@@ -64,3 +64,16 @@ func Equal[T comparable](a, b []T) bool {
 	}
 	return true
 }
+
+func RemoveDuplicates[T comparable](slice []T) []T {
+	res := make([]T, 0, len(slice))
+	keys := make(map[T]struct{}, len(slice))
+	for _, element := range slice {
+		if _, exists := keys[element]; exists {
+			continue
+		}
+		keys[element] = struct{}{}
+		res = append(res, element)
+	}
+	return res
+}

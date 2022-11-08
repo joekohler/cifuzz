@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 // The CMake configuration (also called "build type") to use for fuzzing runs.
@@ -150,7 +151,8 @@ func (b *Builder) Configure() error {
 	return nil
 }
 
-// Build builds the specified fuzz tests with CMake
+// Build builds the specified fuzz tests with CMake. The fuzz tests must
+// not contain duplicates.
 func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 	buildDir, err := fileutil.CanonicalPath(b.BuildDir())
 	if err != nil {
@@ -250,6 +252,7 @@ func (b *Builder) ListFuzzTests() ([]string, error) {
 	for _, entry := range fuzzTestEntries {
 		fuzzTests = append(fuzzTests, entry.Name())
 	}
+	fuzzTests = sliceutil.RemoveDuplicates(fuzzTests)
 	return fuzzTests, nil
 }
 

@@ -97,6 +97,9 @@ type Opts struct {
 func (opts *Opts) Validate() error {
 	var err error
 
+	// Ensure that the fuzz tests contain no duplicates
+	opts.FuzzTests = sliceutil.RemoveDuplicates(opts.FuzzTests)
+
 	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
 		log.Error(err, err.Error())
@@ -411,6 +414,9 @@ func (b *Bundler) buildAllVariantsCMake(configureVariants []configureVariant) ([
 			fuzzTests = b.Opts.FuzzTests
 		}
 
+		// The fuzz tests passed to builder.Build must not contain
+		// duplicates, which is ensured by builder.ListFuzzTests()
+		// and the Opts.Validate() function.
 		results, err := builder.Build(fuzzTests)
 		if err != nil {
 			return nil, err
