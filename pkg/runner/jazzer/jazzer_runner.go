@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
 	"code-intelligence.com/cifuzz/pkg/minijail"
-	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -35,14 +36,6 @@ func (options *RunnerOptions) ValidateOptions() error {
 	if err != nil {
 		return err
 	}
-
-	if options.AutofuzzTarget == "" && options.TargetClass == "" {
-		return errors.New("Either a autofuzz target or a target class must be specified")
-	}
-	if options.AutofuzzTarget != "" && options.TargetClass != "" {
-		return errors.New("Only specify either an autofuzz target or a target class")
-	}
-
 	return nil
 }
 
@@ -58,33 +51,32 @@ func NewRunner(options *RunnerOptions) *Runner {
 }
 
 func (r *Runner) Run(ctx context.Context) error {
-	var err error
-
-	var driverPath string
-	driverPath, err = runfiles.Finder.JazzerDriverPath()
-	if err != nil {
-		return err
-	}
-	agentPath, err := runfiles.Finder.JazzerAgentDeployJarPath()
+	err := r.ValidateOptions()
 	if err != nil {
 		return err
 	}
 
-	args := []string{driverPath}
+	javaHome, err := runfiles.FindSystemJavaHome()
+	if err != nil {
+		return err
+	}
 
+	javaBin := filepath.Join(javaHome, "bin", "java")
+	if runtime.GOOS == "windows" {
+		javaBin = filepath.Join(javaHome, "bin", "java.exe")
+	}
+	args := []string{javaBin}
+
+	// class paths
+	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
 	// ----------------------
 	// --- Jazzer options ---
 	// ----------------------
-	if r.AutofuzzTarget != "" {
-		args = append(args, "--autofuzz="+r.AutofuzzTarget)
-	} else {
-		args = append(args, "--target_class="+r.TargetClass)
+	// Jazzer main class
+	args = append(args, "com.code_intelligence.jazzer.Jazzer")
+	if r.TargetClass != "" {
+	  args = append(args, "--target_class="+r.TargetClass)
 	}
-
-	args = append(args, fmt.Sprintf("--cp=%s", strings.Join(r.ClassPaths, ":")))
-
-	args = append(args, "--agent_path="+agentPath)
-	args = append(args, instrumentorAgentArgs(r.InstrumentationPackageFilters)...)
 
 	// -------------------------
 	// --- libfuzzer options ---
@@ -137,8 +129,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		jazzerArgs := args
 
 		bindings := []*minijail.Binding{
-			// The Jazzer agent must be accessible
-			{Source: agentPath},
 			// The first corpus directory must be writable, because
 			// libfuzzer writes new test inputs to it
 			{Source: r.SeedsDir, Writable: minijail.ReadWrite},
@@ -211,6 +201,122 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 	}
 
 	return env, nil
+}
+
+func (r *Runner) RunPriorASIP4(ctx context.Context) error {
+	var err error
+
+	var driverPath string
+	driverPath, err = runfiles.Finder.JazzerDriverPath()
+	if err != nil {
+		return err
+	}
+	agentPath, err := runfiles.Finder.JazzerAgentDeployJarPath()
+	if err != nil {
+		return err
+	}
+
+	args := []string{driverPath}
+
+	// ----------------------
+	// --- Jazzer options ---
+	// ----------------------
+	if r.AutofuzzTarget != "" {
+		args = append(args, "--autofuzz="+r.AutofuzzTarget)
+	} else {
+		args = append(args, "--target_class="+r.TargetClass)
+	}
+
+	args = append(args, fmt.Sprintf("--cp=%s", strings.Join(r.ClassPaths, ":")))
+
+	args = append(args, "--agent_path="+agentPath)
+	args = append(args, instrumentorAgentArgs(r.InstrumentationPackageFilters)...)
+
+	// -------------------------
+	// --- libfuzzer options ---
+	// -------------------------
+	// Tell libfuzzer to exit after the timeout
+	timeoutSeconds := strconv.FormatInt(int64(r.Timeout.Seconds()), 10)
+	args = append(args, "-max_total_time="+timeoutSeconds)
+	// Tell libfuzzer which dictionary it should use
+	if r.Dictionary != "" {
+		args = append(args, "-dict="+r.Dictionary)
+	}
+	// Add user-specified Jazzer/libfuzzer options
+	args = append(args, r.EngineArgs...)
+	// For Jazzer, we increase the default OOM limit further away from the JVM's maximum heap size of 1800 MB to
+	// prevent spurious OOMs, which abort a fuzzing run.
+	if !stringutil.ContainsStringWithPrefix(r.EngineArgs, "-rss_limit_mb=") {
+		args = append(args, "-rss_limit_mb=3000")
+	}
+	// Tell libfuzzer which corpus directory it should use
+	args = append(args, r.SeedsDir)
+	// Add any additional corpus directories as further positional arguments
+	args = append(args, r.AdditionalSeedsDirs...)
+	// -----------------------------
+	// --- fuzz target arguments ---
+	// -----------------------------
+	if len(r.FuzzTargetArgs) > 0 {
+		// separate the Jazzer/libfuzzer arguments and fuzz target
+		// arguments with a "--"
+		args = append(args, "--")
+		args = append(args, r.FuzzTargetArgs...)
+	}
+	// -----------------------------
+
+	// The environment we run the fuzzer in
+	fuzzerEnv, err := r.FuzzerEnvironment()
+	if err != nil {
+		return err
+	}
+	// The environment we run our minijail wrapper in
+	wrapperEnv := os.Environ()
+	if r.UseMinijail {
+		jazzerArgs := args
+
+		bindings := []*minijail.Binding{
+			// The Jazzer agent must be accessible
+			{Source: agentPath},
+			// The first corpus directory must be writable, because
+			// libfuzzer writes new test inputs to it
+			{Source: r.SeedsDir, Writable: minijail.ReadWrite},
+		}
+		for _, dir := range r.AdditionalSeedsDirs {
+			bindings = append(bindings, &minijail.Binding{Source: dir})
+		}
+		// Add bindings for the Java dependencies
+		for _, p := range r.ClassPaths {
+			bindings = append(bindings, &minijail.Binding{Source: p})
+		}
+		// Add binding for the system JDK and pass it to minijail.
+		javaHome, err := runfiles.FindSystemJavaHome()
+		if err != nil {
+			return err
+		}
+		bindings = append(bindings, &minijail.Binding{Source: javaHome})
+		// Set up Minijail
+		mj, err := minijail.NewMinijail(&minijail.Options{
+			Args:     jazzerArgs,
+			Bindings: bindings,
+			Env:      fuzzerEnv,
+		})
+		if err != nil {
+			return err
+		}
+		defer mj.Cleanup()
+		// Use the command which runs Jazzer via minijail
+		args = mj.Args
+	} else {
+		// We don't use minijail, so we can set the environment
+		// variables for the fuzzer in the wrapper environment
+		for key, value := range envutil.ToMap(fuzzerEnv) {
+			wrapperEnv, err = envutil.Setenv(wrapperEnv, key, value)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return r.RunLibfuzzerAndReport(ctx, args, wrapperEnv)
 }
 
 func instrumentorAgentArgs(instrumentationPackageFilters []string) []string {
