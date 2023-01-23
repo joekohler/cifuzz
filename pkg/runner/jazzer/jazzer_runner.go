@@ -20,7 +20,6 @@ import (
 // List of non-open-sourced hooks that should be used for Java API fuzzing.
 var customHooks = []string{
 	"com.code_intelligence.jazzer.sanitizers.FileIOHooks",
-	"com.code_intelligence.jazzer.sanitizers.SQLHooks",
 }
 
 type RunnerOptions struct {
