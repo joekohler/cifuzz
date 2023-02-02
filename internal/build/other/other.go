@@ -94,6 +94,90 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	return b, nil
 }
 
+func (b *Builder) BuildAll(fuzzTests []string) ([]*build.Result, error) {
+	var err error
+	defer fileutil.Cleanup(b.buildDir)
+
+	if !slices.Equal(b.Sanitizers, []string{"coverage"}) {
+		// We compile the dumper without any user-provided flags. This
+		// should be safe as it does not use any stdlib functions.
+		dumperSource, err := runfiles.Finder.DumperSourcePath()
+		if err != nil {
+			return nil, err
+		}
+		clang, err := runfiles.Finder.ClangPath()
+		if err != nil {
+			return nil, err
+		}
+		// Compile with -fPIC just in case the fuzz test is a PIE.
+		cmd := exec.Command(clang, "-fPIC", "-c", dumperSource, "-o", filepath.Join(b.buildDir, "dumper.o"))
+		cmd.Stdout = b.Stdout
+		cmd.Stderr = b.Stderr
+		log.Debugf("Command: %s", cmd.String())
+		err = cmd.Run()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	buildCommandEnv := b.env
+
+	if slices.Contains(b.Sanitizers, "coverage") {
+		// Allow the build command to figure out if it's executed for a
+		// coverage build
+		buildCommandEnv, err = envutil.Setenv(buildCommandEnv, "CIFUZZ_COVERAGE_BUILD", "1")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Run the build command
+	cmd := exec.Command("/bin/sh", "-c", b.BuildCommand)
+	cmd.Stdout = b.Stdout
+	cmd.Stderr = b.Stderr
+	cmd.Env = buildCommandEnv
+	log.Debugf("Command: %s", cmd.String())
+	err = cmd.Run()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+
+	var results []*build.Result
+	for _, fuzzTest := range fuzzTests {
+		executable, err := b.findFuzzTestExecutable(fuzzTest)
+		if err != nil {
+			return nil, err
+		}
+		if executable == "" {
+			return nil, cmdutils.WrapExecError(errors.Errorf("Could not find executable for fuzz test %q", fuzzTest), cmd)
+		}
+
+		// For the build system type "other", we expect the default seed corpus next
+		// to the fuzzer executable.
+		seedCorpus := executable + "_inputs"
+		runtimeDeps, err := b.findSharedLibraries()
+		if err != nil {
+			return nil, err
+		}
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		generatedCorpus := filepath.Join(b.ProjectDir, ".cifuzz-corpus", fuzzTest)
+		results = append(results, &build.Result{
+			Name:            fuzzTest,
+			Executable:      executable,
+			GeneratedCorpus: generatedCorpus,
+			SeedCorpus:      seedCorpus,
+			BuildDir:        wd,
+			ProjectDir:      b.ProjectDir,
+			Sanitizers:      b.Sanitizers,
+			RuntimeDeps:     runtimeDeps,
+		})
+	}
+	return results, nil
+}
+
 // Build builds the specified fuzz test via the user-specified build command
 func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	var err error

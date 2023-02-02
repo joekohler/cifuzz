@@ -270,11 +270,12 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 			panic("No fuzz tests specified")
 		}
 
-		for _, fuzzTest := range b.opts.FuzzTests {
-			result, err := builder.Build(fuzzTest)
-			if err != nil {
-				return nil, err
-			}
+		variantResults, err := builder.BuildAll(b.opts.FuzzTests)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, result := range variantResults {
 
 			// To avoid that subsequent builds overwrite the artifacts
 			// from this build, we copy them to a temporary directory
@@ -284,9 +285,9 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 			if err != nil {
 				return nil, err
 			}
-
-			results = append(results, result)
 		}
+
+		results = append(results, variantResults...)
 	}
 
 	return results, nil
