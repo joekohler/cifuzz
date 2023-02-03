@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/u-root/u-root/pkg/ldd"
 	"golang.org/x/exp/slices"
 
 	"code-intelligence.com/cifuzz/internal/build"
@@ -155,7 +156,7 @@ func (b *Builder) BuildAll(fuzzTests []string) ([]*build.Result, error) {
 		// For the build system type "other", we expect the default seed corpus next
 		// to the fuzzer executable.
 		seedCorpus := executable + "_inputs"
-		runtimeDeps, err := b.findSharedLibraries()
+		runtimeDeps, err := b.findSharedLibraries(executable)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +243,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	// For the build system type "other", we expect the default seed corpus next
 	// to the fuzzer executable.
 	seedCorpus := executable + "_inputs"
-	runtimeDeps, err := b.findSharedLibraries()
+	runtimeDeps, err := b.findSharedLibraries(executable)
 	if err != nil {
 		return nil, err
 	}
@@ -428,35 +429,20 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 
 var sharedLibraryRegex = regexp.MustCompile(`^.+\.((so)|(dylib))(\.\d\w*)*$`)
 
-func (b *Builder) findSharedLibraries() ([]string, error) {
-	// TODO: Only return those libraries which are actually used, and which
-	//       might live outside of the project directory, by parsing the
-	//       shared object dependencies of the executable (we could use
-	//       cmake for that or do it ourselves in Go).
+func (b *Builder) findSharedLibraries(executable string) ([]string, error) {
 	var sharedObjects []string
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return errors.WithStack(err)
+
+	filesInfo, err := ldd.Ldd([]string{executable})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fileInfo := range filesInfo {
+		if sharedLibraryRegex.MatchString(fileInfo.FullName) &&
+			!strings.HasPrefix(fileInfo.FullName, "/lib") {
+			sharedObjects = append(sharedObjects, fileInfo.FullName)
 		}
-		if info.IsDir() {
-			return nil
-		}
-		// Ignore shared objects in .dSYM directories, to avoid llvm-cov
-		// failing with:
-		//
-		//    Failed to load coverage: Unsupported coverage format version
-		//
-		if strings.Contains(path, "dSYM") {
-			return nil
-		}
-		if sharedLibraryRegex.MatchString(info.Name()) {
-			absPath, err := filepath.Abs(path)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			sharedObjects = append(sharedObjects, absPath)
-		}
-		return nil
-	})
+	}
+
 	return sharedObjects, err
 }

@@ -27,6 +27,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 type configureVariant struct {
@@ -324,13 +325,14 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 		if err != nil {
 			return err
 		}
-		if !isBelow {
-			// If the file is not below the build dir, we assume
-			// that it was not created during the build, so we
-			// don't need to copy it
-			continue
+		var topDir string
+		if isBelow {
+			topDir = buildResult.BuildDir
+		} else {
+			topDir = "/"
 		}
-		relPath, err := filepath.Rel(buildResult.BuildDir, dep)
+
+		relPath, err := filepath.Rel(topDir, dep)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -410,6 +412,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 		}
 	}
 
+	var libraryPaths []string
 	// Add the runtime dependencies of the fuzz test executable.
 	externalLibrariesPrefix := ""
 depsLoop:
@@ -425,6 +428,13 @@ depsLoop:
 			if err != nil {
 				err = errors.WithStack(err)
 				return
+			}
+
+			if b.opts.BuildSystem == config.BuildSystemOther {
+				libraryPath := filepath.Join(buildArtifactsPrefix, filepath.Dir(buildDirRelPath))
+				if !sliceutil.Contains(libraryPaths, libraryPath) {
+					libraryPaths = append(libraryPaths, libraryPath)
+				}
 			}
 
 			var hash string
@@ -549,8 +559,9 @@ depsLoop:
 	}
 
 	if externalLibrariesPrefix != "" {
-		baseFuzzerInfo.LibraryPaths = []string{externalLibrariesPrefix}
+		libraryPaths = append(libraryPaths, externalLibrariesPrefix)
 	}
+	baseFuzzerInfo.LibraryPaths = libraryPaths
 
 	if isCoverageBuild(buildResult.Sanitizers) {
 		fuzzer := baseFuzzerInfo
