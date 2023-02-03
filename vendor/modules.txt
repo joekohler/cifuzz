@@ -164,6 +164,9 @@ github.com/subosito/gotenv
 # github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af
 ## explicit
 github.com/tadvi/systray
+# github.com/u-root/u-root v0.11.0
+## explicit; go 1.19
+github.com/u-root/u-root/pkg/ldd
 # github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778
 ## explicit; go 1.15
 github.com/xo/terminfo
