@@ -262,7 +262,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	jarPattern := filepath.Join(archiveDir, "runtime_deps", "*.jar")
 	jarMatches, err := zglob.Glob(jarPattern)
 	require.NoError(t, err)
-	assert.Equal(t, 10, len(jarMatches))
+	assert.Equal(t, 11, len(jarMatches))
 
 	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
 	classMatches, err := zglob.Glob(classPattern)
@@ -359,9 +359,9 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	require.NoError(t, err)
 	switch lang {
 	case "java":
-		assert.Equal(t, 17, len(jarMatches))
+		assert.Equal(t, 18, len(jarMatches))
 	case "kotlin":
-		assert.Equal(t, 15, len(jarMatches))
+		assert.Equal(t, 16, len(jarMatches))
 	}
 
 	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
