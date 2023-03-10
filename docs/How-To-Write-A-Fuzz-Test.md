@@ -3,22 +3,22 @@
 ## Setup
 
 ### CMake
-When using `cifuzz init` and `cifuzz create` the commands will tell you 
+When using `cifuzz init` and `cifuzz create` the commands will tell you
 which manual steps are necessary to use the cifuzz CMake integration inside
-your existing project. Usually you also have to add instructions in your 
-CMakeLists.txt file to link the fuzz test with the software under test 
-(e.g. use the `target_link_libraries directive`). 
-The `add_fuzz_test` directive can be treated like `add_executable`, but
-can also be used to declare dependencies. For example:
+your existing project. Usually you also have to add instructions in your
+CMakeLists.txt file to link the fuzz test with the software under test
+(e.g. use the `target_link_libraries directive`).
+
+The `add_fuzz_test` directive can be treated just like `add_executable`:
 
 ```
-add_fuzz_test(my_fuzz_test
-    SOURCES my_fuzz_test.cpp
-    DEPENDENCIES ${FUZZ_TEST_DEPENDENCIES}
-    INCLUDE_DIRS ${FUZZ_TEST_INCLUDE_DIRS}
-)
+add_fuzz_test(my_fuzz_test my_fuzz_test.cpp)
+
+target_link_libraries(my_fuzz_test my_library)
+target_compile_definitions(my_fuzz_test PRIVATE MY_DEFINE=foo)
 ```
 
+More detailed information can be found in the [CMake reference](../cmake/Reference.md).
 
 ## How to convert/cast the fuzzer data into the data types you need
 
@@ -52,7 +52,7 @@ FUZZ_TEST(const uint8_t *data, size_t size) {
 <summary>Java</summary>
 For Java, you can use the FuzzedDataProvider which is part of the Jazzer API
 package that is automatically downloaded by maven/gradle respectively if set up
-properly after cifuzz init. 
+properly after cifuzz init.
 
 An example can look like this:
 
