@@ -180,18 +180,7 @@ brew install llvm lcov openjdk bazelisk zip
 ```
 
 **Windows**
-
-At least Visual Studio 2022 version 17 is required.
-
-Please make sure to
-* select **"Develop Desktop C++ applications"** in the Visual Studio Installer
-* check **"C++ Clang Compiler for Windows"** in the "Individual Components" tab
-
-You can add these components anytime by choosing "Modify" in the Visual Studio Installer.
-
-```bash
-choco install lcov microsoft-openjdk bazelisk zip
-```
+Bazel C/C++ projects are currently not supported on Windows.
 
 </details>
 
