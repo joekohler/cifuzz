@@ -4,7 +4,16 @@ target_sources(secrets PUBLIC
 set_property(TARGET secrets PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(secrets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(parser SHARED parser.cpp)
+if(WIN32)
+  # libfuzzer has to be linked statically for clang-cl to get fuzzer
+  # instrumentation, but that causes the linker to link in libFuzzer, even into a shared library. This seems to be the
+  # cause of linker errors, so we fall back to linking statically here until the situation improves.
+  # TODO: We may be able to craft our own fuzzer-no-link option by setting an appropriate /NODEFAULTLIB as a linker
+  # flag on shared libraries only.
+  add_library(parser parser.cpp)
+else()
+  add_library(parser SHARED parser.cpp)
+endif()
 target_sources(parser PUBLIC
                parser.h)
 target_link_libraries(parser PRIVATE helper)
@@ -15,12 +24,6 @@ if(CIFUZZ_USE_DEPRECATED_MACROS)
 else()
   add_fuzz_test(parser_fuzz_test parser_fuzz_test.cpp)
   target_link_libraries(parser_fuzz_test PRIVATE parser)
-  if(WIN32)
-    # Copy all DLLs right next to the binary to account for the lack of R(UN)PATH on Windows.
-    add_custom_command(TARGET parser_fuzz_test POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:parser_fuzz_test> $<TARGET_FILE_DIR:parser_fuzz_test>
-                       COMMAND_EXPAND_LISTS)
-  endif()
 
   add_fuzz_test(no_seed_corpus_fuzz_test crash_always_fuzz_target.cpp)
 

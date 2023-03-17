@@ -18,7 +18,7 @@ function(enable_fuzz_testing)
   #    one.
   if(CIFUZZ_TESTING)
     add_compile_definitions(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-    if(MSVC)
+    if(WIN32)
       add_compile_options(
           # Allow the compiler to inline more aggressively. This overrides the (questionable?) default of /Ob1 set by
           # CMake's RelWithDebInfo configuration (see https://stackoverflow.com/a/66089368/297261). Given that it also
@@ -26,7 +26,7 @@ function(enable_fuzz_testing)
           # information for local variables and inlined functions" (see
           # https://docs.microsoft.com/en-us/cpp/build/reference/zo-enhance-optimized-debugging?view=msvc-170).
           /Ob2
-          # MSVC's equivalent of -fno-omit-frame-pointer.
+          # clang-cl's equivalent of -fno-omit-frame-pointer.
           /Oy-
           # Undefine NDEBUG, which is explicitly defined by the RelWithDebInfo CMake configuration, so that asserts are
           # kept.
@@ -35,8 +35,14 @@ function(enable_fuzz_testing)
           # TODO(fmeum): Remove once ASan has been stabilized and clang_rt.asan_dynamic-x86_64.dll is available in the
           #  default PATH, e.g. in System32.
           # https://stackoverflow.com/a/66532115/297261
-          /MTd
+          /MT
+          # See https://github.com/llvm/llvm-project/issues/56300
+          -D_DISABLE_VECTOR_ANNOTATION
+          -D_DISABLE_STRING_ANNOTATION
       )
+
+      # Add Visual Studio directory for clang runtime libraries to link directories 
+      link_directories("$ENV{VSINSTALLDIR}\\VC\\Tools\\Llvm\\x64\\lib\\clang\\${CMAKE_CXX_COMPILER_VERSION}\\lib\\windows")
       add_link_options(
           # /INCREMENTAL is enabled by default with RelWithDebInfo, but is unsupported with ASan and potentially impacts
           # performance by padding functions.
@@ -59,47 +65,45 @@ function(enable_fuzz_testing)
     # We also use the libfuzzer engine in coverage mode, but don't want fuzzing instrumentation to be applied in that
     # case.
     if(NOT coverage IN_LIST CIFUZZ_SANITIZERS)
-      if(MSVC)
-        add_compile_options(/fsanitize=fuzzer)
-      else()
-        add_compile_options(-fsanitize=fuzzer)
+      add_compile_options(-fsanitize=fuzzer)
+      if(WIN32)
+          # On Windows the option "-fsanitize=fuzzer" doesn't take care of linking the runtime libraries
+        add_link_options("clang_rt.fuzzer-x86_64.lib")
       endif()
     endif()
   endif()
 
   foreach(sanitizer IN LISTS CIFUZZ_SANITIZERS)
     if(sanitizer STREQUAL address)
-      if(MSVC)
-        # stack-use-after-scope instrumentation is enabled by default.
-        # https://docs.microsoft.com/en-us/cpp/sanitizers/asan?view=msvc-170#differences
-        add_compile_options(/fsanitize=address)
-        # MSVC automatically signals to the linker that ASan should be linked.
-        # https://docs.microsoft.com/en-us/cpp/build/reference/inferasanlibs?view=msvc-170
-      else()
-        add_compile_options(
-            -fsanitize=address
-            -fsanitize-recover=address
-            -fsanitize-address-use-after-scope
-            # Disable source fortification, which is currently not supported
-            # in combination with ASan, see https://github.com/google/sanitizers/issues/247
-            # Note that this does not override a user-specified -D_FORTIFY_SOURCE,
-            # because the flags we add here come before user-specified flags.
-            # It's still useful to disable source fortification which the
-            # toolchain or distribution might have enabled by default.
-            -U_FORTIFY_SOURCE
+      add_compile_options(
+          -fsanitize=address
+          -fsanitize-recover=address
+          -fsanitize-address-use-after-scope
+          # Disable source fortification, which is currently not supported
+          # in combination with ASan, see https://github.com/google/sanitizers/issues/247
+          # Note that this does not override a user-specified -D_FORTIFY_SOURCE,
+          # because the flags we add here come before user-specified flags.
+          # It's still useful to disable source fortification which the
+          # toolchain or distribution might have enabled by default.
+          -U_FORTIFY_SOURCE
+      )
+      if(WIN32)
+        add_link_options(
+          "clang_rt.asan-preinit-x86_64.lib"
+          "clang_rt.asan-x86_64.lib"
+          "clang_rt.asan_cxx-x86_64.lib"
         )
+      else()
         add_link_options(-fsanitize=address)
       endif()
     elseif(sanitizer STREQUAL undefined)
-      if(MSVC)
-        message(FATAL_ERROR "cifuzz: MSVC does not support UndefinedBehaviorSanitizer yet")
-      else()
-        add_compile_options(-fsanitize=undefined)
+      add_compile_options(-fsanitize=undefined)
+      if(NOT WIN32)
         add_link_options(-fsanitize=undefined)
       endif()
     elseif(sanitizer STREQUAL coverage)
-      if(MSVC)
-        message(FATAL_ERROR "cifuzz: MSVC does not support coverage builds yet")
+      if(WIN32)
+        message(FATAL_ERROR "cifuzz: coverage builds are not yet supported on windows")
       else()
         add_compile_options(
             -fprofile-instr-generate
@@ -119,8 +123,8 @@ function(enable_fuzz_testing)
         add_link_options(-fprofile-instr-generate)
       endif()
     elseif(sanitizer STREQUAL gcov)
-      if(MSVC)
-        message(FATAL_ERROR "cifuzz: MSVC does not support coverage builds yet")
+      if(WIN32)
+        message(FATAL_ERROR "cifuzz: coverage builds are not yet supported")
       else()
         # We useand gcov style coverage instrumentation instead of llvm-cov since CLion does not correctly collect
         # coverage for shared libraries with llvm-cov. The flag is supported by both gcc and clang.
@@ -153,7 +157,7 @@ function(add_fuzz_test name)
     # The old fuzz macro header is injected via the compile command line. It does not live under the include directory
     # so that is not offered to fuzz tests using the new macros via include path IDE completions.
     set(_fuzz_macro_header "$<SHELL_PATH:${CIFUZZ_INCLUDE_DIR}/legacy/fuzz_macro.h>")
-    if(MSVC)
+    if(WIN32)
       target_compile_options("${name}" PRIVATE /FI"${_fuzz_macro_header}")
     else()
       target_compile_options("${name}" PRIVATE "-include${_fuzz_macro_header}")
@@ -199,11 +203,10 @@ function(add_fuzz_test name)
       target_compile_definitions("${name}" PRIVATE CIFUZZ_HAS_SANITIZER)
     endif()
   elseif(CIFUZZ_ENGINE STREQUAL libfuzzer)
-    if(MSVC)
-      # MSVC already marks its compilation outputs as requiring a link against libFuzzer and thus link.exe doesn't
-      # offer the equivalent of `-fsanitize=fuzzer`.
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR ((NOT "CXX" IN_LIST _enabled_languages) AND (CMAKE_C_COMPILER_ID STREQUAL "Clang")))
-      target_link_options("${name}" PRIVATE -fsanitize=fuzzer)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR ((NOT "CXX" IN_LIST _enabled_languages) AND (CMAKE_C_COMPILER_ID STREQUAL "Clang")))
+      if(NOT WIN32)
+        target_link_options("${name}" PRIVATE -fsanitize=fuzzer)
+      endif()
     else()
       set(_clang_description "clang/clang++")
       if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
@@ -231,12 +234,24 @@ function(add_fuzz_test name)
                                   "-fno-profile-instr-generate -fno-coverage-mapping")
     endif()
     target_sources("${name}" PRIVATE "${_launcher_src}")
-    if((NOT MSVC) AND ((address IN_LIST CIFUZZ_SANITIZERS) OR (undefined IN_LIST CIFUZZ_SANITIZERS)))
+    if((address IN_LIST CIFUZZ_SANITIZERS) OR (undefined IN_LIST CIFUZZ_SANITIZERS))
       # The macOS linker doesn't support --wrap, so we fall back to a different strategy that doesn't require any linker
       # flags.
       # See src/dumper.c for details.
       if(NOT APPLE)
-        target_link_options("${name}" PRIVATE -Wl,--wrap=__sanitizer_set_death_callback)
+        if(WIN32)
+          # ALTERNATENAME replaces the function call to _ZN11__sanitizer6PrintfEPKcz with ?Printf@fuzzer@@YAXPEBDZZ.
+          # _ZN11__sanitizer6PrintfEPKcz is the gcc-style mangled name of __sanitizer:Printf(const char *format, ...).
+          # ?Printf@fuzzer@@YAXPEBDZZ is the mangled name of fuzzer::Printf(const char *format, ...) on Windows,
+          # which is contained in clang_rt.fuzzer-x86_64.lib.
+          # We rely on that redirection, because ?Printf@fuzzer@@YAXPEBDZZ cannot be called directly in dumper.c.
+          target_link_options("${name}" PRIVATE
+            -wrap:__sanitizer_set_death_callback
+            /ALTERNATENAME:_ZN11__sanitizer6PrintfEPKcz=?Printf@fuzzer@@YAXPEBDZZ
+          )
+        else()
+          target_link_options("${name}" PRIVATE -Wl,--wrap=__sanitizer_set_death_callback)
+        endif()
       endif()
       if(C IN_LIST _enabled_languages)
         set(_dumper_src "${CIFUZZ_DUMPER_C_SRC}")

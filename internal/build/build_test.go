@@ -13,7 +13,7 @@ import (
 
 func TestCommonBuildEnv_SetClang(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("We are using MSVC for windows")
+		t.Skip("We are using clang-cl for windows")
 	}
 
 	os.Setenv("CC", "")
@@ -27,7 +27,7 @@ func TestCommonBuildEnv_SetClang(t *testing.T) {
 
 func TestCommonBuildEnv_ClangDontOverwrite(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("We are using MSVC for windows")
+		t.Skip("We are using clang-cl for windows")
 	}
 
 	os.Setenv("CC", "/my/clang")

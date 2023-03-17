@@ -109,9 +109,6 @@ func TestIntegration_Ctest_WithUndefinedBehaviorSanitizer(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("MSVC does not support UndefinedBehaviorSanitizer")
-	}
 	t.Parallel()
 	testutil.RegisterTestDeps("testdata", "modules")
 
@@ -132,9 +129,6 @@ func TestIntegration_Ctest_WithUndefinedBehaviorSanitizer(t *testing.T) {
 func TestIntegration_Build_WithMultipleSanitizers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
-	}
-	if runtime.GOOS == "windows" {
-		t.Skip("MSVC does not support UndefinedBehaviorSanitizer")
 	}
 	t.Parallel()
 	testutil.RegisterTestDeps("testdata", "modules")
@@ -265,6 +259,9 @@ func TestIntegration_FuzzTestBinaryLaunchesCIFuzz(t *testing.T) {
 	cmakeVariables := map[string]string{
 		"CIFUZZ_ENGINE":     "libfuzzer",
 		"CIFUZZ_SANITIZERS": "address",
+		// Enable CIFUZZ_TESTING, which is needed in order to set
+		// required compile and link options
+		"CIFUZZ_TESTING": "ON",
 	}
 	if runtime.GOOS != "windows" {
 		cmakeVariables["CMAKE_C_COMPILER"] = "clang"
@@ -289,7 +286,7 @@ func TestIntegration_FuzzTestBinaryLaunchesCIFuzz(t *testing.T) {
 	var fakeCIFuzzCompileCmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		fakeCIFuzz = filepath.Join(fakeCIFuzzDir, "cifuzz.exe")
-		fakeCIFuzzCompileCmd = exec.Command("cl", fakeCIFuzzSrc, "/Fe"+fakeCIFuzz)
+		fakeCIFuzzCompileCmd = exec.Command("clang-cl", fakeCIFuzzSrc, "/Fe"+fakeCIFuzz)
 	} else {
 		fakeCIFuzz = filepath.Join(fakeCIFuzzDir, "cifuzz")
 		fakeCIFuzzCompileCmd = exec.Command("clang", fakeCIFuzzSrc, "-o", fakeCIFuzz)
@@ -317,6 +314,10 @@ func build(t *testing.T, buildType string, cacheVariables map[string]string, add
 	cacheArgs = append(cacheArgs, "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON")
 	if buildType != "" {
 		cacheArgs = append(cacheArgs, "-D", fmt.Sprintf("CMAKE_BUILD_TYPE=%s", buildType))
+	}
+
+	if runtime.GOOS == "windows" {
+		cacheArgs = append(cacheArgs, "-T ClangCL")
 	}
 
 	// Configure

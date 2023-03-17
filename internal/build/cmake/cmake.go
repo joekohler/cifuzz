@@ -148,12 +148,15 @@ func (b *Builder) Configure() error {
 	}
 
 	cacheArgs := []string{
-		"-DCMAKE_BUILD_TYPE=" + cmakeBuildConfiguration,
 		"-DCIFUZZ_ENGINE=libfuzzer",
 		"-DCIFUZZ_SANITIZERS=" + strings.Join(b.Sanitizers, ";"),
 		"-DCIFUZZ_TESTING:BOOL=ON",
 	}
 	if runtime.GOOS != "windows" {
+		// CMAKE_BUILD_TYPE is ignored when building with MSBuild.
+		// The config only has to be specified in the build step with
+		// --config cmakeBuildConfiguration.
+		cacheArgs = append(cacheArgs, "-DCMAKE_BUILD_TYPE="+cmakeBuildConfiguration)
 		// Use relative paths in RPATH/RUNPATH so that binaries from the
 		// build directory can find their shared libraries even when
 		// packaged into an artifact.
@@ -164,6 +167,9 @@ func (b *Builder) Configure() error {
 		//    in a post-build action.
 		// 2. Add all library directories to PATH.
 		cacheArgs = append(cacheArgs, "-DCMAKE_BUILD_RPATH_USE_ORIGIN:BOOL=ON")
+	} else {
+		// "-T ClangCL" is needed in order to use clang-cl instead of MSVC
+		cacheArgs = append(cacheArgs, "-T ClangCL")
 	}
 
 	args := cacheArgs
