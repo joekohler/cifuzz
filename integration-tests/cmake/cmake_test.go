@@ -279,14 +279,11 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	testdata := cifuzzRunner.DefaultWorkDir
 
 	// Run the fuzz test and check that it finds the undefined behavior
-	// (unless we're running on Windows, in which case UBSan is not
-	// supported) and the use-after-free.
+	// and the use-after-free.
 	expectedOutputs := []*regexp.Regexp{
 		regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
 	}
-	if runtime.GOOS != "windows" {
-		expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
-	}
+	expectedOutputs = append(expectedOutputs, regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`))
 
 	// Check that Minijail is used (if running on Linux, because Minijail
 	// is only supported on Linux)
@@ -300,13 +297,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	// Check that the findings command lists the findings
 	findings := shared.GetFindings(t, cifuzz, testdata)
-	// On Windows, only the ASan finding is expected, on Linux and macOS
-	// both the ASan and the UBSan finding are expected.
-	if runtime.GOOS == "windows" {
-		require.Len(t, findings, 1)
-	} else {
-		require.Len(t, findings, 2)
-	}
+	require.Len(t, findings, 2)
 	var asanFinding *finding.Finding
 	var ubsanFinding *finding.Finding
 	for _, f := range findings {
@@ -356,31 +347,36 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	}
 
 	// Verify that there is a UBSan finding and that it has the correct details.
-	if runtime.GOOS != "windows" {
-		require.NotNil(t, ubsanFinding)
-		// Verify that UBSan findings come with inputs under the project directory.
-		require.NotEmpty(t, ubsanFinding.InputFile)
-		require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
-		require.FileExists(t, filepath.Join(testdata, ubsanFinding.InputFile))
-		if runtime.GOOS != "darwin" {
-			expectedStackTrace := []*stacktrace.StackFrame{
-				{
-					SourceFile:  "src/parser/parser.cpp",
-					Line:        23,
-					Column:      9,
-					FrameNumber: 0,
-					Function:    "parse",
-				},
-				{
-					SourceFile:  "src/parser/parser_fuzz_test.cpp",
-					Line:        30,
-					Column:      3,
-					FrameNumber: 1,
-					Function:    "LLVMFuzzerTestOneInputNoReturn",
-				},
-			}
-			require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
+	require.NotNil(t, ubsanFinding)
+	// Verify that UBSan findings come with inputs under the project directory.
+	require.NotEmpty(t, ubsanFinding.InputFile)
+	require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
+	require.FileExists(t, filepath.Join(testdata, ubsanFinding.InputFile))
+	if runtime.GOOS != "darwin" {
+		expectedStackTrace := []*stacktrace.StackFrame{
+			{
+				SourceFile:  "src/parser/parser.cpp",
+				Line:        23,
+				Column:      9,
+				FrameNumber: 0,
+				Function:    "parse",
+			},
+			{
+				SourceFile:  "src/parser/parser_fuzz_test.cpp",
+				Line:        30,
+				Column:      3,
+				FrameNumber: 1,
+				Function:    "LLVMFuzzerTestOneInputNoReturn",
+			},
 		}
+		if runtime.GOOS == "windows" {
+			// On Windows, the column is not printed
+			for i := range expectedStackTrace {
+				expectedStackTrace[i].Column = 0
+			}
+		}
+
+		require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
 	}
 }
 
