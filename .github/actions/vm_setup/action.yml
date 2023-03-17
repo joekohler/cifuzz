@@ -56,9 +56,9 @@ runs:
           brew install lcov
         shell: bash
 
-      # Add cl.exe to the PATH on Windows for the replayer integration test.
+      # Action for configuring Developer Command Prompt for Microsoft Visual C++
       # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
-      - name: Setup - Windows
+      - name: ClangCL - Windows
         uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
         if: contains(inputs.os, 'windows')
 

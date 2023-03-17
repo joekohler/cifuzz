@@ -29,11 +29,11 @@ jobs:
       - name: Install dependencies (windows) 
         if: contains(matrix.os, 'windows')
         # please make sure this is in sync with the README.md / installation docs
-        run: choco install cmake llvm lcov microsoft-openjdk maven gradle
+        run: choco install lcov microsoft-openjdk maven gradle
 
-      # Add cl.exe to the PATH on Windows for the replayer integration test.
+      # Action for configuring Developer Command Prompt for Microsoft Visual C++
       # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
-      - name: MSVC - Windows
+      - name: ClangCL - Windows
         uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
         if: contains(matrix.os, 'windows')
 
