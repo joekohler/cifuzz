@@ -108,6 +108,9 @@ func CopyTestdataDir(t *testing.T, name string) string {
 	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
 	require.NoError(t, err)
 
+	dir, err = filepath.EvalSymlinks(dir)
+	require.NoError(t, err)
+
 	// Get the path to the testdata dir
 	testDataDir := filepath.Join(cwd, "testdata")
 

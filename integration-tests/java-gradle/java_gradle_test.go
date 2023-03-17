@@ -2,6 +2,7 @@ package gradle
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -114,7 +115,7 @@ func TestIntegration_Gradle_InitCreateRun(t *testing.T) {
 	// When minijail is used, the artifact prefix is set to the minijail
 	// output path
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(`artifact_prefix='./'`)},
+		ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(fmt.Sprintf(`artifact_prefix='%s`, projectDir))},
 	})
 
 	if runtime.GOOS == "linux" {
