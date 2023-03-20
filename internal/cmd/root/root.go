@@ -40,7 +40,7 @@ func New() (*cobra.Command, error) {
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
-			log.Debugf("cifuzz build: %s", version)
+			log.Infof("cifuzz version %s", version)
 
 			err := cmdutils.Chdir()
 			if err != nil {
