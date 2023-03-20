@@ -26,7 +26,6 @@ type RunfilesFinder interface {
 	LogoPath() (string, error)
 	MavenPath() (string, error)
 	GradlePath() (string, error)
-	GradleInitScriptPath() (string, error)
 	JavaHomePath() (string, error)
 }
 

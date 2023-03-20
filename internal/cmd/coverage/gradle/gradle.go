@@ -21,6 +21,8 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+const GradleReportTask = "cifuzzReport"
+
 type CoverageGenerator struct {
 	OutputFormat string
 	OutputPath   string
@@ -42,16 +44,8 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		cov.runfilesFinder = runfiles.Finder
 	}
 
-	gradleTestArgs := []string{
-		"cifuzzTest",
+	gradleArgs := []string{
 		fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest),
-	}
-	if cov.Parallel.Enabled {
-		gradleTestArgs = append(gradleTestArgs, "--parallel")
-	}
-	err := cov.runGradleCommand(gradleTestArgs)
-	if err != nil {
-		return err
 	}
 
 	if cov.OutputPath == "" {
@@ -59,25 +53,22 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		if err != nil {
 			return err
 		}
-		cov.OutputPath = filepath.Join(buildDir, "reports", "cifuzz")
+		cov.OutputPath = filepath.Join(buildDir, "reports", "jacoco", GradleReportTask)
 	}
 
 	// Make sure that directory exists, otherwise the command for --format=jacocoxml will fail
-	err = os.MkdirAll(cov.OutputPath, 0700)
+	err := os.MkdirAll(cov.OutputPath, 0700)
 	if err != nil {
 		return err
 	}
 
-	gradleReportArgs := []string{
-		"cifuzzReport",
-		fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath),
-	}
+	gradleArgs = append(gradleArgs, GradleReportTask, fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath))
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
-		gradleReportArgs = append(gradleReportArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
+		gradleArgs = append(gradleArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
 	}
 
-	return cov.runGradleCommand(gradleReportArgs)
+	return cov.runGradleCommand(gradleArgs)
 }
 
 func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
@@ -102,15 +93,7 @@ func (cov *CoverageGenerator) runGradleCommand(args []string) error {
 		return err
 	}
 
-	initScript, err := runfiles.Finder.GradleInitScriptPath()
-	if err != nil {
-		return err
-	}
-
-	cmdArgs := []string{gradleCmd, "-I", initScript}
-	cmdArgs = append(cmdArgs, args...)
-
-	cmd := executil.Command(cmdArgs[0], cmdArgs[1:]...)
+	cmd := executil.Command(gradleCmd, args...)
 	cmd.Dir = cov.ProjectDir
 	cmd.Stdout = cov.BuildStdout
 	cmd.Stderr = cov.BuildStderr

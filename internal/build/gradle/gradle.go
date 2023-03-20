@@ -19,7 +19,7 @@ import (
 
 var (
 	classpathRegex = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
-	buildDirRegex  = regexp.MustCompile("(?m)^cifuzz.test.buildDir=(?P<buildDir>.*)$")
+	buildDirRegex  = regexp.MustCompile("(?m)^cifuzz.buildDir=(?P<buildDir>.*)$")
 )
 
 func FindGradleWrapper(projectDir string) (string, error) {
@@ -113,7 +113,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 }
 
 func (b *Builder) getDependencies() ([]string, error) {
-	cmd, err := buildGradleCommand(b.ProjectDir, []string{"printClasspath"})
+	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintTestClasspath", "-q"})
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +153,6 @@ func buildGradleCommand(projectDir string, args []string) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	initScript, err := runfiles.Finder.GradleInitScriptPath()
-	if err != nil {
-		return nil, err
-	}
-	defaultArgs := []string{"-I", initScript}
-	args = append(args, defaultArgs...)
-
 	cmd := exec.Command(gradleCmd, args...)
 	cmd.Dir = projectDir
 
@@ -167,7 +160,7 @@ func buildGradleCommand(projectDir string, args []string) (*exec.Cmd, error) {
 }
 
 func GetBuildDirectory(projectDir string) (string, error) {
-	cmd, err := buildGradleCommand(projectDir, []string{"printBuildDir"})
+	cmd, err := buildGradleCommand(projectDir, []string{"cifuzzPrintBuildDir", "-q"})
 	if err != nil {
 		return "", nil
 	}

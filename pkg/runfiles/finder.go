@@ -112,10 +112,6 @@ func (f RunfilesFinderImpl) LogoPath() (string, error) {
 	return f.findFollowSymlinks("share/logo.png")
 }
 
-func (f RunfilesFinderImpl) GradleInitScriptPath() (string, error) {
-	return f.findFollowSymlinks("share/integration/init.gradle")
-}
-
 // JavaHomePath returns the absolute path to the base directory of the
 // default system JDK/JRE. It first looks up JAVA_HOME and then falls back to
 // using the java binary in the PATH.
