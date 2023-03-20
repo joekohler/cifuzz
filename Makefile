@@ -2,6 +2,12 @@ current_os :=
 label_os :=
 bin_ext :=
 
+# Force PowerShell on Windows. sh.exe on Windows GH Actions runners is using a different PATH with incompatible tools.
+ifeq ($(OS),Windows_NT)
+	SHELL := pwsh.exe
+	.SHELLFLAGS := -NoProfile -Command
+endif
+
 ifeq ($(OS),Windows_NT)
 	current_os = windows
 	label_os = windows
@@ -61,6 +67,10 @@ deps/integration-tests:
 deps/dev: deps
 	go install github.com/incu6us/goimports-reviser/v2@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+
+.PHONY: deps/test
+deps/test:
+	go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.4.1
 
 .PHONY: install
 install:
@@ -149,26 +159,25 @@ test: deps build/$(current_os)
 	go test -v ./...
 
 .PHONY: test/unit
-test/unit: deps
-	go test -v ./... -short
+test/unit: deps deps/test
+	go test -json -v ./... -short 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/integration
-test/integration: deps deps/integration-tests
-	go test -v -timeout=20m ./... -run 'TestIntegration.*'
+test/integration: deps deps/test deps/integration-tests
+	go test -json -v -timeout=20m ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/integration/sequential
-test/integration/sequential: deps deps/integration-tests
-	go test -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*'
+test/integration/sequential: deps deps/test deps/integration-tests
+	go test -json -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/e2e
-test/e2e: deps install
-	E2E_TESTS_MATRIX=1 go test -v ./e2e-tests/...
+test/e2e: deps deps/test install
+	E2E_TESTS_MATRIX=1 go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
 
 # For Release E2E testing, we want to use the installed cifuzz, instead of installing from source.
 .PHONY: test/e2e-use-installed-cifuzz
-test/e2e-use-installed-cifuzz:
-	E2E_TESTS_MATRIX=1 go test -v ./e2e-tests/...
-
+test/e2e-use-installed-cifuzz: deps/test
+	E2E_TESTS_MATRIX=1 go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
 
 .PHONY: test/race
 test/race: deps build/$(current_os)

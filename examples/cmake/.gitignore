@@ -4,3 +4,4 @@ build/
 .cifuzz-findings/
 *_inputs
 crash-*
+gotest.log
