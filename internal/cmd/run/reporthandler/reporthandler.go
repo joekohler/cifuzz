@@ -196,11 +196,6 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 		}
 	}
 
-	err = f.EnhanceWithErrorDetails(h.ErrorDetails)
-	if err != nil {
-		return err
-	}
-
 	f.FuzzTest = h.FuzzTest
 
 	// Do not mutate f after this call.

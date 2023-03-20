@@ -57,7 +57,15 @@ func TestListFindings(t *testing.T) {
 	require.Equal(t, "[]", output)
 
 	// Create a finding
-	f := &finding.Finding{Name: "test_finding"}
+	f := &finding.Finding{
+		Name: "test_finding",
+		MoreDetails: &finding.ErrorDetails{
+			Name:         "test_finding",
+			Severity:     nil,
+			OwaspDetails: &finding.ExternalDetail{},
+			CweDetails:   &finding.ExternalDetail{},
+		},
+	}
 	err = f.Save(projectDir)
 	require.NoError(t, err)
 
@@ -70,7 +78,16 @@ func TestListFindings(t *testing.T) {
 }
 
 func TestPrintFinding(t *testing.T) {
-	f := &finding.Finding{Name: "test_finding"}
+	// Create a finding
+	f := &finding.Finding{
+		Name: "test_finding",
+		MoreDetails: &finding.ErrorDetails{
+			Name:         "test_finding",
+			Severity:     nil,
+			OwaspDetails: &finding.ExternalDetail{},
+			CweDetails:   &finding.ExternalDetail{},
+		},
+	}
 
 	projectDir := testutil.BootstrapEmptyProject(t, "test-list-findings-")
 	opts := &options{

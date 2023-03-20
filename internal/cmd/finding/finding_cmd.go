@@ -8,8 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
+	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/finding"
@@ -71,10 +74,15 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (cmd *findingCmd) run(args []string) error {
+	errorDetails, err := checkForErrorDetails()
+	if err != nil {
+		return err
+	}
+
 	if len(args) == 0 {
 		// If called without arguments, `cifuzz findings` lists short
 		// descriptions of all findings
-		findings, err := finding.ListFindings(cmd.opts.ProjectDir)
+		findings, err := finding.ListFindings(cmd.opts.ProjectDir, errorDetails)
 		if err != nil {
 			return err
 		}
@@ -137,7 +145,7 @@ func (cmd *findingCmd) run(args []string) error {
 	// If called with one argument, `cifuzz finding <finding name>`
 	// prints the information available for the specified finding
 	findingName := args[0]
-	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName)
+	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName, errorDetails)
 	if finding.IsNotExistError(err) {
 		log.Errorf(err, "Finding %s does not exist", findingName)
 		return cmdutils.WrapSilentError(err)
@@ -230,4 +238,30 @@ func getColorFunctionForSeverity(severity float32) func(a ...interface{}) string
 	default:
 		return pterm.Gray
 	}
+}
+
+// checkForErrorDetails tries to get error details from the API.
+// If the API is available and the user is logged in, it returns the error details.
+// If the API is not available or the user is not logged in, it returns nil.
+func checkForErrorDetails() (*[]finding.ErrorDetails, error) {
+	var errorDetails []finding.ErrorDetails
+	var err error
+
+	server := viper.GetString("server")
+	token := login.GetToken(server)
+	log.Debugf("Checking for error details on server %s", server)
+
+	apiClient := api.APIClient{Server: server}
+	errorDetails, err = apiClient.GetErrorDetails(token)
+	if err != nil {
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return nil, err
+		} else {
+			log.Warn("Connection to API failed. Skipping error details.")
+			log.Debugf("Connection error: %v (continiung gracefully)", connErr)
+			return nil, nil
+		}
+	}
+	return &errorDetails, nil
 }

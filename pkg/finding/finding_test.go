@@ -45,7 +45,7 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 	require.Equal(t, expectedJSON, actualJSON)
 
 	// Check that LoadFinding also returns the expected finding
-	loadedFinding, err := LoadFinding(testDir, finding.Name)
+	loadedFinding, err := LoadFinding(testDir, finding.Name, nil)
 	require.NoError(t, err)
 	actualJSON, err = stringutil.ToJSONString(loadedFinding)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestListFindings(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the finding is listed
-	findings, err := ListFindings(testBaseDir)
+	findings, err := ListFindings(testBaseDir, nil)
 	require.NoError(t, err)
 	require.Len(t, findings, 1)
 	require.Equal(t, finding, findings[0])

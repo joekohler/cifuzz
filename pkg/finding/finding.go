@@ -281,7 +281,7 @@ func (f *Finding) ShortDescriptionColumns() []string {
 
 // ListFindings parses the JSON files of all findings and returns the
 // result.
-func ListFindings(projectDir string) ([]*Finding, error) {
+func ListFindings(projectDir string, errorDetails *[]ErrorDetails) ([]*Finding, error) {
 	findingsDir := filepath.Join(projectDir, nameFindingsDir)
 	entries, err := os.ReadDir(findingsDir)
 	if os.IsNotExist(err) {
@@ -293,7 +293,7 @@ func ListFindings(projectDir string) ([]*Finding, error) {
 
 	var res []*Finding
 	for _, e := range entries {
-		f, err := LoadFinding(projectDir, e.Name())
+		f, err := LoadFinding(projectDir, e.Name(), errorDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -311,7 +311,8 @@ func ListFindings(projectDir string) ([]*Finding, error) {
 // LoadFinding parses the JSON file of the specified finding and returns
 // the result.
 // If the specified finding does not exist, a NotExistError is returned.
-func LoadFinding(projectDir, findingName string) (*Finding, error) {
+// If the user is logged in, the error details are added to the finding.
+func LoadFinding(projectDir, findingName string, errorDetails *[]ErrorDetails) (*Finding, error) {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, findingName)
 	jsonPath := filepath.Join(findingDir, nameJSONFile)
 	bytes, err := os.ReadFile(jsonPath)
@@ -326,6 +327,12 @@ func LoadFinding(projectDir, findingName string) (*Finding, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	err = f.EnhanceWithErrorDetails(errorDetails)
+	if err != nil {
+		return nil, err
+	}
+
 	return &f, nil
 }
 
