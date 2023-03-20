@@ -69,7 +69,44 @@ jobs:
         # we have to use macos-12 as after upgrading the external
         # action for llvm setup as it seems that this is breaking
         # with macos-11
-        os: [ubuntu-20.04, ubuntu-latest, macos-12, windows-2022]
+        os: [ubuntu-20.04, ubuntu-latest, macos-12] # windows-2022 is quarantined, see below
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup VM for cifuzz
+        uses: ./.github/actions/vm_setup
+        with:
+          os: ${{ matrix.os }}
+
+      - name: Run integration tests
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
+        # We run the integration tests sequentially here to avoid that
+        # tests write to stderr at the same time, which makes it hard to
+        # figure out which output belongs to which test.
+        run: make test/integration/sequential
+        shell: bash
+
+      - name: Run integration tests
+        if: contains(matrix.os, 'windows')
+        # We allow a maximum of 2 attempts in order to give flaky tests a
+        # better chance to pass.
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 15
+          max_attempts: 2
+          # We run the integration tests sequentially here to avoid that
+          # tests write to stderr at the same time, which makes it hard to
+          # figure out which output belongs to which test.
+          command: make test/integration/sequential
+          shell: bash
+
+  # Copy of integration tests - but without the "Required" status check for PRs
+  quarantine_integration_tests:
+    name: Quarantine integration tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2022]
     steps:
       - uses: actions/checkout@v3
 
