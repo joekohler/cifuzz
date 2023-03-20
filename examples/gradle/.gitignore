@@ -4,6 +4,12 @@
 # Ignore Gradle build output directory
 /build
 
+/bin
+
+.project
+.classpath
+.settings/
+
 .cifuzz-corpus/
 .cifuzz-findings/
 *_inputs
