@@ -245,12 +245,12 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	return campaignRunName, nil
 }
 
-// sendRequest sends a request to the API server with a default timeout of 60 seconds.
+// sendRequest sends a request to the API server with a default timeout of 30 seconds.
 func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
-	// we use 60 seconds as a conservative timeout for the API server to
+	// we use 30 seconds as a conservative timeout for the API server to
 	// respond to a request. We might have to revisit this value in the future
-	// after the rollout of our API  features.
-	timeout := 60 * time.Second
+	// after the rollout of our API features.
+	timeout := 30 * time.Second
 	return client.sendRequestWithTimeout(method, endpoint, body, token, timeout)
 }
 
