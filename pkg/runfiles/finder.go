@@ -58,6 +58,22 @@ func (f RunfilesFinderImpl) LLVMSymbolizerPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) GenHTMLPath() (string, error) {
+	if runtime.GOOS == "windows" {
+		path := os.Getenv("path")
+		for _, dir := range filepath.SplitList(path) {
+			path := filepath.Join(dir, "genhtml")
+			exists, err := fileutil.Exists(path)
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+			if exists {
+				return path, nil
+			}
+		}
+
+		return "", errors.New("genhtml not found in %PATH%")
+	}
+
 	path, err := exec.LookPath("genhtml")
 	return path, errors.WithStack(err)
 }
