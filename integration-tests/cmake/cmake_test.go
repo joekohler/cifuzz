@@ -176,10 +176,6 @@ func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 		t.Skip("skipping testRunWithAdditionalArgs")
 	}
 
-	if runtime.GOOS == "windows" {
-		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
-	}
-
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cmd := executil.Command(cifuzz, "coverage", "parser_fuzz_test", "--", "--non-existent-flag")
 	cmd.Dir = dir
@@ -340,6 +336,8 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 		}
 		if runtime.GOOS == "windows" {
+			expectedStackTrace[1].Line = 11
+			expectedStackTrace[1].Function = "LLVMFuzzerTestOneInput"
 			// On Windows, the column is not printed
 			for i := range expectedStackTrace {
 				expectedStackTrace[i].Column = 0
@@ -373,6 +371,8 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 		}
 		if runtime.GOOS == "windows" {
+			expectedStackTrace[1].Line = 11
+			expectedStackTrace[1].Function = "LLVMFuzzerTestOneInput"
 			// On Windows, the column is not printed
 			for i := range expectedStackTrace {
 				expectedStackTrace[i].Column = 0
@@ -439,10 +439,6 @@ func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
-	}
-
 	cmd := executil.Command(cifuzz, "coverage", "-v",
 		"--output", "coverage-report",
 		"parser_fuzz_test")
@@ -457,8 +453,11 @@ func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 	err := cmd.Run()
 	require.NoError(t, err)
 
-	// Check that the coverage report was created
 	reportPath := filepath.Join(dir, "coverage-report", "src", "parser", "index.html")
+	if runtime.GOOS == "windows" {
+		// On Windows the prefix flag is not working, which results in a slightly different reportPath
+		reportPath = filepath.Join(dir, "coverage-report", "parser", "index.html")
+	}
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for the
@@ -471,66 +470,90 @@ func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 }
 
 func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
+	testCases := map[string]struct {
+		sourceFiles            []string
+		expectedLinesUncovered []uint
+	}{
+		"parser_fuzz_test": {
+			sourceFiles: []string{
+				filepath.Join("src", "parser", "parser.cpp"),
+				filepath.Join("src", "parser", "parser_fuzz_test.cpp"),
+			},
+			// All lines should be covered
+			expectedLinesUncovered: []uint{},
+		},
+		"crashing_fuzz_test": {
+			sourceFiles: []string{
+				filepath.Join("coverage", "crashing_fuzz_test.cpp"),
+			},
+			// Lines after the three crashes. Whether these are covered depends on
+			// implementation details of the coverage instrumentation, so we
+			// conservatively assume they aren't covered.
+			expectedLinesUncovered: []uint{21, 31, 41},
+		},
 	}
 
-	reportPath := filepath.Join(dir, "crashing_fuzz_test.lcov")
+	for testCase, testData := range testCases {
+		// LLVM's continuous mode is not supported on Windows
+		if runtime.GOOS == "windows" && testCase == "crashing_fuzz_test" {
+			continue
+		}
 
-	cmd := executil.Command(cifuzz, "coverage", "-v",
-		"--format=lcov",
-		"--output", reportPath,
-		"crashing_fuzz_test")
-	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+		reportPath := filepath.Join(dir, testCase+".lcov")
 
-	// Terminate the cifuzz process when we receive a termination signal
-	// (else the test won't stop).
-	shared.TerminateOnSignal(t, cmd)
+		cmd := executil.Command(cifuzz, "coverage", "-v",
+			"--format=lcov",
+			"--output", reportPath,
+			testCase)
+		cmd.Dir = dir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	require.NoError(t, err)
+		// Terminate the cifuzz process when we receive a termination signal
+		// (else the test won't stop).
+		shared.TerminateOnSignal(t, cmd)
 
-	// Check that the coverage report was created
-	require.FileExists(t, reportPath)
+		err := cmd.Run()
+		require.NoError(t, err)
 
-	// Read the report and extract all uncovered lines in the fuzz test source file.
-	reportBytes, err := os.ReadFile(reportPath)
-	require.NoError(t, err)
-	lcov := bufio.NewScanner(bytes.NewBuffer(reportBytes))
-	isFuzzTestSource := false
-	var uncoveredLines []uint
-	for lcov.Scan() {
-		line := lcov.Text()
+		// Check that the coverage report was created
+		require.FileExists(t, reportPath)
 
-		if strings.HasPrefix(line, "SF:") {
-			if strings.HasSuffix(line, "/coverage/crashing_fuzz_test.cpp") {
-				isFuzzTestSource = true
-			} else {
+		// Read the report and extract all uncovered lines in the fuzz test source file.
+		reportBytes, err := os.ReadFile(reportPath)
+		require.NoError(t, err)
+		lcov := bufio.NewScanner(bytes.NewBuffer(reportBytes))
+		isFuzzTestSource := false
+		var uncoveredLines []uint
+		for lcov.Scan() {
+			line := lcov.Text()
+
+			if strings.HasPrefix(line, "SF:") {
 				isFuzzTestSource = false
-				assert.Fail(t, "Unexpected source file: "+line)
+				for _, sourceFile := range testData.sourceFiles {
+					if strings.HasSuffix(line, sourceFile) {
+						isFuzzTestSource = true
+					}
+				}
+				if !isFuzzTestSource {
+					assert.Fail(t, "Unexpected source file: "+line)
+				}
+			}
+
+			if !isFuzzTestSource || !strings.HasPrefix(line, "DA:") {
+				continue
+			}
+			split := strings.Split(strings.TrimPrefix(line, "DA:"), ",")
+			require.Len(t, split, 2)
+			if split[1] == "0" {
+				lineNo, err := strconv.Atoi(split[0])
+				require.NoError(t, err)
+				uncoveredLines = append(uncoveredLines, uint(lineNo))
 			}
 		}
 
-		if !isFuzzTestSource || !strings.HasPrefix(line, "DA:") {
-			continue
-		}
-		split := strings.Split(strings.TrimPrefix(line, "DA:"), ",")
-		require.Len(t, split, 2)
-		if split[1] == "0" {
-			lineNo, err := strconv.Atoi(split[0])
-			require.NoError(t, err)
-			uncoveredLines = append(uncoveredLines, uint(lineNo))
-		}
+		assert.Subset(t, testData.expectedLinesUncovered, uncoveredLines)
 	}
-
-	assert.Subset(t, []uint{
-		// Lines after the three crashes. Whether these are covered depends on implementation details of the coverage
-		// instrumentation, so we conservatively assume they aren't covered.
-		21, 31, 41,
-	},
-		uncoveredLines)
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
@@ -559,11 +582,7 @@ func testRunNotAuthenticated(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
-	}
-
-	reportPath := filepath.Join(dir, "crashing_fuzz_test.lcov")
+	reportPath := filepath.Join(dir, "lcov.info")
 
 	cmd := executil.Command(cifuzz, "coverage",
 		"-v",
