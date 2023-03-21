@@ -359,7 +359,9 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
 	var details *ErrorDetails
 
 	for _, d := range *errorDetails {
-		if strings.EqualFold(d.Name, f.ShortDescriptionColumns()[0]) {
+		if strings.Contains(
+			strings.ToLower(f.ShortDescriptionColumns()[0]),
+			strings.ToLower(d.Name)) {
 			details = &d
 			break
 		}
