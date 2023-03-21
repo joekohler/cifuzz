@@ -1,13 +1,14 @@
 package integrationtest
 
 import (
+	"runtime"
 	"testing"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
 )
 
 func TestIntegration_OOM(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

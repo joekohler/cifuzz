@@ -8,7 +8,6 @@ import (
 )
 
 func TestIntegration_UBSANRecoverable(t *testing.T) {
-	// We are using msvc on windows, which does not support UBSan yet.
 	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}

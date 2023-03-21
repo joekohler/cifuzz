@@ -1,6 +1,7 @@
 package integrationtest
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 )
 
 func TestIntegration_Timeout(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

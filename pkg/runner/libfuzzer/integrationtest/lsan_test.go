@@ -8,7 +8,7 @@ import (
 )
 
 func TestIntegration_LSAN(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

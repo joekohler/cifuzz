@@ -1,11 +1,12 @@
 package integrationtest
 
 import (
+	"runtime"
 	"testing"
 )
 
 func TestIntegration_CasesWrittenToCorpus(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

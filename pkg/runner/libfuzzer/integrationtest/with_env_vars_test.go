@@ -9,7 +9,7 @@ import (
 )
 
 func TestIntegration_WithEnvs_NoStatsPrinted(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()
@@ -27,7 +27,7 @@ func TestIntegration_WithEnvs_NoStatsPrinted(t *testing.T) {
 }
 
 func TestIntegration_WithEnvs_StatsPrinted(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

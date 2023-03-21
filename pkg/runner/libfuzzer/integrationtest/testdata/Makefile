@@ -28,33 +28,10 @@ INCLUDE_OPTION := -I
 NOLINK_OPTION := -c
 OUT_OBJ_OPTION := -o
 DISABLE_UBSAN := 0
-
-# handle MSVC specific options
-ifeq ($(OS),Windows_NT)
-	CC = cl
-	CXX = cl
-	CFLAGS = /fsanitize=fuzzer \
-	  /fsanitize=address \
-		/Zi
-
-	CXXFLAGS = /fsanitize=fuzzer \
-	  /fsanitize=address \
-		/Zi \
-		/std:c++17
-
-	EXT = .exe
-	OUT_OPTION = /Fe
-	INCLUDE_OPTION = /I
-	NOLINK_OPTION = /c
-	OUT_OBJ_OPTION = /Fo
-
-	DISABLE_UBSAN = 1
-else
-	DEPS := dumper.o
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		LDFLAGS = -Wl,--wrap=__sanitizer_set_death_callback
-	endif
+DEPS := dumper.o
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	LDFLAGS = -Wl,--wrap=__sanitizer_set_death_callback
 endif
 
 ALL_PREREQUISITES = clean prepare $(FUZZ_TARGETS)

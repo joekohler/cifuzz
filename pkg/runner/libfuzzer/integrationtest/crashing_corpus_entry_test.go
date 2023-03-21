@@ -3,6 +3,7 @@ package integrationtest
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/otiai10/copy"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestIntegration_CrashingCorpusEntry(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()

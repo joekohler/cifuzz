@@ -10,7 +10,7 @@ import (
 // Regression test: When crashing on an empty input the runner was not reporting a finding
 // see also: https://code-intelligence.atlassian.net/browse/CLI-226
 func TestIntegration_CrashOnEmptyInput(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || runtime.GOOS == "windows" {
 		t.Skip()
 	}
 	t.Parallel()
