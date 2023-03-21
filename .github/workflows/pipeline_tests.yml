@@ -92,7 +92,8 @@ jobs:
         # better chance to pass.
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 15
+          # Aligning with 20 minutes timeout in the go test command
+          timeout_minutes: 20
           max_attempts: 2
           # We run the integration tests sequentially here to avoid that
           # tests write to stderr at the same time, which makes it hard to
