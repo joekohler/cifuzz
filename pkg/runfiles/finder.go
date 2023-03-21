@@ -62,6 +62,11 @@ func (f RunfilesFinderImpl) GenHTMLPath() (string, error) {
 	return path, errors.WithStack(err)
 }
 
+func (f RunfilesFinderImpl) PerlPath() (string, error) {
+	path, err := exec.LookPath("perl")
+	return path, errors.WithStack(err)
+}
+
 func (f RunfilesFinderImpl) JavaPath() (string, error) {
 	os.LookupEnv("JAVA_HOME")
 	path, err := exec.LookPath("java")

@@ -28,6 +28,7 @@ const (
 	LLVMProfData   Key = "llvm-profdata"
 
 	GenHTML Key = "genhtml"
+	Perl    Key = "perl"
 
 	Java   Key = "java"
 	Maven  Key = "mvn"

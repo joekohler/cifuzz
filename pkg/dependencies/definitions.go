@@ -132,6 +132,16 @@ var deps = Dependencies{
 			return true
 		},
 	},
+	Perl: {
+		Key:        Perl,
+		MinVersion: *semver.MustParse("0.0.0"),
+		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+			return semver.NewVersion("0.0.0")
+		},
+		Installed: func(dep *Dependency) bool {
+			return dep.checkFinder(dep.finder.PerlPath)
+		},
+	},
 	Java: {
 		Key:        Java,
 		MinVersion: *semver.MustParse("1.8.0"),

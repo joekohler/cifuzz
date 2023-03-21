@@ -17,6 +17,7 @@ type RunfilesFinder interface {
 	LLVMProfDataPath() (string, error)
 	LLVMSymbolizerPath() (string, error)
 	GenHTMLPath() (string, error)
+	PerlPath() (string, error)
 	Minijail0Path() (string, error)
 	ProcessWrapperPath() (string, error)
 	ReplayerSourcePath() (string, error)
