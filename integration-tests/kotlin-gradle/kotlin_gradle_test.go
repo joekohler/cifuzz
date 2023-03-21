@@ -91,22 +91,16 @@ func TestIntegration_GradleKotlin_InitCreateRun(t *testing.T) {
 	require.Len(t, findings, 1)
 	require.Contains(t, findings[0].Details, "Remote Code Execution")
 
-	//// TODO: This check currently fails on macOS because there
-	//// llvm-symbolizer doesn't read debug info from object files.
-	//// See https://github.com/google/sanitizers/issues/207#issuecomment-136495556
-	if runtime.GOOS != "darwin" {
-		expectedStackTrace := []*stacktrace.StackFrame{
-			{
-				SourceFile:  "ExploreMe",
-				Line:        11,
-				Column:      0,
-				FrameNumber: 0,
-				Function:    "exploreMe",
-			},
-		}
-
-		require.Equal(t, expectedStackTrace, findings[0].StackTrace)
+	expectedStackTrace := []*stacktrace.StackFrame{
+		{
+			SourceFile:  "ExploreMe",
+			Line:        11,
+			Column:      0,
+			FrameNumber: 0,
+			Function:    "exploreMe",
+		},
 	}
+	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
 
 	// Check that options set via the config file are respected
 	configFileContent := `use-sandbox: false`
