@@ -9,7 +9,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/alexflint/go-filemutex v1.2.0
 	github.com/gen2brain/beeep v0.0.0-20230307103607-6e717729cb4f
-	github.com/gookit/color v1.5.2
+	github.com/gookit/color v1.5.3
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/mattn/go-zglob v0.0.4
