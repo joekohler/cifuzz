@@ -416,9 +416,26 @@ func (cov *CoverageGenerator) generateHTMLReport() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	args = []string{"--prefix", cov.ProjectDir, "--output", cov.OutputPath, lcovReport}
+	args = []string{"--output", cov.OutputPath, lcovReport}
 
-	cmd := exec.Command(genHTML, args...)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// genHTML is a perl script, which has to be started like
+		// "perl /path/to/genhtml args..." on Windows
+		args = append([]string{genHTML}, args...)
+		perl, err := runfiles.Finder.PerlPath()
+		if err != nil {
+			return "", err
+		}
+		cmd = exec.Command(perl, args...)
+	} else {
+		// The prefix flag is currently not working on Windows.
+		// Check if this is still true once lcov > 1.15
+		// is shipped by chocolatey.
+		args := append([]string{"--prefix", cov.ProjectDir}, args...)
+		cmd = exec.Command(genHTML, args...)
+	}
+
 	cmd.Dir = cov.ProjectDir
 	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", cmd.String())
@@ -528,7 +545,12 @@ func (cov *CoverageGenerator) indexedProfilePath() string {
 }
 
 func (cov *CoverageGenerator) executableName() string {
-	return filepath.Base(cov.buildResult.Executable)
+	executable := cov.buildResult.Executable
+	// Remove .exe file extension on Windows
+	if runtime.GOOS == "windows" {
+		executable = strings.TrimSuffix(executable, filepath.Ext(executable))
+	}
+	return filepath.Base(executable)
 }
 
 // Returns an llvm-cov -arch flag indicating the preferred architecture of the given object on macOS, where objects can

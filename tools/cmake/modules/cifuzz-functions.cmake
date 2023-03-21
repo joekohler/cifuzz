@@ -102,25 +102,27 @@ function(enable_fuzz_testing)
         add_link_options(-fsanitize=undefined)
       endif()
     elseif(sanitizer STREQUAL coverage)
-      if(WIN32)
-        message(FATAL_ERROR "cifuzz: coverage builds are not yet supported on windows")
-      else()
-        add_compile_options(
-            -fprofile-instr-generate
-            -fcoverage-mapping
-            # Disable source fortification to ensure that coverage builds
-            # reach all code reached by ASan builds.
-            -U_FORTIFY_SOURCE
-        )
-        if(NOT APPLE)
-          # LLVM's continuous coverage mode currently requires compile-time support on non-macOS platforms. This is only
-          # really working as of clang 14 though, earlier versions are affected by runtime crashes.
-          if (((NOT DEFINED CMAKE_C_COMPILER_VERSION) OR ("${CMAKE_C_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14)) AND
-            ((NOT DEFINED CMAKE_CXX_COMPILER_VERSION) OR ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14)))
-            add_compile_options(-mllvm -runtime-counter-relocation)
-          endif()
+      add_compile_options(
+          -fprofile-instr-generate
+          -fcoverage-mapping
+          # Disable source fortification to ensure that coverage builds
+          # reach all code reached by ASan builds.
+          -U_FORTIFY_SOURCE
+      )
+      if(NOT APPLE)
+        # LLVM's continuous coverage mode currently requires compile-time support on non-macOS platforms. This is only
+        # really working as of clang 14 though, earlier versions are affected by runtime crashes.
+        if (((NOT DEFINED CMAKE_C_COMPILER_VERSION) OR ("${CMAKE_C_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14)) AND
+          ((NOT DEFINED CMAKE_CXX_COMPILER_VERSION) OR ("${CMAKE_CXX_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14)))
+          add_compile_options(-mllvm -runtime-counter-relocation)
         endif()
-        add_link_options(-fprofile-instr-generate)
+      endif()
+      add_link_options(-fprofile-instr-generate)
+      if(WIN32)
+        add_link_options(
+          "clang_rt.fuzzer-x86_64.lib"
+          "clang_rt.profile-x86_64.lib"
+        )
       endif()
     elseif(sanitizer STREQUAL gcov)
       if(WIN32)

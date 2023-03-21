@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -38,6 +39,9 @@ func TestFail(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
 	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
@@ -52,6 +56,26 @@ func TestClangMissing(t *testing.T) {
 	output, err := io.ReadAll(testOut)
 	require.NoError(t, err)
 	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
+}
+
+func TestVisualStudioMissing(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip()
+	}
+	dependencies.TestMockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.VisualStudio))
+
+	// clone the example project because this command needs to parse an actual
+	// project config... if there is none it will fail before the dependency check
+	_, cleanup := testutil.BootstrapExampleProjectForTest("coverage-cmd-test", config.BuildSystemCMake)
+	defer cleanup()
+
+	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
+	require.Error(t, err)
+
+	output, err := io.ReadAll(testOut)
+	require.NoError(t, err)
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "Visual Studio"))
 }
 
 func TestCMakeMissing(t *testing.T) {

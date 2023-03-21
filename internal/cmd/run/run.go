@@ -718,15 +718,17 @@ func (c *runCmd) checkDependencies() error {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
-		deps = []dependencies.Key{
-			dependencies.CMake,
-		}
 		switch runtime.GOOS {
 		case "linux", "darwin":
-			deps = append(deps, dependencies.Clang)
-			deps = append(deps, dependencies.LLVMSymbolizer)
+			deps = []dependencies.Key{
+				dependencies.Clang,
+				dependencies.CMake,
+				dependencies.LLVMSymbolizer,
+			}
 		case "windows":
-			deps = append(deps, dependencies.VisualStudio)
+			deps = []dependencies.Key{
+				dependencies.VisualStudio,
+			}
 		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{

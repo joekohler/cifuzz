@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/browser"
@@ -418,12 +419,17 @@ func (c *coverageCmd) checkDependencies() error {
 		}
 	case config.BuildSystemCMake:
 		deps = []dependencies.Key{
-			dependencies.Clang,
 			dependencies.CMake,
 			dependencies.LLVMSymbolizer,
 			dependencies.LLVMCov,
 			dependencies.LLVMProfData,
 			dependencies.GenHTML,
+		}
+		switch runtime.GOOS {
+		case "linux", "darwin":
+			deps = append(deps, dependencies.Clang)
+		case "windows":
+			deps = append(deps, dependencies.VisualStudio, dependencies.Perl)
 		}
 	case config.BuildSystemMaven:
 		deps = []dependencies.Key{
