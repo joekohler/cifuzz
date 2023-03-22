@@ -45,9 +45,9 @@ func TestIntegration_GradleKotlin_InitCreateRun(t *testing.T) {
 	// Execute the init command
 	allStderrLines := cifuzzRunner.Command(t, "init", nil)
 	require.Contains(t, strings.Join(allStderrLines, " "), initCmd.GradleMultiProjectWarningMsg)
-	linesToAdd := shared.FilterForInstructions(allStderrLines)
 	require.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
-	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle.kts"), linesToAdd, "dependencies {", true)
+	linesToAdd := shared.FilterForInstructions(allStderrLines)
+	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle.kts"), linesToAdd, "plugins", true)
 
 	// Execute the create command
 	testDir := filepath.Join(
