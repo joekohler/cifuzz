@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -28,6 +29,14 @@ import (
 // See enable_fuzz_testing in tools/cmake/modules/cifuzz-functions.cmake for the rationale for using this
 // build type.
 const cmakeBuildConfiguration = "RelWithDebInfo"
+
+// System library dependencies, which should not be considered as runtime dependencies
+var wellKnownSystemLibraries = map[string][]*regexp.Regexp{
+	"windows": {
+		regexp.MustCompile("^api-ms"),
+		regexp.MustCompile("^ext-ms"),
+	},
+}
 
 type ParallelOptions struct {
 	Enabled bool
@@ -349,6 +358,11 @@ func (b *Builder) getRuntimeDeps(fuzzTest string) ([]string, error) {
 		status := statusAndDep[:endOfStatus]
 		dep := statusAndDep[endOfStatus+1:]
 
+		// Filter well known system libraries
+		if isSystemLibrary(dep) {
+			continue
+		}
+
 		switch status {
 		case "UNRESOLVED":
 			unresolvedDeps = append(unresolvedDeps, dep)
@@ -419,4 +433,14 @@ func (b *Builder) fuzzTestsInfoDir() (string, error) {
 	}
 	log.Warn("Did not find test info file")
 	return "", errors.WithStack(os.ErrNotExist)
+}
+
+func isSystemLibrary(dep string) bool {
+	for _, wellKnownSystemLibrary := range wellKnownSystemLibraries[runtime.GOOS] {
+		if wellKnownSystemLibrary.MatchString(dep) {
+			return true
+		}
+	}
+
+	return false
 }
