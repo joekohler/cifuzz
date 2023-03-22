@@ -130,7 +130,7 @@ jobs:
         # better chance to pass.
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 15
+          timeout_minutes: 20 
           max_attempts: 2
           # We run the integration tests sequentially here to avoid that
           # tests write to stderr at the same time, which makes it hard to
