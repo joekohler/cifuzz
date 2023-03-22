@@ -110,7 +110,7 @@ func TestIntegration_Gradle_InitCreateRun(t *testing.T) {
 	// When minijail is used, the artifact prefix is set to the minijail
 	// output path
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(fmt.Sprintf(`artifact_prefix='%s`, projectDir))},
+		ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(fmt.Sprintf(`artifact_prefix='%s`, regexp.QuoteMeta(projectDir)))},
 	})
 
 	if runtime.GOOS == "linux" {
