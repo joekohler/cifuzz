@@ -98,7 +98,7 @@ func migrateOldTokens() {
 		log.Errorf(err, "Error checking if old tokens file exists: %v", err.Error())
 	}
 
-	if exists {
+	if exists && oldTokensFilePath != accessTokensFilePath {
 		log.Infof("Migrating old tokens file to new location: %s", accessTokensFilePath)
 		err := os.Rename(oldTokensFilePath, accessTokensFilePath)
 		if err != nil {
