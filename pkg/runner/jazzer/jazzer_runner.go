@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/minijail"
+	"code-intelligence.com/cifuzz/pkg/options"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -75,27 +76,27 @@ func (r *Runner) Run(ctx context.Context) error {
 	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
 
 	// Jazzer main class
-	args = append(args, "com.code_intelligence.jazzer.Jazzer")
+	args = append(args, options.JazzerMainClass)
 
 	// ----------------------
 	// --- Jazzer options ---
 	// ----------------------
 	if r.AutofuzzTarget != "" {
-		args = append(args, "--autofuzz="+r.AutofuzzTarget)
+		args = append(args, options.JazzerAutoFuzzFlag(r.AutofuzzTarget))
 	} else {
-		args = append(args, "--target_class="+r.TargetClass)
-		args = append(args, "--target_method="+r.TargetMethod)
+		args = append(args, options.JazzerTargetClassFlag(r.TargetClass))
+		args = append(args, options.JazzerTargetMethodFlag(r.TargetMethod))
 	}
 	// -------------------------
 	// --- libfuzzer options ---
 	// -------------------------
 	// Tell libfuzzer to exit after the timeout
 	timeoutSeconds := strconv.FormatInt(int64(r.Timeout.Seconds()), 10)
-	args = append(args, "-max_total_time="+timeoutSeconds)
+	args = append(args, options.LibFuzzerMaxTotalTimeFlag(timeoutSeconds))
 
 	// Tell libfuzzer which dictionary it should use
 	if r.Dictionary != "" {
-		args = append(args, "-dict="+r.Dictionary)
+		args = append(args, options.LibFuzzerDictionaryFlag(r.Dictionary))
 	}
 
 	// Add user-specified Jazzer/libfuzzer options
@@ -103,8 +104,8 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	// For Jazzer, we increase the default OOM limit further away from the JVM's maximum heap size of 1800 MB to
 	// prevent spurious OOMs, which abort a fuzzing run.
-	if !stringutil.ContainsStringWithPrefix(r.EngineArgs, "-rss_limit_mb=") {
-		args = append(args, "-rss_limit_mb=3000")
+	if !stringutil.ContainsStringWithPrefix(r.EngineArgs, options.LibFuzzerRSSLimit) {
+		args = append(args, options.LibFuzzerRSSLimitFlag("3000"))
 	}
 
 	// Tell libfuzzer which corpus directory it should use

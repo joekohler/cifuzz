@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/java"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/options"
 )
 
 // The directory inside the fuzzing artifact used to store runtime dependencies
@@ -255,7 +256,7 @@ func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 
 	// entries for the MANIFEST.MF
 	entries := map[string]string{
-		"Jazzer-Fuzz-Target-Class": targetClass,
+		options.JazzerTargetClassManifest: targetClass,
 	}
 
 	jarPath, err := java.CreateManifestJar(entries, fuzzerPath)

@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/minijail"
+	"code-intelligence.com/cifuzz/pkg/options"
 	libfuzzer_parser "code-intelligence.com/cifuzz/pkg/parser/libfuzzer"
 	"code-intelligence.com/cifuzz/pkg/report"
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
@@ -107,11 +108,11 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	// Tell libfuzzer to exit after the timeout
 	timeoutSeconds := strconv.FormatInt(int64(r.Timeout.Seconds()), 10)
-	args = append(args, "-max_total_time="+timeoutSeconds)
+	args = append(args, options.LibFuzzerMaxTotalTimeFlag(timeoutSeconds))
 
 	// Tell libfuzzer which dictionary it should use
 	if r.Dictionary != "" {
-		args = append(args, "-dict="+r.Dictionary)
+		args = append(args, options.LibFuzzerDictionaryFlag(r.Dictionary))
 	}
 
 	// Add user-specified libfuzzer options
@@ -132,7 +133,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 	defer fileutil.Cleanup(outputDir)
-	args = append(args, "-artifact_prefix="+outputDir+"/")
+	args = append(args, options.LibFuzzerArtifactPrefixFlag(outputDir+"/"))
 
 	if len(r.FuzzTestArgs) > 0 {
 		// separate the libfuzzer and fuzz test arguments with a "--"
