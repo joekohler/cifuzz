@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -24,6 +23,7 @@ type options struct {
 	PrintJSON  bool   `mapstructure:"print-json"`
 	ProjectDir string `mapstructure:"project-dir"`
 	ConfigDir  string `mapstructure:"config-dir"`
+	Server     string `mapstructure:"server"`
 }
 
 type findingCmd struct {
@@ -68,13 +68,14 @@ func newWithOptions(opts *options) *cobra.Command {
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
+		cmdutils.AddServerFlag,
 	)
 
 	return cmd
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	errorDetails, err := checkForErrorDetails()
+	errorDetails, err := cmd.checkForErrorDetails()
 	if err != nil {
 		return err
 	}
@@ -243,15 +244,14 @@ func getColorFunctionForSeverity(severity float32) func(a ...interface{}) string
 // checkForErrorDetails tries to get error details from the API.
 // If the API is available and the user is logged in, it returns the error details.
 // If the API is not available or the user is not logged in, it returns nil.
-func checkForErrorDetails() (*[]finding.ErrorDetails, error) {
+func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
 	var errorDetails []finding.ErrorDetails
 	var err error
 
-	server := viper.GetString("server")
-	token := login.GetToken(server)
-	log.Debugf("Checking for error details on server %s", server)
+	token := login.GetToken(cmd.opts.Server)
+	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
-	apiClient := api.APIClient{Server: server}
+	apiClient := api.APIClient{Server: cmd.opts.Server}
 	errorDetails, err = apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError
