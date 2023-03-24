@@ -16,6 +16,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/installer"
@@ -199,7 +200,13 @@ func installCIFuzz(installDir string) error {
 		}
 	}
 
-	log.Success("Installation successful")
+	version, err := cifuzzVersion(installDir)
+	if err != nil {
+		return err
+	}
+	log.Print(version)
+
+	log.Successf("Installation successful")
 
 	// Print a newline between the "Installation successful" message
 	// and the notes
@@ -519,7 +526,9 @@ func createCommandCompletionScript(installDir, shell string) error {
 	}
 
 	cmd := exec.Command("sh", "-c", "'"+cifuzz+"' completion "+shell+" > '"+completionScript+"'")
-	cmd.Stderr = os.Stderr
+	if viper.GetBool("verbose") {
+		cmd.Stderr = os.Stderr
+	}
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
@@ -569,4 +578,14 @@ func getInstallDir() (string, error) {
 	}
 
 	return installDir, nil
+}
+
+func cifuzzVersion(installDir string) (string, error) {
+	cifuzz := cifuzzPath(installDir)
+	cmd := exec.Command(cifuzz, "--version")
+	version, err := cmd.Output()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return string(version), nil
 }

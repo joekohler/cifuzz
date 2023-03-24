@@ -75,7 +75,7 @@ deps/test:
 .PHONY: install
 install:
 	go run tools/builder/builder.go --version $(version)
-	go run -tags installer cmd/installer/installer.go
+	go run -tags installer cmd/installer/installer.go --verbose
 	$(RM) cmd/installer/build
 
 .PHONY: installer
