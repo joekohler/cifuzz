@@ -1,0 +1,44 @@
+ ==13480==ERROR: AddressSanitizer: attempting double-free on 0x000103414550 in thread T0:
+      #0 0x100f732b0 in wrap_free (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f2b0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x1008a15b0 in double_free(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/double-free/double_free.cpp:7:9
+      #2 0x100896ff4 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/double-free/double_free_fuzztest.cpp:12:5
+      #3 0x100896e0c in LLVMFuzzerTestOneInput /testdata/double-free/double_free_fuzztest.cpp:9:1
+      #4 0x1008b8f9c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+      #5 0x1008b8890 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+      #6 0x1008b9edc in fuzzer::Fuzzer::MutateAndTestOne() /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:758:19
+      #7 0x1008babc8 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:903:5
+      #8 0x1008aa294 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #9 0x1008d5ac0 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #10 0x1b02afe4c  (<unknown module>)
+      #11 0xb4e7ffffffffffc  (<unknown module>)
+
+  0x000103414550 is located 0 bytes inside of 4-byte region [0x000103414550,0x000103414554)
+  freed by thread T0 here:
+      #0 0x100f732b0 in wrap_free (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f2b0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x1008a15a8 in double_free(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/double-free/double_free.cpp:6:9
+      #2 0x100896ff4 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/double-free/double_free_fuzztest.cpp:12:5
+      #3 0x100896e0c in LLVMFuzzerTestOneInput /testdata/double-free/double_free_fuzztest.cpp:9:1
+      #4 0x1008b8f9c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+      #5 0x1008b8890 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+      #6 0x1008b9edc in fuzzer::Fuzzer::MutateAndTestOne() /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:758:19
+      #7 0x1008babc8 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:903:5
+      #8 0x1008aa294 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #9 0x1008d5ac0 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #10 0x1b02afe4c  (<unknown module>)
+      #11 0xb4e7ffffffffffc  (<unknown module>)
+
+  previously allocated by thread T0 here:
+      #0 0x100f7317c in wrap_malloc (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f17c) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x1008a159c in double_free(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/double-free/double_free.cpp:5:28
+      #2 0x100896ff4 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/double-free/double_free_fuzztest.cpp:12:5
+      #3 0x100896e0c in LLVMFuzzerTestOneInput /testdata/double-free/double_free_fuzztest.cpp:9:1
+      #4 0x1008b8f9c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+      #5 0x1008b8890 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+      #6 0x1008b9edc in fuzzer::Fuzzer::MutateAndTestOne() /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:758:19
+      #7 0x1008babc8 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:903:5
+      #8 0x1008aa294 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #9 0x1008d5ac0 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #10 0x1b02afe4c  (<unknown module>)
+      #11 0xb4e7ffffffffffc  (<unknown module>)
+
+  SUMMARY: AddressSanitizer: double-free (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f2b0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00) in wrap_free

@@ -1,0 +1,4 @@
+add_library(deadly_signal deadly_signal.cpp)
+
+add_fuzz_test(deadly_signal_fuzztest deadly_signal_fuzztest.cpp)
+target_link_libraries(deadly_signal_fuzztest PRIVATE deadly_signal)

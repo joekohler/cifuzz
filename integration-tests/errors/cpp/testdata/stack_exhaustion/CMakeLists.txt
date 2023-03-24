@@ -1,0 +1,3 @@
+add_library(stack_exhaustion stack_exhaustion.cpp)
+add_fuzz_test(stack_exhaustion_fuzztest stack_exhaustion_fuzztest.cpp)
+target_link_libraries(stack_exhaustion_fuzztest PRIVATE stack_exhaustion)

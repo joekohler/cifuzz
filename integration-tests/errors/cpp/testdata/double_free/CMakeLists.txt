@@ -1,0 +1,3 @@
+add_library(double_free double_free.cpp)
+add_fuzz_test(double_free_fuzztest double_free_fuzztest.cpp)
+target_link_libraries(double_free_fuzztest PRIVATE double_free)

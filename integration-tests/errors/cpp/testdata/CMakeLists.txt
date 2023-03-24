@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.16)
+project(testdata)
+
+enable_testing()
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(cifuzz NO_SYSTEM_ENVIRONMENT_PATH)
+enable_fuzz_testing()
+
+add_subdirectory(alloc_dealloc_mismatch)
+add_subdirectory(deadly_signal)
+add_subdirectory(double_free)
+add_subdirectory(global_buffer_overflow)
+add_subdirectory(heap_buffer_overflow)
+add_subdirectory(heap_use_after_free)
+add_subdirectory(memory_leak)
+add_subdirectory(odr_violation)
+add_subdirectory(out_of_bounds)
+add_subdirectory(out_of_memory)
+add_subdirectory(segmentation_fault)
+add_subdirectory(slow_input)
+add_subdirectory(stack_buffer_overflow)
+add_subdirectory(stack_exhaustion)
+add_subdirectory(timeout)
+add_subdirectory(use_after_return)
+add_subdirectory(use_after_scope)

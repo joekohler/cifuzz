@@ -1,0 +1,25 @@
+==25088== ERROR: libFuzzer: deadly signal
+    #0 0x55a68874bf9f in __sanitizer_print_stack_trace (/testdata/deadly-signal/a.out+0x133f9f) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #1 0x55a688687925 in fuzzer::PrintStackTrace() (/testdata/deadly-signal/a.out+0x6f925) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #2 0x55a688667729 in fuzzer::Fuzzer::CrashCallback() (.part.0) FuzzerLoop.cpp.o
+    #3 0x55a6886677ea in fuzzer::Fuzzer::StaticCrashSignalCallback() (/testdata/deadly-signal/a.out+0x4f7ea) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #4 0x7faec390ef4f  (/usr/lib/libc.so.6+0x38f4f) (BuildId: 4a4bec3d95a1804443e852958fe59ed461135ce9)
+    #5 0x55a688788344 in LLVMFuzzerTestOneInput (/testdata/deadly-signal/a.out+0x170344) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #6 0x55a688667c58 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/testdata/deadly-signal/a.out+0x4fc58) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #7 0x55a6886685c0 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) (/testdata/deadly-signal/a.out+0x505c0) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #8 0x55a688669641 in fuzzer::Fuzzer::MutateAndTestOne() (/testdata/deadly-signal/a.out+0x51641) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #9 0x55a68866b0a7 in fuzzer::Fuzzer::Loop(std::vector<fuzzer::SizedFile, std::allocator<fuzzer::SizedFile>>&) (/testdata/deadly-signal/a.out+0x530a7) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #10 0x55a68864ed34 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/testdata/deadly-signal/a.out+0x36d34) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #11 0x55a68863e1f7 in main (/testdata/deadly-signal/a.out+0x261f7) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+    #12 0x7faec38f978f  (/usr/lib/libc.so.6+0x2378f) (BuildId: 4a4bec3d95a1804443e852958fe59ed461135ce9)
+    #13 0x7faec38f9849 in __libc_start_main (/usr/lib/libc.so.6+0x23849) (BuildId: 4a4bec3d95a1804443e852958fe59ed461135ce9)
+    #14 0x55a68863e234 in _start (/testdata/deadly-signal/a.out+0x26234) (BuildId: aed838bc8a014754f7067a3b8126c979653cd903)
+
+NOTE: libFuzzer has rudimentary signal handlers.
+      Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+SUMMARY: libFuzzer: deadly signal
+MS: 1 ChangeByte-; base unit: 7b8e94a3093762ac25eef0712450555132537f26
+0x48,0x49,0x21,
+HI!
+artifact_prefix='./'; Test unit written to ./crash-7a8dc3985d2a90fb6e62e94910fc11d31949c348
+Base64: SEkh

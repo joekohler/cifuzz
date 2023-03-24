@@ -1,0 +1,3 @@
+add_library(heap_use_after_free heap_use_after_free.cpp)
+add_fuzz_test(heap_use_after_free_fuzztest heap_use_after_free_fuzztest.cpp)
+target_link_libraries(heap_use_after_free_fuzztest PRIVATE heap_use_after_free)

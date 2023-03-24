@@ -1,0 +1,3 @@
+add_library(slow_input slow_input.cpp)
+add_fuzz_test(slow_input_fuzztest slow_input_fuzztest.cpp)
+target_link_libraries(slow_input_fuzztest PRIVATE slow_input)

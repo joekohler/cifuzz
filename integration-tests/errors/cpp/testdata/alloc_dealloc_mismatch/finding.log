@@ -1,0 +1,24 @@
+  ==14156==ERROR: AddressSanitizer: attempting free on address which was not malloc()-ed: 0x00016d28a480 in thread T0
+      #0 0x1032532b0 in wrap_free (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f2b0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x102b8155c in mismatch(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/alloc-dealloc-mismatch/alloc_dealloc_mismatch.cpp:6:9
+      #2 0x102b76fb4 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/alloc-dealloc-mismatch/alloc_dealloc_mismatch_fuzztest.cpp:13:5
+      #3 0x102b76dcc in LLVMFuzzerTestOneInput /testdata/alloc-dealloc-mismatch/alloc_dealloc_mismatch_fuzztest.cpp:10:1
+      #4 0x102b98f48 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+      #5 0x102b9883c in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+      #6 0x102b9a6a8 in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:827:7
+      #7 0x102b9a8e8 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:865:3
+      #8 0x102b8a240 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #9 0x102bb5a6c in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #10 0x1b02afe4c  (<unknown module>)
+      #11 0x3a71fffffffffffc  (<unknown module>)
+
+  Address 0x00016d28a480 is located in stack of thread T0 at offset 192 in frame
+      #0 0x102b76dec in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/alloc-dealloc-mismatch/alloc_dealloc_mismatch_fuzztest.cpp:10
+
+    This frame has 3 object(s):
+      [32, 48) 'fuzzed_data' (line 11)
+      [64, 88) 'c' (line 12)
+      [128, 152) 'agg.tmp' <== Memory access at offset 192 overflows this variable
+  HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+        (longjmp and C++ exceptions *are* supported)
+  SUMMARY: AddressSanitizer: bad-free (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3f2b0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00) in wrap_free

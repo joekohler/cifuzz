@@ -1,0 +1,3 @@
+add_library(alloc_dealloc_mismatch alloc_dealloc_mismatch.cpp)
+add_fuzz_test(alloc_dealloc_mismatch_fuzztest alloc_dealloc_mismatch_fuzztest.cpp)
+target_link_libraries(alloc_dealloc_mismatch_fuzztest PRIVATE alloc_dealloc_mismatch)

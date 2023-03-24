@@ -1,0 +1,3 @@
+add_library(out_of_memory out_of_memory.cpp)
+add_fuzz_test(out_of_memory_fuzztest out_of_memory_fuzztest.cpp)
+target_link_libraries(out_of_memory_fuzztest PRIVATE out_of_memory)

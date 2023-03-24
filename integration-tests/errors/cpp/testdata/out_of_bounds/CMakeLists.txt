@@ -1,0 +1,3 @@
+add_library(out_of_bounds out_of_bounds.cpp)
+add_fuzz_test(out_of_bounds_fuzztest out_of_bounds_fuzztest.cpp)
+target_link_libraries(out_of_bounds_fuzztest PRIVATE out_of_bounds)

@@ -1,0 +1,3 @@
+add_library(odr_violation odr_violation.cpp)
+add_fuzz_test(odr_violation_fuzztest odr_violation_fuzztest.cpp)
+target_link_libraries(odr_violation_fuzztest PRIVATE odr_violation)

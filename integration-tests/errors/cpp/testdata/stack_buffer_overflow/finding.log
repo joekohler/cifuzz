@@ -1,0 +1,59 @@
+==8779==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x00016cece2ec at pc 0x0001035e8b2c bp 0x00016cecd430 sp 0x00016ceccbf0
+  WRITE of size 38 at 0x00016cece2ec thread T0
+      #0 0x1035e8b28 in wrap_memcpy (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x18b28) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x1813d1c34  (/usr/lib/system/libsystem_c.dylib:arm64+0x4c34) (BuildId: 14cd841b0c7b34a2a342cc6796ef925932000000200000000100000000020d00)
+      #2 0x5b070001813d1830  (<unknown module>)
+      #3 0x4e158001813fd9c4  (<unknown module>)
+      #4 0x1b4e8001035ee6d4  (<unknown module>)
+      #5 0x1035eeec0 in wrap_snprintf (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x1eec0) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #6 0x102f3d434 in overflow(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/stack-buffer-overflow/stack_buffer_overflow.cpp:8:9
+      #7 0x102f32d64 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/stack-buffer-overflow/stack_buffer_overflow_fuzztest.cpp:12:5
+      #8 0x102f32b7c in LLVMFuzzerTestOneInput /testdata/stack-buffer-overflow/stack_buffer_overflow_fuzztest.cpp:9:1
+      #9 0x102f54ebc in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+      #10 0x102f547b0 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+      #11 0x102f5661c in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:827:7
+      #12 0x102f5685c in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:865:3
+      #13 0x102f461b4 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #14 0x102f719e0 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #15 0x1811e3e4c  (<unknown module>)
+      #16 0x22347ffffffffffc  (<unknown module>)
+
+  Address 0x00016cece2ec is located in stack of thread T0 at offset 44 in frame
+      #0 0x102f3d23c in overflow(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/stack-buffer-overflow/stack_buffer_overflow.cpp:5
+
+    This frame has 1 object(s):
+      [32, 44) 's' (line 7) <== Memory access at offset 44 overflows this variable
+  HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+        (longjmp and C++ exceptions *are* supported)
+  SUMMARY: AddressSanitizer: stack-buffer-overflow (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x18b28) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00) in wrap_memcpy
+  Shadow bytes around the buggy address:
+    0x00702d9f9c00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9c10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9c20: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9c30: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9c40: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  =>0x00702d9f9c50: 00 00 00 00 00 00 00 00 f1 f1 f1 f1 00[04]f3 f3
+    0x00702d9f9c60: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9c70: 00 00 00 00 00 00 00 00 f1 f1 f1 f1 00 00 f2 f2
+    0x00702d9f9c80: 00 00 00 f2 f2 f2 f2 f2 00 00 00 f3 f3 f3 f3 f3
+    0x00702d9f9c90: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x00702d9f9ca0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  Shadow byte legend (one shadow byte represents 8 application bytes):
+    Addressable:           00
+    Partially addressable: 01 02 03 04 05 06 07
+    Heap left redzone:       fa
+    Freed heap region:       fd
+    Stack left redzone:      f1
+    Stack mid redzone:       f2
+    Stack right redzone:     f3
+    Stack after return:      f5
+    Stack use after scope:   f8
+    Global redzone:          f9
+    Global init order:       f6
+    Poisoned by user:        f7
+    Container overflow:      fc
+    Array cookie:            ac
+    Intra object redzone:    bb
+    ASan internal:           fe
+    Left alloca redzone:     ca
+    Right alloca redzone:    cb

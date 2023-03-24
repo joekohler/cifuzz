@@ -1,0 +1,18 @@
+==12869== ERROR: libFuzzer: timeout after 1202 seconds
+      #0 0x10090d200 in __sanitizer_print_stack_trace (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x49200) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+      #1 0x10026476c  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x10004076c) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #2 0x100247b80  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100023b80) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #3 0x1b06082a0 in OSAtomicTestAndClearBarrier (/usr/lib/system/libsystem_platform.dylib:arm64+0x42a0) (BuildId: 4cf75103429d3aaeba132c1f67e47dbb32000000200000000100000000020d00)
+      #4 0x51578001002315c0  (<unknown module>)
+      #5 0x10022704c  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x10000304c) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #6 0x100226e64  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100002e64) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #7 0x100248fc8  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100024fc8) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #8 0x1002488bc  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x1000248bc) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #9 0x10024a728  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100026728) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #10 0x10024a968  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100026968) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #11 0x10023a2c0  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x1000162c0) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #12 0x100265aec  (/testdata/.cifuzz-build/libfuzzer/address+undefined/timeout/timeout_fuzztest:arm64+0x100041aec) (BuildId: 685f774865453180989c4671ea935d6532000000200000000100000000000d00)
+      #13 0x1b02afe4c  (<unknown module>)
+      #14 0x4517fffffffffffc  (<unknown module>)
+  
+  SUMMARY: libFuzzer: timeout

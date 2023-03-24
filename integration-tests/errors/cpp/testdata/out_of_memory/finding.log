@@ -1,0 +1,31 @@
+==4254== ERROR: libFuzzer: out-of-memory (used: 2078Mb; limit: 2048Mb)
+   To change the out-of-memory limit use -rss_limit_mb=<N>
+
+Live Heap Allocations: 259921642 bytes in 58934348 chunks; quarantined: 252896 bytes in 4069 chunks; 126243 other chunks; total chunks: 59064660; showing top 95% (at most 8 unique contexts)
+235735132 byte(s) (90%) in 58933783 allocation(s)
+    #0 0x100760b00 in wrap__Znwm (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x4cb00) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+    #1 0x100081470 in memory(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/out-of-memory/out_of_memory.cpp:6:24
+    #2 0x100076ed8 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/out-of-memory/out_of_memory_fuzztest.cpp:12:5
+    #3 0x100076cf0 in LLVMFuzzerTestOneInput /testdata/out-of-memory/out_of_memory_fuzztest.cpp:9:1
+    #4 0x100098f5c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+    #5 0x100098850 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+    #6 0x100099e9c in fuzzer::Fuzzer::MutateAndTestOne() /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:758:19
+    #7 0x10009ab88 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:903:5
+    #8 0x10008a254 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+    #9 0x1000b5a80 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #10 0x1811e3e4c  (<unknown module>)
+    #11 0xa5027ffffffffffc  (<unknown module>)
+
+20971816 byte(s) (8%) in 1 allocation(s)
+    #0 0x100760b00 in wrap__Znwm (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x4cb00) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+    #1 0x1000898dc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:812:18
+    #2 0x1000b5a80 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #3 0x1811e3e4c  (<unknown module>)
+    #4 0xa5027ffffffffffc  (<unknown module>)
+
+MS: 5 CopyPart-ChangeBit-PersAutoDict-ChangeByte-CMP- DE: "\001\000\000\\"-"FUZZING"-; base unit: 0fd8d0473a35879af289c7eefb322578a4d31f16
+0x46,0x55,0x5a,0x5a,0x49,0x4e,0x47,
+FUZZING
+artifact_prefix='/var/folders/jw/bwkg1q1x0bx_74lg_8jjd_5r0000gn/T/libfuzzer-out-2533175685/'; Test unit written to /var/folders/jw/bwkg1q1x0bx_74lg_8jjd_5r0000gn/T/libfuzzer-out-2533175685/oom-8a91537bcd3a83491ed2d3f4d011f99e7e123a3f
+Base64: RlVaWklORw==
+SUMMARY: libFuzzer: out-of-memory

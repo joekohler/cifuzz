@@ -1,0 +1,49 @@
+==3727==ERROR: AddressSanitizer: global-buffer-overflow on address 0x000104f0cd21 at pc 0x000105592228 bp 0x00016af462e0 sp 0x00016af45aa0
+WRITE of size 8 at 0x000104f0cd21 thread T0
+    #0 0x105592224 in wrap_strcpy (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3a224) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00)
+    #1 0x104ec47d8 in overflow(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) /testdata/global-buffer-overflow/global_buffer_overflow.cpp:12:9
+    #2 0x104eba0d0 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /testdata/global-buffer-overflow/global_buffer_overflow_fuzztest.cpp:12:5
+    #3 0x104eb9ee8 in LLVMFuzzerTestOneInput /testdata/global-buffer-overflow/global_buffer_overflow_fuzztest.cpp:9:1
+    #4 0x104edcb7c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13
+    #5 0x104edc470 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7
+    #6 0x104ede2dc in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:827:7
+    #7 0x104ede51c in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:865:3
+    #8 0x104ecde74 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+    #9 0x104ef96a0 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #10 0x1811e3e4c  (<unknown module>)
+    #11 0xd274fffffffffffc  (<unknown module>)
+
+0x000104f0cd21 is located 0 bytes to the right of global variable 'test' defined in '/testdata/global-buffer-overflow/global_buffer_overflow.cpp:5' (0x104f0cd20) of size 1
+  'test' is ascii string ''
+SUMMARY: AddressSanitizer: global-buffer-overflow (/opt/homebrew/Cellar/llvm/15.0.7_1/lib/clang/15.0.7/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64+0x3a224) (BuildId: ee0fd54f5b5b37fab0dff0277a63fa1d32000000200000000100000000000b00) in wrap_strcpy
+Shadow bytes around the buggy address:
+  0x007020a01950: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x007020a01960: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a01970: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a01980: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a01990: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x007020a019a0: 00 f9 f9 f9[01]f9 f9 f9 00 00 00 00 00 00 00 00
+  0x007020a019b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a019c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a019d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a019e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x007020a019f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb

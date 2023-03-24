@@ -1,0 +1,3 @@
+add_library(use_after_return use_after_return.cpp)
+add_fuzz_test(use_after_return_fuzztest use_after_return_fuzztest.cpp)
+target_link_libraries(use_after_return_fuzztest PRIVATE use_after_return)

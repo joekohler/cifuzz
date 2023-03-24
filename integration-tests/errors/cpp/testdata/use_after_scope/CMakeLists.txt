@@ -1,0 +1,3 @@
+add_library(use_after_scope use_after_scope.cpp)
+add_fuzz_test(use_after_scope_fuzztest use_after_scope_fuzztest.cpp)
+target_link_libraries(use_after_scope_fuzztest PRIVATE use_after_scope)

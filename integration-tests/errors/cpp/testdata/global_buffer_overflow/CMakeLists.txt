@@ -1,0 +1,3 @@
+add_library(global_buffer_overflow global_buffer_overflow.cpp)
+add_fuzz_test(global_buffer_overflow_fuzztest global_buffer_overflow_fuzztest.cpp)
+target_link_libraries(global_buffer_overflow_fuzztest PRIVATE global_buffer_overflow)

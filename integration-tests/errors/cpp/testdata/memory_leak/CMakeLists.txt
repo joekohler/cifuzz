@@ -1,0 +1,3 @@
+add_library(memory_leak memory_leak.cpp)
+add_fuzz_test(memory_leak_fuzztest memory_leak_fuzztest.cpp)
+target_link_libraries(memory_leak_fuzztest PRIVATE memory_leak)

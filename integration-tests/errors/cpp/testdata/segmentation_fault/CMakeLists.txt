@@ -1,0 +1,3 @@
+add_library(segmentation_fault segmentation_fault.cpp)
+add_fuzz_test(segmentation_fault_fuzztest segmentation_fault_fuzztest.cpp)
+target_link_libraries(segmentation_fault_fuzztest PRIVATE segmentation_fault)
