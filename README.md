@@ -88,7 +88,7 @@ or by running our install script:
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/CodeIntelligenceTesting/cifuzz/main/install.sh)"
 ```
 If you are using Windows you can download
-the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows.exe)
+the [latest release](https://github.com/CodeIntelligenceTesting/cifuzz/releases/latest/download/cifuzz_installer_windows_amd64.exe)
 and execute it.
 
 Do not forget to add the installation's `bin` directory to your `PATH`. 
