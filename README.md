@@ -258,6 +258,12 @@ choco install microsoft-openjdk gradle
 
 </details>
 
+## Limitations
+
+**Windows**
+
+* C/C++ projects are only supported with CMake and fuzz tests cannot depend on shared libraries.
+
 ## Troubleshooting
 
 If you encounter problems installing or running cifuzz, you can check [Troubleshooting](docs/Troubleshooting.md)
