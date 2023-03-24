@@ -2,6 +2,7 @@ package shared
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"os"
 	"regexp"
@@ -27,7 +28,42 @@ type CommandOptions struct {
 	Args    []string
 }
 
-// Command runs "cifuzz <command> <args>" and returns stderr output
+// CommandOutput runs "cifuzz <command> <args>" and returns stderr and output.
+func (r *CIFuzzRunner) CommandOutput(t *testing.T, command string, opts *CommandOptions) (string, string) {
+	t.Helper()
+
+	if opts == nil {
+		opts = &CommandOptions{}
+	}
+
+	var args []string
+	// Empty command means that the root command should be executed
+	if command != "" {
+		args = append(args, command)
+	}
+	args = append(args, opts.Args...)
+
+	if opts.WorkDir == "" {
+		opts.WorkDir = r.DefaultWorkDir
+	}
+
+	cmd := executil.Command(r.CIFuzzPath, args...)
+	cmd.Dir = opts.WorkDir
+	cmd.Env = opts.Env
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	t.Logf("Command: %s", cmd.String())
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	return stderr.String(), stdout.String()
+}
+
+// Command runs "cifuzz <command> <args>" and returns stderr output as lines.
 func (r *CIFuzzRunner) Command(t *testing.T, command string, opts *CommandOptions) []string {
 	t.Helper()
 
@@ -48,6 +84,7 @@ func (r *CIFuzzRunner) Command(t *testing.T, command string, opts *CommandOption
 
 	cmd := executil.Command(r.CIFuzzPath, args...)
 	cmd.Dir = opts.WorkDir
+	cmd.Env = opts.Env
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
 	require.NoError(t, err)
 	defer func() {
