@@ -16,6 +16,7 @@ import (
 
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/minijail"
+	"code-intelligence.com/cifuzz/pkg/parser/errorid"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/pkg/parser/sanitizer"
 	"code-intelligence.com/cifuzz/pkg/report"
@@ -213,6 +214,7 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	finding := p.parseAsNewFinding(line)
+
 	if finding != nil && !p.libFuzzerErrorFollowingGoPanic(finding) {
 		// If there is still a pending finding, send it now, because
 		// we'll treat all further output lines as belonging to the new
@@ -557,6 +559,10 @@ func (p *parser) finalizeAndSendPendingFinding(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+  p.pendingFinding.MoreDetails = &finding.ErrorDetails{
+    ID: errorid.ForFinding(p.pendingFinding),
+  }
 
 	err = p.sendFinding(ctx, p.pendingFinding)
 	if err != nil {

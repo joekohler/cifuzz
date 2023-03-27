@@ -801,6 +801,7 @@ func TestBufferOverflowCrashLogs(t *testing.T) {
 	require.NoError(t, err)
 	assertCorrectCrashesParsing(t,
 		"global-buffer-overflow on address 0x00",
+		"global_buffer_overflow",
 		expectedCrashFile.Name(),
 		testInput,
 		[]string{
@@ -822,6 +823,7 @@ func TestOOMCrashLogs(t *testing.T) {
 	require.NoError(t, err)
 	assertCorrectCrashesParsing(t,
 		"out-of-memory (used: 251Mb; limit: 250Mb)",
+		"out_of_memory",
 		expectedCrashFile.Name(),
 		testInput,
 		[]string{
@@ -832,7 +834,7 @@ func TestOOMCrashLogs(t *testing.T) {
 		})
 }
 
-func assertCorrectCrashesParsing(t *testing.T, errorDetails, crashFile string, crashingInput []byte, logs []string) {
+func assertCorrectCrashesParsing(t *testing.T, errorDetails, errorID, crashFile string, crashingInput []byte, logs []string) {
 	expectedReports := []*report.Report{
 		{
 			Status: report.RunStatusRunning,
@@ -842,6 +844,9 @@ func assertCorrectCrashesParsing(t *testing.T, errorDetails, crashFile string, c
 				InputFile: crashFile,
 				Details:   errorDetails,
 				Logs:      logs,
+				MoreDetails: &finding.ErrorDetails{
+					ID: errorID,
+				},
 			},
 		},
 	}
