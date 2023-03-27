@@ -143,6 +143,8 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	// Produce a jacoco xml coverage report
 	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
 
+	testCoverageVSCodePreset(t, cifuzz, projectDir)
+
 	// Run cifuzz bundle and verify the contents of the archive.
 	shared.TestBundleMaven(t, projectDir, cifuzz, "com.example.FuzzTestCase")
 }
@@ -180,6 +182,24 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 			assert.Equal(t, 0, file.Coverage.BranchesHit)
 		}
 	}
+}
+
+func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
+	t.Helper()
+
+	cmd := executil.Command(cifuzz, "coverage",
+		"-v",
+		"--preset=vscode",
+		"com.example.FuzzTestCase")
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "report", "jacoco.xml")
+	require.FileExists(t, reportPath)
 }
 
 func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {

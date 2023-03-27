@@ -118,6 +118,9 @@ func TestIntegration_CMake(t *testing.T) {
 			// Run cifuzz coverage with additional args
 			testCoverageWithAdditionalArgs(t, cifuzz, dir)
 		})
+		t.Run("coverageVSCodePreset", func(t *testing.T) {
+			testCoverageVSCodePreset(t, cifuzz, dir)
+		})
 	})
 
 	t.Run("runWithConfigFile", func(t *testing.T) {
@@ -553,4 +556,30 @@ func testRunNotAuthenticated(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRunNotAuthenticated(t, testdata, cifuzz)
+}
+
+func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Building with coverage instrumentation doesn't work on Windows yet")
+	}
+
+	reportPath := filepath.Join(dir, "crashing_fuzz_test.lcov")
+
+	cmd := executil.Command(cifuzz, "coverage",
+		"-v",
+		"--preset=vscode",
+		"crashing_fuzz_test")
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	require.FileExists(t, reportPath)
 }
