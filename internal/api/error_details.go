@@ -33,8 +33,13 @@ func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, 
 	if resp.StatusCode != 200 {
 		// the request did not succeed, but we don't want the entire process to fail
 		// so we just log the error and return an empty list
-		log.Warnf("Error getting error details: %s", resp.Status)
-		log.Info("Continuing without external error details")
+		if resp.StatusCode == 401 {
+			log.Warnf("Not authorized to get error details. Please log in to enable this feature.")
+		} else {
+			log.Warnf("Failed to get error details: %s", resp.Status)
+			log.Infof("Response: %s", resp.Body)
+		}
+		log.Infof("Continuing without external error details")
 		return nil, nil
 	}
 

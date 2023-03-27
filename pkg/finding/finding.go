@@ -370,7 +370,7 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
 	if details != nil {
 		moreDetails = *details
 	} else {
-		log.Infof("No error details found for finding %s", f.Name)
+		log.Debugf("No error details found for finding %s", f.Name)
 
 		moreDetails.Name = f.Name
 		if f.MoreDetails != nil {
