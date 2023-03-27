@@ -14,7 +14,7 @@ var helpTests = &[]e2e.TestCase{
 		Command:     "help",
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Equal(t, output.Stderr, "")
+			assert.Contains(t, output.Stderr, "cifuzz version")
 			assert.Contains(t, output.Stdout, "Available Commands")
 		},
 	},
