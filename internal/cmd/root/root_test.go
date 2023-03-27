@@ -10,6 +10,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestMain(m *testing.M) {
@@ -54,6 +55,8 @@ func TestChangingToExistingDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	err = os.Mkdir("foo", 0700)
+	require.NoError(t, err)
+	err = fileutil.Touch(filepath.Join("foo", "CMakeLists.txt"))
 	require.NoError(t, err)
 
 	args := []string{

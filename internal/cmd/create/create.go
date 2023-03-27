@@ -29,6 +29,12 @@ type createOpts struct {
 }
 
 func (opts *createOpts) Validate() error {
+	err := config.ValidateBuildSystem(opts.BuildSystem)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+
 	if opts.Interactive {
 		opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 	}

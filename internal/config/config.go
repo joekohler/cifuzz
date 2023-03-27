@@ -13,6 +13,8 @@ import (
 	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -34,6 +36,23 @@ var buildSystemTypes = []string{
 	BuildSystemMaven,
 	BuildSystemGradle,
 	BuildSystemOther,
+}
+
+var supportedBuildSystems = map[string][]string{
+	"linux": buildSystemTypes,
+	"darwin": {
+		BuildSystemCMake,
+		BuildSystemNodeJS,
+		BuildSystemMaven,
+		BuildSystemGradle,
+		BuildSystemOther,
+	},
+	"windows": {
+		BuildSystemCMake,
+		BuildSystemNodeJS,
+		BuildSystemMaven,
+		BuildSystemGradle,
+	},
 }
 
 const projectConfigFile = "cifuzz.yaml"
@@ -144,8 +163,19 @@ func ParseProjectConfig(configDir string, opts interface{}) error {
 
 func ValidateBuildSystem(buildSystem string) error {
 	if !stringutil.Contains(buildSystemTypes, buildSystem) {
-		return errors.Errorf("Invalid build system \"%s\"", buildSystem)
+		return errors.Errorf("Unsupported build system \"%s\"", buildSystem)
 	}
+
+	if !stringutil.Contains(supportedBuildSystems[runtime.GOOS], buildSystem) {
+		osName := cases.Title(language.Und).String(runtime.GOOS)
+		if runtime.GOOS == "darwin" {
+			osName = "macOS"
+		}
+		return errors.Errorf(`Build system %[1]s is currently not supported on %[2]s. If you
+are interested in using this feature with %[1]s, please file an issue at
+https://github.com/CodeIntelligenceTesting/cifuzz/issues`, buildSystem, osName)
+	}
+
 	return nil
 }
 

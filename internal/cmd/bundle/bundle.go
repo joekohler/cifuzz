@@ -16,7 +16,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 type options struct {
@@ -24,13 +23,13 @@ type options struct {
 }
 
 func (opts *options) Validate() error {
-	if !sliceutil.Contains([]string{
-		config.BuildSystemBazel,
-		config.BuildSystemCMake,
-		config.BuildSystemOther,
-		config.BuildSystemMaven,
-		config.BuildSystemGradle,
-	}, opts.BuildSystem) {
+	err := config.ValidateBuildSystem(opts.BuildSystem)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+
+	if opts.BuildSystem == config.BuildSystemNodeJS {
 		err := errors.Errorf(`Creating a bundle is currently not supported for %[1]s projects. If you
 are interested in using this feature with %[1]s, please file an issue at
 https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))

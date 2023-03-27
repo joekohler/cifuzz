@@ -43,7 +43,13 @@ type remoteRunOpts struct {
 }
 
 func (opts *remoteRunOpts) Validate() error {
-	if !sliceutil.Contains([]string{config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemMaven, config.BuildSystemGradle, config.BuildSystemOther}, opts.BuildSystem) {
+	err := config.ValidateBuildSystem(opts.BuildSystem)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
+	}
+
+	if opts.BuildSystem == config.BuildSystemNodeJS {
 		err := errors.Errorf(`Starting a remote run is currently not supported for %[1]s projects. If you
 are interested in using this feature with %[1]s, please file an issue at
 https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))

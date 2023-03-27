@@ -13,6 +13,8 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/internal/build/maven"
@@ -69,11 +71,20 @@ func (opts *coverageOptions) validate() error {
 		if err != nil {
 			return err
 		}
-	} else {
-		err = config.ValidateBuildSystem(opts.BuildSystem)
-		if err != nil {
-			return err
-		}
+	}
+
+	if opts.BuildSystem == config.BuildSystemNodeJS {
+		err := errors.Errorf(`Starting a coverage run is currently not supported for %[1]s projects. If you
+are interested in using this feature with %[1]s, please file an issue at
+https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))
+		log.Print(err.Error())
+		return cmdutils.WrapSilentError(err)
+	}
+
+	err = config.ValidateBuildSystem(opts.BuildSystem)
+	if err != nil {
+		log.Error(err)
+		return cmdutils.WrapSilentError(err)
 	}
 
 	validFormats := coverage.ValidOutputFormats[opts.BuildSystem]

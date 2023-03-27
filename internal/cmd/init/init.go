@@ -20,7 +20,8 @@ const (
 )
 
 type Options struct {
-	Dir string
+	Dir         string
+	BuildSystem string
 }
 
 func New() *cobra.Command {
@@ -42,6 +43,19 @@ func NewWithOptions(opts *Options) *cobra.Command {
 					return errors.WithStack(err)
 				}
 			}
+
+			opts.BuildSystem, err = config.DetermineBuildSystem(opts.Dir)
+			if err != nil {
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+
+			err = config.ValidateBuildSystem(opts.BuildSystem)
+			if err != nil {
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -55,7 +69,7 @@ func NewWithOptions(opts *Options) *cobra.Command {
 }
 
 func run(opts *Options) error {
-	setUpAndMentionBuildSystemIntegrations(opts.Dir)
+	setUpAndMentionBuildSystemIntegrations(opts.Dir, opts.BuildSystem)
 
 	log.Debugf("Creating config file in directory: %s", opts.Dir)
 	configpath, err := config.CreateProjectConfig(opts.Dir)
@@ -75,16 +89,7 @@ Use 'cifuzz create' to create your first fuzz test.`)
 	return nil
 }
 
-func setUpAndMentionBuildSystemIntegrations(dir string) {
-	// Printing build system instructions is best-effort: Do not fail on errors.
-	buildSystem, err := config.DetermineBuildSystem(dir)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			log.Debug(err)
-		}
-		return
-	}
-
+func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string) {
 	switch buildSystem {
 	case config.BuildSystemBazel:
 		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))

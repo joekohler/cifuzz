@@ -29,8 +29,8 @@ func TestIntegration_Bazel(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Using cifuzz with bazel is currently only supported on Unix")
+	if runtime.GOOS != "linux" {
+		t.Skip("Using cifuzz with bazel is currently only supported on Linux")
 	}
 
 	// Install cifuzz

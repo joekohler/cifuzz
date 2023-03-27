@@ -15,6 +15,7 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/mocks"
@@ -23,21 +24,19 @@ import (
 )
 
 var logOutput io.ReadWriter
-var testDir string
 
 func TestMain(m *testing.M) {
 	logOutput = bytes.NewBuffer([]byte{})
 	log.Output = logOutput
 
-	// Create an empty project directory and change working directory to it
-	var cleanup func()
-	testDir, cleanup = testutil.ChdirToTempDir("integrate-cmd-test")
-	defer cleanup()
-
 	m.Run()
 }
 
 func TestMissingCIFuzzProject(t *testing.T) {
+	// Create an empty project directory and change working directory to it
+	testDir, cleanup := testutil.ChdirToTempDir("integrate-cmd-test")
+	defer cleanup()
+
 	// Check that the command produces the expected error when not
 	// called below a cifuzz project directory.
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
@@ -45,6 +44,8 @@ func TestMissingCIFuzzProject(t *testing.T) {
 	testutil.CheckOutput(t, logOutput, "cifuzz.yaml file does not exist")
 
 	// Initialize a cifuzz project
+	err = fileutil.Touch(filepath.Join(testDir, "CMakeLists.txt"))
+	require.NoError(t, err)
 	_, err = cmdutils.ExecuteCommand(t, initCmd.New(), os.Stdin)
 	require.NoError(t, err)
 
@@ -55,7 +56,14 @@ func TestMissingCIFuzzProject(t *testing.T) {
 }
 
 func TestSetupGitIgnore(t *testing.T) {
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("integrate-cmd-test", config.BuildSystemCMake)
+	defer cleanup()
+
 	gitIgnorePath := filepath.Join(testDir, ".gitignore")
+	cmakeListsPath := filepath.Join(testDir, "CMakeLists.txt")
+	// Remove existing .gitignore and CMakeLists.txt from example project
+	os.Remove(gitIgnorePath)
+	os.Remove(cmakeListsPath)
 
 	// Check that a new .gitignore file is created
 	err := setupGitIgnore(testDir)
@@ -75,7 +83,7 @@ func TestSetupGitIgnore(t *testing.T) {
 	assert.Equal(t, 2, len(getNonEmptyLines(content)))
 
 	// Check that two additional entries are added for cmake projects
-	err = fileutil.Touch(filepath.Join(testDir, "CMakeLists.txt"))
+	err = fileutil.Touch(cmakeListsPath)
 	require.NoError(t, err)
 	err = setupGitIgnore(testDir)
 	require.NoError(t, err)
@@ -85,7 +93,10 @@ func TestSetupGitIgnore(t *testing.T) {
 }
 
 func TestSetupCMakePresets(t *testing.T) {
-	sourceDir := getRootSourceDirectory(t)
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("integrate-cmd-test", config.BuildSystemCMake)
+	defer cleanup()
+
+	sourceDir := getRootSourceDirectory(t, testDir)
 	cmakePresets := filepath.Join(sourceDir, "share", "integration", "CMakePresets.json")
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePresetsPath").Return(cmakePresets, nil)
@@ -109,7 +120,10 @@ func TestSetupCMakePresets(t *testing.T) {
 }
 
 func TestSetupVSCodeTasks(t *testing.T) {
-	sourceDir := getRootSourceDirectory(t)
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("integrate-cmd-test", config.BuildSystemCMake)
+	defer cleanup()
+
+	sourceDir := getRootSourceDirectory(t, testDir)
 	vscodeTasks := filepath.Join(sourceDir, "share", "integration", "tasks.json")
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("VSCodeTasksPath").Return(vscodeTasks, nil)
@@ -136,7 +150,7 @@ func getNonEmptyLines(content []byte) []string {
 	return stringutil.NonEmpty(strings.Split(string(content), "\n"))
 }
 
-func getRootSourceDirectory(t *testing.T) string {
+func getRootSourceDirectory(t *testing.T, testDir string) string {
 	// Change to source file directory
 	_, file, _, _ := runtime.Caller(0)
 	err := os.Chdir(filepath.Dir(file))
