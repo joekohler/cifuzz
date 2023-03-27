@@ -119,30 +119,60 @@ func (cmd *findingCmd) run(args []string) error {
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 1, ' ', 0)
 
 		data := [][]string{
-			{"Severity", "Name", "Description", "FuzzTest", "Location"},
+			{"Severity", "Name", "Description", "Location"},
 		}
+
+		// showing the fuzz test name is a SaaS only feature...
+		if authenticated {
+			data = [][]string{
+				{"Severity", "Name", "Description", "FuzzTest", "Location"},
+			}
+		}
+
 		for _, f := range findings {
 			if f.MoreDetails != nil {
 				colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
 
-				data = append(data, []string{
-					colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
-					f.Name,
-					// FIXME: replace f.ShortDescriptionColumns()[0] with
-					// f.MoreDetails.Name once we cover all bugs with our
-					// error-details.json
-					f.ShortDescriptionColumns()[0],
-					f.FuzzTest,
-					f.ShortDescriptionColumns()[1],
-				})
+				if authenticated {
+					data = append(data, []string{
+						colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
+						f.Name,
+						// FIXME: replace f.ShortDescriptionColumns()[0] with
+						// f.MoreDetails.Name once we cover all bugs with our
+						// error-details.json
+						f.ShortDescriptionColumns()[0],
+						// showing the fuzz test name is a SaaS only feature...
+						f.FuzzTest,
+						f.ShortDescriptionColumns()[1],
+					})
+				} else {
+					data = append(data, []string{
+						colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
+						f.Name,
+						// FIXME: replace f.ShortDescriptionColumns()[0] with
+						// f.MoreDetails.Name once we cover all bugs with our
+						// error-details.json
+						f.ShortDescriptionColumns()[0],
+						f.ShortDescriptionColumns()[1],
+					})
+				}
 			} else {
-				data = append(data, []string{
-					"n/a",
-					f.Name,
-					f.ShortDescriptionColumns()[0],
-					f.FuzzTest,
-					f.ShortDescriptionColumns()[1],
-				})
+				if authenticated {
+					data = append(data, []string{
+						"n/a",
+						f.Name,
+						f.ShortDescriptionColumns()[0],
+						f.FuzzTest,
+						f.ShortDescriptionColumns()[1],
+					})
+				} else {
+					data = append(data, []string{
+						"n/a",
+						f.Name,
+						f.ShortDescriptionColumns()[0],
+						f.ShortDescriptionColumns()[1],
+					})
+				}
 			}
 		}
 		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
