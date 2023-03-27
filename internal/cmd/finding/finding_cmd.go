@@ -2,34 +2,30 @@ package finding
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
-	"code-intelligence.com/cifuzz/internal/tokenstorage"
-	"code-intelligence.com/cifuzz/pkg/cicheck"
-	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type options struct {
-	PrintJSON  bool   `mapstructure:"print-json"`
-	ProjectDir string `mapstructure:"project-dir"`
-	ConfigDir  string `mapstructure:"config-dir"`
-	Server     string `mapstructure:"server"`
+	PrintJSON   bool   `mapstructure:"print-json"`
+	ProjectDir  string `mapstructure:"project-dir"`
+	ConfigDir   string `mapstructure:"config-dir"`
+	Interactive bool   `mapstructure:"interactive"`
+	Server      string `mapstructure:"server"`
 }
 
 type findingCmd struct {
@@ -74,6 +70,7 @@ func newWithOptions(opts *options) *cobra.Command {
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddServerFlag,
 	)
 
@@ -81,12 +78,12 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	auth, err := cmd.isAuthenticated()
+	authenticated, err := auth.GetAuthStatus(cmd.opts.Server)
 	if err != nil {
 		return err
 	}
-	if !auth {
-		_, err = showServerConnectionDialog(cmd.opts.Server)
+	if !authenticated && cmd.opts.Interactive {
+		_, err = auth.ShowServerConnectionDialog(cmd.opts.Server)
 		if err != nil {
 			return err
 		}
@@ -281,105 +278,4 @@ func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
 		}
 	}
 	return &errorDetails, nil
-}
-
-func (c *findingCmd) isAuthenticated() (bool, error) {
-	interactive := viper.GetBool("interactive")
-	if cicheck.IsCIEnvironment() {
-		interactive = false
-	}
-
-	// Check if the server option is a valid URL
-	err := api.ValidateURL(c.opts.Server)
-	if err != nil {
-		// See if prefixing https:// makes it a valid URL
-		err = api.ValidateURL("https://" + c.opts.Server)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("server %q is not a valid URL", c.opts.Server))
-		}
-		c.opts.Server = "https://" + c.opts.Server
-	}
-
-	// normalize server URL
-	url, err := url.JoinPath(c.opts.Server)
-	if err != nil {
-		return false, cmdutils.WrapSilentError(err)
-	}
-	c.opts.Server = url
-
-	authenticated, err := getAuthStatus(c.opts.Server)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if errors.As(err, &connErr) {
-			log.Warn("Connection to API failed. Skipping sync.")
-			log.Debugf("Connection error: %s (continuing gracefully)", connErr)
-			return false, nil
-		} else {
-			fmt.Println("AUTH STATUS CHECK ERROR")
-			return false, cmdutils.WrapSilentError(err)
-		}
-	}
-
-	if interactive && !authenticated {
-		// establish server connection to check user auth
-		authenticated, err = showServerConnectionDialog(c.opts.Server)
-		if err != nil {
-			var connErr *api.ConnectionError
-			if errors.As(err, &connErr) {
-				log.Warn("Connection to API failed. Skipping sync.")
-				log.Debugf("Connection error: %v (continuing gracefully)", connErr)
-				return false, nil
-			} else {
-				return false, cmdutils.WrapSilentError(err)
-			}
-		}
-	}
-	return authenticated, nil
-}
-
-func getAuthStatus(server string) (bool, error) {
-	// Obtain the API access token
-	token := login.GetToken(server)
-
-	if token == "" {
-		return false, nil
-	}
-
-	// Token might be invalid, so try to authenticate with it
-	apiClient := api.APIClient{Server: server}
-	err := login.CheckValidToken(&apiClient, token)
-	if err != nil {
-		log.Warnf(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, tokenstorage.GetTokenFilePath())
-
-		return false, err
-	}
-
-	return true, nil
-}
-
-// showServerConnectionDialog ask users if they want to use a SaaS backend
-// if they are not authenticated and returns their wish to authenticate
-func showServerConnectionDialog(server string) (bool, error) {
-	additionalParams := messaging.ShowServerConnectionMessage(server)
-
-	wishOptions := map[string]string{
-		"Yes":  "Yes",
-		"Skip": "Skip",
-	}
-	wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
-	if err != nil {
-		return false, err
-	}
-
-	if wishToAuthenticate == "Yes" {
-		apiClient := api.APIClient{Server: server}
-		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient, additionalParams)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return wishToAuthenticate == "Yes", nil
 }

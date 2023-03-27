@@ -29,6 +29,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
@@ -40,7 +41,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -784,7 +784,7 @@ func (c *runCmd) setupSync() (bool, error) {
 	}
 	c.opts.Server = url
 
-	authenticated, err := getAuthStatus(c.opts.Server)
+	authenticated, err := auth.GetAuthStatus(c.opts.Server)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if errors.As(err, &connErr) {
@@ -809,7 +809,7 @@ Your results will not be synced to a remote fuzzing server.`)
 
 	if interactive && !authenticated {
 		// establish server connection to check user auth
-		willSync, err = showServerConnectionDialog(c.opts.Server)
+		willSync, err = auth.ShowServerConnectionDialog(c.opts.Server)
 		if err != nil {
 			var connErr *api.ConnectionError
 			if errors.As(err, &connErr) {
@@ -991,49 +991,6 @@ func countCorpusEntries(seedCorpusDirs []string) (uint, error) {
 		numSeeds += seedsInDir
 	}
 	return numSeeds, nil
-}
-
-func getAuthStatus(server string) (bool, error) {
-	// Obtain the API access token
-	token := login.GetToken(server)
-
-	if token == "" {
-		return false, nil
-	}
-
-	// Token might be invalid, so try to authenticate with it
-	apiClient := api.APIClient{Server: server}
-	err := login.CheckValidToken(&apiClient, token)
-	if err != nil {
-		log.Warnf(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, tokenstorage.GetTokenFilePath())
-
-		return false, err
-	}
-
-	return true, nil
-}
-
-// showServerConnectionDialog ask users if they want to use a SaaS backend
-// if they are not authenticated and returns their wish to authenticate
-func showServerConnectionDialog(server string) (bool, error) {
-	additionalParams := messaging.ShowServerConnectionMessage(server)
-
-	wishToAuthenticate, err := dialog.Confirm("Do you want to authenticate?", true)
-	if err != nil {
-		return false, err
-	}
-
-	if wishToAuthenticate {
-		apiClient := api.APIClient{Server: server}
-		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient, additionalParams)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return wishToAuthenticate, nil
 }
 
 func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
