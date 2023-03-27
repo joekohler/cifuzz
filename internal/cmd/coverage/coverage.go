@@ -229,19 +229,15 @@ func (c *coverageCmd) run() error {
 			format = coverage.FormatLCOV
 			output = "lcov.info"
 		case config.BuildSystemMaven, config.BuildSystemGradle:
-			format = coverage.FormatHTML
-			output = "coverage.html"
+			format = coverage.FormatJacocoXML
+			output = "coverage.xml"
 		default:
 			log.Info("The --vscode flag only supports the following build systems: CMake, Bazel, Maven, Gradle")
 			return nil
 		}
 
-		if c.opts.OutputFormat == "" {
-			c.opts.OutputFormat = format
-		}
-		if c.opts.OutputPath == "" {
-			c.opts.OutputPath = output
-		}
+		c.opts.OutputFormat = format
+		c.opts.OutputPath = output
 	}
 
 	var gen Generator
