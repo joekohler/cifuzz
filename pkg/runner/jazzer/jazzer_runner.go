@@ -74,7 +74,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	// Jazzer main class
 	args = append(args, "com.code_intelligence.jazzer.Jazzer")
 	if r.TargetClass != "" {
-	  args = append(args, "--target_class="+r.TargetClass)
+		args = append(args, "--target_class="+r.TargetClass)
 	}
 
 	// -------------------------

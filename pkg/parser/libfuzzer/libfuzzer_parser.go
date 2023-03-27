@@ -15,6 +15,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/parser/errorid"
 	"code-intelligence.com/cifuzz/pkg/parser/sanitizer"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/util/regexutil"
@@ -422,6 +423,9 @@ func (p *parser) sendPendingFindingIfAny(ctx context.Context) error {
 }
 
 func (p *parser) sendPendingFinding(ctx context.Context) error {
+	p.pendingFinding.MoreDetails = &report.ErrorDetails{
+		Id: errorid.ForFinding(p.pendingFinding),
+	}
 	err := p.sendFinding(ctx, p.pendingFinding)
 	if err != nil {
 		return err
