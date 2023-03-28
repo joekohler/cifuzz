@@ -133,7 +133,7 @@ At least Visual Studio 2022 version 17 is required.
 Please make sure to
 * select **"Develop Desktop C++ applications"** in the Visual Studio Installer
 * check **"C++ Clang Compiler for Windows"** in the "Individual Components" tab
-* check **"C++ CMake Tools for Windows"** in the "Individual Conponents" tab
+* check **"C++ CMake Tools for Windows"** in the "Individual Components" tab
 
 You can add these components anytime by choosing "Modify" in the Visual Studio Installer.
 
@@ -257,6 +257,12 @@ choco install microsoft-openjdk gradle
 ```
 
 </details>
+
+### Windows
+
+In order to get font colors and glyphs to render properly install the 
+[Windows Terminal from the Microsoft Store](https://aka.ms/terminal).
+Run `cifuzz` in `Developer PowerShell for VS 2022` inside of `Windows Terminal`. 
 
 ## Limitations
 
