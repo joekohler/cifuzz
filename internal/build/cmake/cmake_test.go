@@ -56,7 +56,7 @@ func TestNewBuilder(t *testing.T) {
 	require.NoError(t, err)
 	require.DirExists(t, buildDir2)
 	// Check that the build dir name contains an additional hash value
-	require.Equal(t, 64, len(strings.Split(filepath.Base(buildDir2), "-")[1]))
+	require.Equal(t, 8, len(strings.Split(filepath.Base(buildDir2), "-")[1]))
 
 	// Check that the two builders have different build directories
 	// (because they use different engines)

@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/sha256"
+	"encoding/base32"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -123,7 +123,9 @@ func (b *Builder) BuildDir() (string, error) {
 				return "", errors.WithStack(err)
 			}
 		}
-		hashString := hex.EncodeToString(hash.Sum(nil))
+		// Use only the first 8 characters in order to prevent errors on
+		// Windows, which cannot handle long file paths.
+		hashString := base32.StdEncoding.EncodeToString(hash.Sum(nil))[:8]
 		buildDir = fmt.Sprintf("%s-%s", sanitizersSegment, hashString)
 	}
 
