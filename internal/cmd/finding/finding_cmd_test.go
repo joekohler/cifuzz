@@ -52,7 +52,7 @@ func TestListFindings(t *testing.T) {
 	}
 
 	// Check that the command lists no findings in the empty project
-	output, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json")
+	output, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json", "--interactive=false")
 	require.NoError(t, err)
 	require.Equal(t, "[]", output)
 
@@ -70,7 +70,7 @@ func TestListFindings(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the command lists the finding
-	output, err = cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json")
+	output, err = cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json", "--interactive=false")
 	require.NoError(t, err)
 	jsonString, err := stringutil.ToJSONString([]*finding.Finding{f})
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestPrintFinding(t *testing.T) {
 
 	// Check that the command produces the expected error when the
 	// specified finding does not exist
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json")
+	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--interactive=false")
 	require.Error(t, err)
 	testutil.CheckOutput(t, logOutput, fmt.Sprintf("Finding %s does not exist", f.Name))
 
@@ -106,7 +106,7 @@ func TestPrintFinding(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the command prints the finding
-	output, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json")
+	output, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--interactive=false")
 	require.NoError(t, err)
 	jsonString, err := stringutil.ToJSONString(f)
 	require.NoError(t, err)

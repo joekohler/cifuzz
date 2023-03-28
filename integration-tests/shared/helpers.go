@@ -122,7 +122,7 @@ func CopyTestdataDir(t *testing.T, name string) string {
 }
 
 func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
-	cmd := executil.Command(cifuzz, "findings", "--json")
+	cmd := executil.Command(cifuzz, "findings", "--json", "--interactive=false")
 	cmd.Dir = dir
 	output, err := cmd.Output()
 	require.NoError(t, err)

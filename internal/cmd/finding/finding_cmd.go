@@ -2,12 +2,14 @@ package finding
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -59,6 +61,26 @@ func newWithOptions(opts *options) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			opts.Interactive = viper.GetBool("interactive")
+			opts.Server = viper.GetString("server")
+
+			// Check if the server option is a valid URL
+			err := api.ValidateURL(opts.Server)
+			if err != nil {
+				// See if prefixing https:// makes it a valid URL
+				err = api.ValidateURL("https://" + opts.Server)
+				if err != nil {
+					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
+				}
+				opts.Server = "https://" + opts.Server
+			}
+
+			// normalize server URL
+			url, err := url.JoinPath(opts.Server)
+			if err != nil {
+				return err
+			}
+			opts.Server = url
 			cmd := findingCmd{Command: c, opts: opts}
 			return cmd.run(args)
 		},
