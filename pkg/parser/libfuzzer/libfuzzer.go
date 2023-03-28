@@ -361,41 +361,13 @@ func (p *parser) parseAsLibfuzzerFinding(line string) *finding.Finding {
 func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 	matches, found := regexutil.FindNamedGroupsMatch(jazzerSecurityIssuePattern, line)
 	if found {
-		issueSeverity := matches["type"]
-		severityScore := 0.0
-		var severityLevel finding.SeverityLevel
-		switch issueSeverity {
-		case "Critical":
-			severityScore = 9.0
-			severityLevel = finding.SeverityLevelCritical
-		case "High":
-			severityScore = 7.0
-			severityLevel = finding.SeverityLevelHigh
-		case "Medium":
-			severityScore = 5.0
-			severityLevel = finding.SeverityLevelMedium
-		case "Low":
-			severityScore = 1.0
-			severityLevel = finding.SeverityLevelLow
-		}
 		exceptionMessage := strings.TrimSpace(matches["message"])
 		description := "Security Issue: " + exceptionMessage
-		uiDescription := "Security Issue Raised"
-		if len(exceptionMessage) > 0 {
-			uiDescription = exceptionMessage
-		}
 
 		return &finding.Finding{
 			Type:    finding.ErrorTypeCrash, // aka Vulnerability
 			Details: description,
-			MoreDetails: &finding.ErrorDetails{
-				Name: uiDescription, // This field is shown in the UI
-				Severity: &finding.Severity{
-					Level: severityLevel,
-					Score: float32(severityScore),
-				},
-			},
-			Logs: []string{line},
+			Logs:    []string{line},
 		}
 	}
 
@@ -494,14 +466,6 @@ func parseAsSlowInput(log string) *finding.Finding {
 			Type:    finding.ErrorTypeWarning,
 			Details: fmt.Sprintf("Slow input detected. Processing time: %s s", res["duration"]),
 			Logs:    []string{fmt.Sprintf("Slow input: %s seconds for processing", res["duration"])},
-			MoreDetails: &finding.ErrorDetails{
-				ID:   "Slow Input Detected",
-				Name: "Slow Input Detected",
-				Severity: &finding.Severity{
-					Level: finding.SeverityLevelLow,
-					Score: 2,
-				},
-			},
 		}
 	}
 	return nil
@@ -560,9 +524,9 @@ func (p *parser) finalizeAndSendPendingFinding(ctx context.Context) error {
 		return err
 	}
 
-  p.pendingFinding.MoreDetails = &finding.ErrorDetails{
-    ID: errorid.ForFinding(p.pendingFinding),
-  }
+	p.pendingFinding.MoreDetails = &finding.ErrorDetails{
+		ID: errorid.ForFinding(p.pendingFinding),
+	}
 
 	err = p.sendFinding(ctx, p.pendingFinding)
 	if err != nil {
