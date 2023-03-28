@@ -1,7 +1,6 @@
 package init
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 
@@ -12,26 +11,9 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
-
-//go:embed instructions/bazel
-var bazelSetup string
-
-//go:embed instructions/cmake
-var cmakeSetup string
-
-//go:embed instructions/maven
-var mavenSetup string
-
-//go:embed instructions/gradle
-var gradleGroovySetup string
-
-//go:embed instructions/gradlekotlin
-var gradleKotlinSetup string
-
-//go:embed instructions/nodejs
-var nodejsSetup string
 
 const (
 	GradleMultiProjectWarningMsg = "For multi-project builds, you should setup cifuzz in the subprojects containing the fuzz tests."
@@ -105,7 +87,7 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 
 	switch buildSystem {
 	case config.BuildSystemBazel:
-		log.Print(fmt.Sprintf(bazelSetup, dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
+		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
 	case config.BuildSystemCMake:
 		// Note: We set NO_SYSTEM_ENVIRONMENT_PATH to avoid that the
 		// system-wide cmake package takes precedence over a package
@@ -127,16 +109,16 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 		//
 		// With NO_SYSTEM_ENVIRONMENT_PATH, the system-wide installation
 		// directory is only searched in step 7.
-		log.Print(cmakeSetup)
+		log.Print(messaging.Instructions(buildSystem))
 	case config.BuildSystemNodeJS:
 		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-			log.Print(nodejsSetup)
+			log.Print(messaging.Instructions(buildSystem))
 		} else {
 			log.Print("cifuzz does not support NodeJS projects yet.")
 			os.Exit(1)
 		}
 	case config.BuildSystemMaven:
-		log.Print(mavenSetup)
+		log.Print(messaging.Instructions(buildSystem))
 	case config.BuildSystemGradle:
 		gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(dir)
 		if err != nil {
@@ -153,11 +135,6 @@ func setUpAndMentionBuildSystemIntegrations(dir string) {
 			log.Warn(GradleMultiProjectWarningMsg)
 		}
 
-		switch gradleBuildLanguage {
-		case config.GradleGroovy:
-			log.Print(gradleGroovySetup)
-		case config.GradleKotlin:
-			log.Print(gradleKotlinSetup)
-		}
+		log.Print(messaging.Instructions(string(gradleBuildLanguage)))
 	}
 }

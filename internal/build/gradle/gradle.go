@@ -12,7 +12,9 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -72,6 +74,19 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 }
 
 func (b *Builder) Build(targetClass string) (*build.Result, error) {
+	gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(b.ProjectDir)
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := b.GradlePluginVersion()
+	if err != nil {
+		log.Warn("No cifuzz gradle plugin found")
+		log.Print(messaging.Instructions(string(gradleBuildLanguage)))
+		return nil, cmdutils.WrapSilentError(err)
+	}
+	log.Debugf("Found gradle plugin version: %s", version)
+
 	var flags []string
 	if b.Parallel.Enabled {
 		flags = append(flags, "--parallel")
@@ -112,8 +127,22 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	return result, nil
 }
 
+func (b *Builder) GradlePluginVersion() (string, error) {
+	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintPluginVersion", "-q"})
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return strings.TrimPrefix(string(output), "cifuzz.plugin.version="), nil
+}
+
 func (b *Builder) getDependencies() ([]string, error) {
-	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintTestClasspath", "-q"})
+	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintTestClasspath"})
 	if err != nil {
 		return nil, err
 	}
