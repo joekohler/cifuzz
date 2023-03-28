@@ -869,7 +869,7 @@ func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingM
 
 		// this will ask users via a y/N prompt if they want to persist the
 		// project choice
-		err = dialog.AskToPersistProjectChoice(apiClient.Server, project)
+		err = dialog.AskToPersistProjectChoice(project)
 		if err != nil {
 			return cmdutils.WrapSilentError(err)
 		}

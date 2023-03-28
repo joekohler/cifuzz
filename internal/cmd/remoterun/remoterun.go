@@ -276,7 +276,7 @@ func (c *runRemoteCmd) run() error {
 
 			// this will ask users via a y/N prompt if they want to persist the
 			// project choice
-			err = dialog.AskToPersistProjectChoice(apiClient.Server, c.opts.ProjectName)
+			err = dialog.AskToPersistProjectChoice(c.opts.ProjectName)
 			if err != nil {
 				return cmdutils.WrapSilentError(err)
 			}

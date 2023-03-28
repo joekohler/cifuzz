@@ -116,19 +116,17 @@ func ReadSecretWithFeedback(message string) (string, error) {
 }
 
 // askToPersistProjectChoice asks the user if they want to persist their
-// choice of server and project. If they do, it adds the server and project
-// to the cifuzz.yaml file.
-func AskToPersistProjectChoice(server string, projectName string) error {
+// project choice. If they do, it adds the project to the cifuzz.yaml file.
+func AskToPersistProjectChoice(projectName string) error {
 	persist, err := Confirm(`Do you want to persist your choice?
-This will add a 'server' and 'project' entry to your cifuzz.yaml.
+This will add a 'project' entry to your cifuzz.yaml.
 You can change these values later by editing the file.`, false)
 	if err != nil {
 		return err
 	}
 
 	if persist {
-		text := fmt.Sprintf(`server: %s
-project: %s`, server, strings.TrimPrefix(projectName, "projects/"))
+		text := fmt.Sprintf(`project: %s`, strings.TrimPrefix(projectName, "projects/"))
 
 		f, err := os.OpenFile("cifuzz.yaml", os.O_APPEND|os.O_WRONLY, 0o644)
 		if err != nil {
