@@ -369,16 +369,12 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
 
 	if details != nil {
 		moreDetails = *details
+		f.MoreDetails = &moreDetails
 	} else {
 		log.Debugf("No error details found for finding %s", f.Name)
 
-		moreDetails.Name = f.Name
-		if f.MoreDetails != nil {
-			moreDetails.Severity = f.MoreDetails.Severity
-		}
+		f.MoreDetails = nil
 	}
-
-	f.MoreDetails = &moreDetails
 
 	return nil
 }
