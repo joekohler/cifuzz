@@ -31,9 +31,7 @@ With a free authentication you receive detailed information and solution tips
 for each finding in your console.
 	
 All your finding data stays only with us at Code Intelligence
-and will never be shared.
-	
-Do you want to continue with authentication now?`,
+and will never be shared.`,
 			additionalParams: url.Values{
 				"utm_source":   []string{"cli"},
 				"utm_campaign": []string{"login-message"},

@@ -1020,16 +1020,12 @@ removing the token from %s.`, tokenstorage.GetTokenFilePath())
 func showServerConnectionDialog(server string) (bool, error) {
 	additionalParams := messaging.ShowServerConnectionMessage(server)
 
-	wishOptions := map[string]string{
-		"Yes":  "Yes",
-		"Skip": "Skip",
-	}
-	wishToAuthenticate, err := dialog.Select("Do you want to authenticate?", wishOptions, false)
+	wishToAuthenticate, err := dialog.Confirm("Do you want to authenticate?", true)
 	if err != nil {
 		return false, err
 	}
 
-	if wishToAuthenticate == "Yes" {
+	if wishToAuthenticate {
 		apiClient := api.APIClient{Server: server}
 		_, err := login.ReadCheckAndStoreTokenInteractively(&apiClient, additionalParams)
 		if err != nil {
@@ -1037,7 +1033,7 @@ func showServerConnectionDialog(server string) (bool, error) {
 		}
 	}
 
-	return wishToAuthenticate == "Yes", nil
+	return wishToAuthenticate, nil
 }
 
 func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
