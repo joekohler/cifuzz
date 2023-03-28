@@ -19,3 +19,5 @@ coverage.out
 /cifuzz.yaml
 
 build-*.log
+
+gotest.log
