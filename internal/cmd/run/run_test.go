@@ -44,7 +44,7 @@ func TestClangMissing(t *testing.T) {
 		t.Skip("clang is not needed on windows and will be provided by Visual Studio")
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	// let the clang dep fail
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
@@ -67,7 +67,7 @@ func TestLlvmSymbolizerVersion(t *testing.T) {
 		t.Skip("llvm-symbolizer is not needed on windows")
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dep := dependencies.GetDep(dependencies.LLVMSymbolizer)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
@@ -91,7 +91,7 @@ func TestVisualStudioMissing(t *testing.T) {
 		t.Skip("only needed on windows")
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 
 	dep := dependencies.GetDep(dependencies.VisualStudio)
 	version := dependencies.OverwriteGetVersionWith0(dep)

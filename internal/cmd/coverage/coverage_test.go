@@ -38,7 +38,7 @@ func TestFail(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	// clone the example project because this command needs to parse an actual
@@ -55,7 +55,7 @@ func TestClangMissing(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	// clone the example project because this command needs to parse an actual
@@ -73,7 +73,7 @@ func TestCMakeMissing(t *testing.T) {
 }
 
 func TestLlvmCovVersion(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 
 	dep := dependencies.GetDep(dependencies.LLVMCov)
 	version := dependencies.OverwriteGetVersionWith0(dep)

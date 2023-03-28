@@ -51,7 +51,7 @@ func TestUnknownBuildSystem(t *testing.T) {
 }
 
 func TestClangMissing(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	opts := &options{}
@@ -71,7 +71,7 @@ func TestClangMissing(t *testing.T) {
 }
 
 func TestClangVersion(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 
 	dep := dependencies.GetDep(dependencies.Clang)
 	version := dependencies.OverwriteGetVersionWith0(dep)
@@ -94,7 +94,7 @@ func TestClangVersion(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	opts := &options{}

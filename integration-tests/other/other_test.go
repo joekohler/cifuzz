@@ -35,7 +35,7 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	skipOnWindows(t)
+	TestSkipOnWindows(t)
 
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
@@ -162,7 +162,7 @@ func TestIntegration_Other_DetailedCoverage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	skipOnWindows(t)
+	TestSkipOnWindows(t)
 
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
@@ -284,7 +284,8 @@ func createAndVerifyLcovCoverageReport(t *testing.T, cifuzz string, dir string, 
 	assert.Subset(t, []uint{
 		// Lines after the three crashes. Whether these are covered depends on implementation details of the coverage
 		// instrumentation, so we conservatively assume they aren't covered.
-		21, 31, 41},
+		21, 31, 41,
+	},
 		uncoveredLines)
 }
 
@@ -304,7 +305,7 @@ func buildCommand() string {
 	return "make clean && make $FUZZ_TEST"
 }
 
-func skipOnWindows(t *testing.T) {
+func TestSkipOnWindows(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Other build systems are currently not supported on Windows")
 	}

@@ -59,7 +59,7 @@ func TestClangMissing(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
@@ -78,7 +78,7 @@ func TestCMakeMissing(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
@@ -97,7 +97,7 @@ func TestWrongCMakeVersion(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dep := dependencies.GetDep(dependencies.CMake)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 

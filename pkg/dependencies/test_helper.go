@@ -23,9 +23,9 @@ func getDeps(keys []Key) Dependencies {
 	return deps
 }
 
-// MockAllDeps marks all the dependencies of this package as installed
+// TestMockAllDeps marks all the dependencies of this package as installed
 // in the right version
-func MockAllDeps(t *testing.T) {
+func TestMockAllDeps(t *testing.T) {
 	t.Helper()
 
 	// mock functions

@@ -87,7 +87,7 @@ func TestCreateCmd_OutDir(t *testing.T) {
 }
 
 func TestCMakeMissing(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
@@ -112,7 +112,7 @@ func TestCMakeMissing(t *testing.T) {
 }
 
 func TestClangVersion(t *testing.T) {
-	dependencies.MockAllDeps(t)
+	dependencies.TestMockAllDeps(t)
 	dep := dependencies.GetDep(dependencies.Clang)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
