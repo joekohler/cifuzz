@@ -19,16 +19,13 @@ const (
 	GradleMultiProjectWarningMsg = "For multi-project builds, you should setup cifuzz in the subprojects containing the fuzz tests."
 )
 
-type Options struct {
+type options struct {
 	Dir         string
 	BuildSystem string
 }
 
 func New() *cobra.Command {
-	return NewWithOptions(&Options{})
-}
-
-func NewWithOptions(opts *Options) *cobra.Command {
+	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Set up a project for use with cifuzz",
@@ -68,7 +65,7 @@ func NewWithOptions(opts *Options) *cobra.Command {
 	return cmd
 }
 
-func run(opts *Options) error {
+func run(opts *options) error {
 	setUpAndMentionBuildSystemIntegrations(opts.Dir, opts.BuildSystem)
 
 	log.Debugf("Creating config file in directory: %s", opts.Dir)
