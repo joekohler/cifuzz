@@ -13,6 +13,9 @@ precedence over the respective config file setting.
 [timeout](#timeout) <br/>
 [use-sandbox](#use-sandbox) <br/>
 [print-json](#print-json) <br/>
+[no-notifications](#no-notifications) <br/>
+[server](#server) <br/>
+[project](#project) <br/>
 
 <a id="build-system"></a>
 
@@ -20,7 +23,7 @@ precedence over the respective config file setting.
 
 The build system used to build this project. If not set, cifuzz tries
 to detect the build system automatically.
-Valid values: "cmake", "other".
+Valid values: "bazel", "cmake", "maven", "gradle", "other".
 
 #### Example
 
@@ -114,4 +117,31 @@ Set to true to print output of the `cifuzz run` command as JSON.
 #### Example
 ```yaml
 print-json: true
+```
+
+### no-notifications
+
+Set to true to disable desktop notifications
+
+#### Example
+```yaml
+no-notifications: true
+```
+
+### server
+
+Set URL of the CI App
+
+#### Example
+```yaml
+server: https://app.code-intelligence.com
+```
+
+### project
+
+Set the project name of the CI App project
+
+#### Example
+```yaml
+project: my-project-1a2b3c4d
 ```
