@@ -94,10 +94,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		}
 	}
 
-	err = finding.EnhanceWithErrorDetails(&errorDetails)
-	if err != nil {
-		return err
-	}
+	finding.EnhanceWithErrorDetails(&errorDetails)
 
 	findings := &Findings{
 		Findings: []Finding{

@@ -328,53 +328,27 @@ func LoadFinding(projectDir, findingName string, errorDetails *[]ErrorDetails) (
 		return nil, errors.WithStack(err)
 	}
 
-	err = f.EnhanceWithErrorDetails(errorDetails)
-	if err != nil {
-		return nil, err
-	}
+	f.EnhanceWithErrorDetails(errorDetails)
 
 	return &f, nil
 }
 
 // EnhanceWithErrorDetails adds more details to the finding by parsing the
 // error details file.
-func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) error {
+func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) {
 	if errorDetails == nil {
-		return nil
+		return
 	}
-
-	moreDetails := ErrorDetails{
-		ID:           "",
-		Name:         "",
-		Description:  "",
-		Severity:     &Severity{},
-		Mitigation:   "",
-		Links:        []Link{},
-		OwaspDetails: &ExternalDetail{},
-		CweDetails:   &ExternalDetail{},
-	}
-
-	// find error details for specific finding
-	// TODO: optimize matching of error details
-	var details *ErrorDetails
-
 	for _, d := range *errorDetails {
-		if strings.Contains(
-			strings.ToLower(f.ShortDescriptionColumns()[0]),
-			strings.ToLower(d.Name)) {
-			details = &d
-			break
+		if (f.MoreDetails != nil && f.MoreDetails.ID == d.ID) ||
+			strings.Contains(
+				strings.ToLower(f.ShortDescriptionColumns()[0]),
+				strings.ToLower(d.Name)) {
+
+			f.MoreDetails = &d
+			return
 		}
 	}
 
-	if details != nil {
-		moreDetails = *details
-		f.MoreDetails = &moreDetails
-	} else {
-		log.Debugf("No error details found for finding %s", f.Name)
-
-		f.MoreDetails = nil
-	}
-
-	return nil
+	log.Infof("No error details found for finding %s", f.Name)
 }
