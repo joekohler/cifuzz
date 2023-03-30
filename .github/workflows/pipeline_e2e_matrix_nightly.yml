@@ -22,8 +22,5 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
-      - name: Install cifuzz
-        run: make install
-
       - name: Run E2E tests matrix
         run: make test/e2e
