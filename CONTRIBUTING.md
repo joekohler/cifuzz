@@ -21,7 +21,7 @@ For more information, see [how to create and publish a new release](./docs/RELEA
 * Java JDK >= 8 (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
 * [Maven](https://maven.apache.org/install.html)
-* [Gradle](https://gradle.org/install/) >= 5.0 
+* [Gradle](https://gradle.org/install/) >= 6.1 
 
 
 ### Ubuntu / Debian
