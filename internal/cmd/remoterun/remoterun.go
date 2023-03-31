@@ -68,7 +68,10 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.
 }
 
 type runRemoteCmd struct {
-	opts *remoteRunOpts
+	*cobra.Command
+
+	opts      *remoteRunOpts
+	apiClient *api.APIClient
 }
 
 func New() *cobra.Command {
@@ -196,7 +199,8 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			cmd := runRemoteCmd{opts: opts}
+			cmd := runRemoteCmd{Command: c, opts: opts}
+			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
 			return cmd.run()
 		},
 	}
@@ -228,10 +232,6 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 func (c *runRemoteCmd) run() error {
 	var err error
 
-	apiClient := &api.APIClient{
-		Server: c.opts.Server,
-	}
-
 	token := login.GetToken(c.opts.Server)
 	if token == "" {
 		log.Print("You need to authenticate to a CI Fuzz Server instance to use this command.")
@@ -249,19 +249,19 @@ func (c *runRemoteCmd) run() error {
 			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
 			return cmdutils.ErrSilent
 		}
-		token, err = login.ReadCheckAndStoreTokenInteractively(apiClient, nil)
+		token, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
 		if err != nil {
 			return err
 		}
 	} else {
-		err = login.CheckValidToken(apiClient, token)
+		err = login.CheckValidToken(c.apiClient, token)
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.opts.ProjectName == "" {
-		projects, err := apiClient.ListProjects(token)
+		projects, err := c.apiClient.ListProjects(token)
 		if err != nil {
 			log.Error(err)
 			err = errors.New("Flag \"project\" must be set")
@@ -339,7 +339,7 @@ func (c *runRemoteCmd) run() error {
 		}
 	}
 
-	artifact, err := apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)
+	artifact, err := c.apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)
 	if err != nil {
 		var apiErr *api.APIError
 		if !errors.As(err, &apiErr) {
@@ -352,7 +352,7 @@ func (c *runRemoteCmd) run() error {
 		return err
 	}
 
-	campaignRunName, err := apiClient.StartRemoteFuzzingRun(artifact, token)
+	campaignRunName, err := c.apiClient.StartRemoteFuzzingRun(artifact, token)
 	if err != nil {
 		// API calls might fail due to network issues, invalid server
 		// responses or similar. We don't want to print a stack trace

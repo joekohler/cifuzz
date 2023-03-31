@@ -121,7 +121,9 @@ func (opts *runOptions) validate() error {
 
 type runCmd struct {
 	*cobra.Command
-	opts *runOptions
+
+	opts      *runOptions
+	apiClient *api.APIClient
 
 	reportHandler *reporthandler.ReportHandler
 	tempDir       string
@@ -276,7 +278,26 @@ depends on the build system configured for the project.
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			// Check if the server option is a valid URL
+			err := api.ValidateURL(opts.Server)
+			if err != nil {
+				// See if prefixing https:// makes it a valid URL
+				err = api.ValidateURL("https://" + opts.Server)
+				if err != nil {
+					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
+				}
+				opts.Server = "https://" + opts.Server
+			}
+
+			// normalize server URL
+			url, err := url.JoinPath(opts.Server)
+			if err != nil {
+				return err
+			}
+			opts.Server = url
+
 			cmd := runCmd{Command: c, opts: opts}
+			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
 			return cmd.run()
 		},
 	}
@@ -825,13 +846,12 @@ Your results will not be synced to a remote fuzzing server.`)
 }
 
 func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
-	apiClient := api.APIClient{Server: c.opts.Server}
 	token := login.GetToken(c.opts.Server)
 	if token == "" {
 		return nil, errors.New("No access token found")
 	}
 
-	errorDetails, err := apiClient.GetErrorDetails(token)
+	errorDetails, err := c.apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if !errors.As(err, &connErr) {
@@ -847,14 +867,12 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
-	// get projects from server
-	apiClient := api.APIClient{Server: c.opts.Server}
 	token := login.GetToken(c.opts.Server)
 	if token == "" {
 		return errors.New("No access token found")
 	}
 
-	projects, err := apiClient.ListProjects(token)
+	projects, err := c.apiClient.ListProjects(token)
 	if err != nil {
 		return err
 	}
@@ -894,14 +912,14 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	}
 
 	// create campaign run on server for selected project
-	campaignRunName, fuzzingRunName, err := apiClient.CreateCampaignRun(project, token, fuzzTarget, firstMetrics, lastMetrics, numBuildJobs)
+	campaignRunName, fuzzingRunName, err := c.apiClient.CreateCampaignRun(project, token, fuzzTarget, firstMetrics, lastMetrics, numBuildJobs)
 	if err != nil {
 		return err
 	}
 
 	// upload findings
 	for _, finding := range c.reportHandler.Findings {
-		err = apiClient.UploadFinding(project, fuzzTarget, campaignRunName, fuzzingRunName, finding, token)
+		err = c.apiClient.UploadFinding(project, fuzzTarget, campaignRunName, fuzzingRunName, finding, token)
 		if err != nil {
 			return err
 		}
@@ -1017,8 +1035,6 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 	}
 
 	if projectName == "<<new>>" {
-		apiClient := api.APIClient{Server: c.opts.Server}
-
 		// ask user for project name
 		projectName, err = dialog.Input("Enter the name of the project you want to create")
 		if err != nil {
@@ -1026,7 +1042,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 		}
 
 		token := tokenstorage.Get(c.opts.Server)
-		project, err := apiClient.CreateProject(projectName, token)
+		project, err := c.apiClient.CreateProject(projectName, token)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}

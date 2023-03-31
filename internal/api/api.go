@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -86,7 +87,8 @@ func WrapConnectionError(err error) error {
 }
 
 type APIClient struct {
-	Server string
+	Server    string
+	UserAgent string
 }
 
 var FeaturedProjectsOrganization = "organizations/1"
@@ -94,6 +96,13 @@ var FeaturedProjectsOrganization = "organizations/1"
 type Artifact struct {
 	DisplayName  string `json:"display-name"`
 	ResourceName string `json:"resource-name"`
+}
+
+func NewClient(server string, version string) *APIClient {
+	return &APIClient{
+		Server:    server,
+		UserAgent: "cifuzz/" + version + " " + runtime.GOOS + "-" + runtime.GOARCH,
+	}
 }
 
 func (client *APIClient) UploadBundle(path string, projectName string, token string) (*Artifact, error) {
@@ -167,6 +176,8 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
+		req.Header.Set("User-Agent", client.UserAgent)
 		req.Header.Set("Content-Type", m.FormDataContentType())
 		req.Header.Add("Authorization", "Bearer "+token)
 
@@ -264,6 +275,8 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	req.Header.Set("User-Agent", client.UserAgent)
 	req.Header.Add("Authorization", "Bearer "+token)
 
 	httpClient := &http.Client{Transport: getCustomTransport(), Timeout: timeout}

@@ -317,7 +317,7 @@ func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
 	token := login.GetToken(cmd.opts.Server)
 	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
-	apiClient := api.APIClient{Server: cmd.opts.Server}
+	apiClient := api.NewClient(cmd.opts.Server, cmd.Command.Root().Version)
 	errorDetails, err = apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError

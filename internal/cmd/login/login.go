@@ -25,6 +25,7 @@ type loginOpts struct {
 }
 
 type loginCmd struct {
+	*cobra.Command
 	opts      *loginOpts
 	apiClient *api.APIClient
 }
@@ -69,8 +70,8 @@ To learn more, visit https://www.code-intelligence.com.`,
 			}
 			opts.Server = url
 
-			apiClient := &api.APIClient{Server: opts.Server}
-			cmd := loginCmd{opts: opts, apiClient: apiClient}
+			cmd := loginCmd{Command: c, opts: opts}
+			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
 			return cmd.run()
 		},
 	}
