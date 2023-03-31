@@ -7,7 +7,7 @@ import (
 	"regexp"
 )
 
-const GradlePluginVersion = "1.0.0-RC1"
+const GradlePluginVersion = "1.0.0"
 
 func main() {
 	updateGradlePluginVersion("examples/gradle/build.gradle")
