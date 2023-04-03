@@ -24,7 +24,7 @@ var (
 	clangRegex = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
 	cmakeRegex = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
 	llvmRegex  = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
-	javaRegex  = regexp.MustCompile(`(?m)version \"(?P<version>\d+(\.\d+\.\d+)?)(_\d+)?\"`)
+	javaRegex  = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
 	bazelRegex = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 )
 
@@ -188,9 +188,9 @@ func getVersionFromCommand(cmdPath string, args []string, re *regexp.Regexp, key
 }
 
 func extractVersion(output string, re *regexp.Regexp, key Key) (*semver.Version, error) {
-	result := re.FindStringSubmatch(string(output))
+	result := re.FindStringSubmatch(output)
 	if len(result) <= 1 {
-		return nil, fmt.Errorf("No matching version string for %s", key)
+		return nil, fmt.Errorf("no matching version string for %s", key)
 	}
 
 	version, err := semver.NewVersion(result[1])
