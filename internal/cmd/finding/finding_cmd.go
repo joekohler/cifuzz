@@ -19,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -105,7 +106,7 @@ func (cmd *findingCmd) run(args []string) error {
 		return err
 	}
 	if !authenticated && cmd.opts.Interactive {
-		_, err = auth.ShowServerConnectionDialog(cmd.opts.Server)
+		_, err = auth.ShowServerConnectionDialog(cmd.opts.Server, messaging.Finding)
 		if err != nil {
 			return err
 		}

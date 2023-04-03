@@ -1,25 +1,30 @@
 package messaging
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func ShowServerConnectionMessage(server string) *url.Values {
+type MessagingContext string
 
-	messagesAndParams := []struct {
-		message          string
-		additionalParams url.Values
-	}{
+const (
+	Run     MessagingContext = "Run"
+	Finding MessagingContext = "Finding"
+)
+
+var messagesAndParams = map[MessagingContext][]struct {
+	message          string
+	additionalParams url.Values
+}{
+	Run: {
 		{
-			message: fmt.Sprintf(`Do you want to persist your findings?
-Authenticate with the CI Fuzz Server %s to get more insights.`, server),
+			message: `Do you want to persist your findings?
+Authenticate with the CI App server to get more insights.`,
 			additionalParams: url.Values{
 				"utm_source":   []string{"cli"},
-				"utm_campaign": []string{"login-message"},
+				"utm_campaign": []string{"run-message"},
 				"utm_term":     []string{"a"}},
 		},
 		{
@@ -29,15 +34,44 @@ them to keep the output clean and focused.
 
 With a free authentication you receive detailed information and solution tips
 for each finding in your console.
-	
+
 All your finding data stays only with us at Code Intelligence
 and will never be shared.`,
 			additionalParams: url.Values{
 				"utm_source":   []string{"cli"},
-				"utm_campaign": []string{"login-message"},
+				"utm_campaign": []string{"run-message"},
 				"utm_term":     []string{"b"},
 			},
 		},
+	},
+	Finding: {
+		{
+			message: `Authenticate with CI App to get more insights
+on your findings and persist them for a full history.`,
+			additionalParams: url.Values{
+				"utm_source":   []string{"cli"},
+				"utm_campaign": []string{"finding-message"},
+				"utm_term":     []string{"a"}},
+		},
+		{
+			message: `With a free authentication you receive detailed information such as severity
+and solution tips for each finding in your console.
+
+All your finding data stays only with us at Code Intelligence and will never be shared.`,
+			additionalParams: url.Values{
+				"utm_source":   []string{"cli"},
+				"utm_campaign": []string{"finding-message"},
+				"utm_term":     []string{"b"},
+			},
+		},
+	},
+}
+
+func ShowServerConnectionMessage(server string, context MessagingContext) *url.Values {
+	messageAndParam, entryPresent := messagesAndParams[context]
+
+	if !entryPresent {
+		return &url.Values{}
 	}
 
 	messageIndex, err := pickNumberForMessagingIndex(len(messagesAndParams))
@@ -45,8 +79,8 @@ and will never be shared.`,
 		messageIndex = 0
 	}
 
-	log.Notef(messagesAndParams[messageIndex].message)
-	return &messagesAndParams[messageIndex].additionalParams
+	log.Notef(messageAndParam[messageIndex].message)
+	return &messageAndParam[messageIndex].additionalParams
 }
 
 // To avoid that a user sees a different message each time

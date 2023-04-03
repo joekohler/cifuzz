@@ -41,6 +41,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -830,7 +831,7 @@ Your results will not be synced to a remote fuzzing server.`)
 
 	if interactive && !authenticated {
 		// establish server connection to check user auth
-		willSync, err = auth.ShowServerConnectionDialog(c.opts.Server)
+		willSync, err = auth.ShowServerConnectionDialog(c.opts.Server, messaging.Run)
 		if err != nil {
 			var connErr *api.ConnectionError
 			if errors.As(err, &connErr) {

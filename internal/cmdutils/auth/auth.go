@@ -18,7 +18,7 @@ import (
 )
 
 // IsAuthenticated checks if the user is authenticated with the server.
-func IsAuthenticated(server string) (bool, error) {
+func IsAuthenticated(server string, context messaging.MessagingContext) (bool, error) {
 	interactive := viper.GetBool("interactive")
 	if cicheck.IsCIEnvironment() {
 		interactive = false
@@ -57,7 +57,7 @@ func IsAuthenticated(server string) (bool, error) {
 
 	if interactive && !authenticated {
 		// establish server connection to check user auth
-		authenticated, err = ShowServerConnectionDialog(server)
+		authenticated, err = ShowServerConnectionDialog(server, context)
 		if err != nil {
 			var connErr *api.ConnectionError
 			if errors.As(err, &connErr) {
@@ -96,8 +96,8 @@ removing the token from %s.`, tokenstorage.GetTokenFilePath())
 
 // ShowServerConnectionDialog ask users if they want to use a SaaS backend
 // if they are not authenticated and returns their wish to authenticate
-func ShowServerConnectionDialog(server string) (bool, error) {
-	additionalParams := messaging.ShowServerConnectionMessage(server)
+func ShowServerConnectionDialog(server string, context messaging.MessagingContext) (bool, error) {
+	additionalParams := messaging.ShowServerConnectionMessage(server, context)
 
 	wishToAuthenticate, err := dialog.Confirm("Do you want to authenticate?", true)
 	if err != nil {
