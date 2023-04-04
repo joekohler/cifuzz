@@ -108,7 +108,7 @@ jobs:
           # tests write to stderr at the same time, which makes it hard to
           # figure out which output belongs to which test.
           command: make test/integration/sequential
-          shell: bash
+          shell: pwsh
 
       # Upload the original go test log as an artifact for later review.
       - name: Upload test log
@@ -154,7 +154,7 @@ jobs:
           # tests write to stderr at the same time, which makes it hard to
           # figure out which output belongs to which test.
           command: make test/integration/sequential
-          shell: bash
+          shell: pwsh
 
   prerelease_tests:
     name: test with CIFUZZ_PRERELEASE (ubuntu-latest)

@@ -62,6 +62,11 @@ runs:
         uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
         if: contains(inputs.os, 'windows')
 
+      - name: Install lcov - Windows
+        if: contains(inputs.os, 'windows')
+        run: choco install lcov
+        shell: pwsh
+
       - name: Update Path - MacOS/Linux
         if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
         run: |
@@ -72,5 +77,7 @@ runs:
         if: contains(inputs.os, 'windows')
         # Windows can't find cifuzz executable without this
         # https://www.scivision.dev/github-actions-path-append/
-        run: echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        run: |
+          echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "$env:ChocolateyInstall\lib\lcov\tools\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: pwsh
