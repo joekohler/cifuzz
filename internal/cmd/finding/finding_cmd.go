@@ -2,6 +2,7 @@ package finding
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"text/tabwriter"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -62,6 +64,11 @@ func newWithOptions(opts *options) *cobra.Command {
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			opts.Interactive = viper.GetBool("interactive")
+			// Command should not be interactive when stdin is not a terminal.
+			// TODO: Should this be global? Set on a Viper level for all commands?
+			if opts.Interactive {
+				opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+			}
 			opts.Server = viper.GetString("server")
 
 			var err error

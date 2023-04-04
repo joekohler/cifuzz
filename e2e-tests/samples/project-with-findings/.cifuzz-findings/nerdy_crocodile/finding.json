@@ -1,0 +1,47 @@
+{
+	"name": "nerdy_crocodile",
+	"type": "RUNTIME_ERROR",
+	"input_data": "WAD3v1gA978=",
+	"logs": [
+		"\u001b[1m/Users/gak/Work/cifuzz/examples/cmake/src/explore_me.cpp:13:11:\u001b[1m\u001b[31m runtime error: \u001b[1m\u001b[0m\u001b[1mshift exponent 32 is too large for 32-bit type 'int'\u001b[1m\u001b[0m",
+		"    #0 0x104a59230 in exploreMe(int, int, std::__1::basic_string\u003cchar, std::__1::char_traits\u003cchar\u003e, std::__1::allocator\u003cchar\u003e\u003e) /Users/gak/Work/cifuzz/examples/cmake/src/explore_me.cpp:13:11",
+		"    #1 0x104a4e324 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) /Users/gak/Work/cifuzz/examples/cmake/my_fuzz_test.cpp:18:3",
+		"    #2 0x104a4e104 in LLVMFuzzerTestOneInput /Users/gak/Work/cifuzz/examples/cmake/my_fuzz_test.cpp:8:1",
+		"    #3 0x104a70d20 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:612:13",
+		"    #4 0x104a70614 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:514:7",
+		"    #5 0x104a72480 in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::__1::vector\u003cfuzzer::SizedFile, std::__1::allocator\u003cfuzzer::SizedFile\u003e\u003e\u0026) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:827:7",
+		"    #6 0x104a726c0 in fuzzer::Fuzzer::Loop(std::__1::vector\u003cfuzzer::SizedFile, std::__1::allocator\u003cfuzzer::SizedFile\u003e\u003e\u0026) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:865:3",
+		"    #7 0x104a62018 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6",
+		"    #8 0x104a8d844 in main /tmp/llvm-20230115-15744-5hwhtr/llvm-project-15.0.7.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10",
+		"    #9 0x19a6b3e4c  (\u003cunknown module\u003e)",
+		"    #10 0x554a7ffffffffffc  (\u003cunknown module\u003e)",
+		"",
+		"SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior /Users/gak/Work/cifuzz/examples/cmake/src/explore_me.cpp:13:11 in ",
+		"MS: 0 ; base unit: 0000000000000000000000000000000000000000",
+		"0x58,0x0,0xf7,0xbf,0x58,0x0,0xf7,0xbf,",
+		"X\\000\\367\\277X\\000\\367\\277",
+		"artifact_prefix='/var/folders/jv/f19xtprx64z5qck6x134rsz40000gn/T/libfuzzer-out-2447826141/'; Test unit written to .cifuzz-findings/nerdy_crocodile/crashing-input",
+		"Base64: WAD3v1gA978=",
+		"================================================================="
+	],
+	"details": "undefined behavior: \u001b[1m\u001b[0m\u001b[1mshift exponent 32 is too large for 32-bit type 'int'\u001b[1m\u001b[0m",
+	"created_at": "2023-03-27T14:24:47.139088+02:00",
+	"input_file": ".cifuzz-findings/nerdy_crocodile/crashing-input",
+	"stack_trace": [
+		{
+			"SourceFile": "src/explore_me.cpp",
+			"Line": 13,
+			"Column": 11,
+			"FrameNumber": 0,
+			"Function": "exploreMe"
+		},
+		{
+			"SourceFile": "my_fuzz_test.cpp",
+			"Line": 18,
+			"Column": 3,
+			"FrameNumber": 1,
+			"Function": "LLVMFuzzerTestOneInputNoReturn"
+		}
+	],
+	"fuzz_test": "my_fuzz_test"
+}

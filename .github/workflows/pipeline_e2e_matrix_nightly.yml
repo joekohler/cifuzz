@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
+  push: # WIP for testing pipelines
 
 jobs:
   e2e:
@@ -24,3 +25,5 @@ jobs:
 
       - name: Run E2E tests matrix
         run: make test/e2e
+        env:
+          E2E_TEST_CIFUZZ_API_TOKEN: ${{ secrets.E2E_TEST_CIFUZZ_API_TOKEN }}

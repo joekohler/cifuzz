@@ -176,12 +176,16 @@ test/integration: deps deps/test deps/integration-tests
 
 .PHONY: test/e2e
 test/e2e: deps deps/test install
-	E2E_TESTS_MATRIX=1 go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
+test/e2e: export E2E_TESTS_MATRIX = 1
+test/e2e:
+	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
 
 # For Release E2E testing, we want to use the installed cifuzz, instead of installing from source.
 .PHONY: test/e2e-use-installed-cifuzz
 test/e2e-use-installed-cifuzz: deps/test
-	E2E_TESTS_MATRIX=1 go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
+test/e2e-use-installed-cifuzz: export E2E_TESTS_MATRIX = 1
+test/e2e-use-installed-cifuzz:
+	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
 
 .PHONY: test/race
 test/race: deps build/$(current_os)

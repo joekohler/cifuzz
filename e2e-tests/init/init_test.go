@@ -10,9 +10,9 @@ import (
 
 var initTests = &[]e2e.TestCase{
 	{
-		Description:  "init command in empty project succeeds and creates a config file",
+		Description:  "init command in empty CMake project succeeds and creates a config file",
 		Command:      "init",
-		SampleFolder: []string{"empty"},
+		SampleFolder: []string{"cmake"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
