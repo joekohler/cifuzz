@@ -148,7 +148,7 @@ func (cmd *findingCmd) run(args []string) error {
 		// showing the fuzz test name is a SaaS only feature...
 		if authenticated {
 			data = [][]string{
-				{"Severity", "Name", "Description", "FuzzTest", "Location"},
+				{"Severity", "Name", "Description", "Fuzz Test", "Location"},
 			}
 		}
 

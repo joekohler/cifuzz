@@ -329,7 +329,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 			{
 				SourceFile:  "src/parser/parser_fuzz_test.cpp",
-				Line:        30,
+				Line:        29,
 				Column:      3,
 				FrameNumber: 1,
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
@@ -364,7 +364,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 			{
 				SourceFile:  "src/parser/parser_fuzz_test.cpp",
-				Line:        30,
+				Line:        29,
 				Column:      3,
 				FrameNumber: 1,
 				Function:    "LLVMFuzzerTestOneInputNoReturn",
