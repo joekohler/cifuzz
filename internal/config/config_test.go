@@ -34,7 +34,7 @@ func TestCreateProjectConfig(t *testing.T) {
 
 	path, err := CreateProjectConfig(projectDir, "", "")
 	assert.NoError(t, err)
-	expectedPath := filepath.Join(projectDir, "cifuzz.yaml")
+	expectedPath := filepath.Join(projectDir, ProjectConfigFile)
 	assert.Equal(t, expectedPath, path)
 
 	// file created?
@@ -47,6 +47,34 @@ func TestCreateProjectConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, content)
 	assert.Contains(t, string(content), "Configuration for")
+	assert.Contains(t, string(content), "#server: https://app.code-intelligence.com")
+	assert.Contains(t, string(content), "#project: ")
+}
+
+// Should create a config file with a commented out server if the server value
+// is empty
+func TestCreateProjectConfig_WithServerAndProject(t *testing.T) {
+	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
+	require.NoError(t, err)
+	defer fileutil.Cleanup(projectDir)
+
+	path, err := CreateProjectConfig(projectDir, "https://foo.bar", "my-project")
+	assert.NoError(t, err)
+	expectedPath := filepath.Join(projectDir, ProjectConfigFile)
+	assert.Equal(t, expectedPath, path)
+
+	// file created?
+	exists, err := fileutil.Exists(expectedPath)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	// check for content
+	content, err := os.ReadFile(expectedPath)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, content)
+	assert.Contains(t, string(content), "Configuration for")
+	assert.Contains(t, string(content), "server: https://foo.bar")
+	assert.Contains(t, string(content), "project: my-project")
 }
 
 // Should return error if not allowed to write to directory
@@ -65,7 +93,7 @@ func TestCreateProjectConfig_NoPerm(t *testing.T) {
 	assert.Empty(t, path)
 
 	// file should not exists
-	exists, err := fileutil.Exists("cifuzz.yaml")
+	exists, err := fileutil.Exists(ProjectConfigFile)
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }
@@ -76,7 +104,7 @@ func TestCreateProjectConfig_Exists(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	existingPath := filepath.Join(projectDir, "cifuzz.yaml")
+	existingPath := filepath.Join(projectDir, ProjectConfigFile)
 	err = os.WriteFile(existingPath, []byte{}, 0o644)
 	require.NoError(t, err)
 
@@ -101,7 +129,7 @@ func TestParseProjectConfig(t *testing.T) {
 		BuildSystem string `mapstructure:"build-system"`
 	}{}
 
-	configFile := filepath.Join(projectDir, "cifuzz.yaml")
+	configFile := filepath.Join(projectDir, ProjectConfigFile)
 	err = os.WriteFile(configFile, []byte("build-system: "), 0o644)
 	require.NoError(t, err)
 
@@ -128,7 +156,7 @@ func TestParseProjectConfigCMake(t *testing.T) {
 		BuildSystem string `mapstructure:"build-system"`
 	}{}
 
-	configFile := filepath.Join(projectDir, "cifuzz.yaml")
+	configFile := filepath.Join(projectDir, ProjectConfigFile)
 	err = os.WriteFile(configFile, []byte("build-system: "), 0o644)
 	require.NoError(t, err)
 
@@ -245,4 +273,60 @@ func TestIsGradleMultiProject_False(t *testing.T) {
 	isGradleMultiProject, err := IsGradleMultiProject(projectDir)
 	require.NoError(t, err)
 	assert.False(t, isGradleMultiProject)
+}
+
+func TestEnsureProjectEntry(t *testing.T) {
+	testCases := []struct {
+		name     string
+		expected string
+		input    string
+	}{
+		{
+			name:     "empty",
+			expected: "\nproject: myProject\n",
+			input:    "",
+		},
+		{
+			name: "existing project",
+			expected: `## Set URL of the CI App
+#server: https://app.code-intelligence.com
+
+## Set the project name on the CI App
+project: myProject`,
+			input: `## Set URL of the CI App
+#server: https://app.code-intelligence.com
+
+## Set the project name on the CI App
+project: my-project-1a2b3c4d`,
+		},
+		{
+			name: "commented out project",
+			expected: `## Set URL of the CI App
+#server: https://app.code-intelligence.com
+
+## Set the project name on the CI App
+project: myProject`,
+			input: `## Set URL of the CI App
+#server: https://app.code-intelligence.com
+
+## Set the project name on the CI App
+#project: my-project-1a2b3c4d`,
+		},
+		{
+			name: "non empty with no project",
+			expected: `## Set URL of the CI App
+#server: https://app.code-intelligence.com
+project: myProject
+`,
+			input: `## Set URL of the CI App
+#server: https://app.code-intelligence.com`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			updatedConfigString := EnsureProjectEntry(tc.input, "myProject")
+			assert.Equal(t, tc.expected, updatedConfigString)
+		})
+	}
 }

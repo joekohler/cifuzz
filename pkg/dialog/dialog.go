@@ -1,7 +1,6 @@
 package dialog
 
 import (
-	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/term"
 
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -126,15 +126,21 @@ You can change these values later by editing the file.`, false)
 	}
 
 	if persist {
-		text := fmt.Sprintf(`project: %s`, strings.TrimPrefix(projectName, "projects/"))
+		project := strings.TrimPrefix(projectName, "projects/")
 
-		f, err := os.OpenFile("cifuzz.yaml", os.O_APPEND|os.O_WRONLY, 0o644)
+		f, err := os.OpenFile(config.ProjectConfigFile, os.O_WRONLY, 0o644)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		defer f.Close()
 
-		_, err = f.WriteString(text)
+		contents, err := os.ReadFile(config.ProjectConfigFile)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		updatedContents := config.EnsureProjectEntry(string(contents), project)
+
+		_, err = f.WriteString(updatedContents)
 		if err != nil {
 			return errors.WithStack(err)
 		}

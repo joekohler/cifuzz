@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"text/template"
@@ -275,4 +276,15 @@ func FindConfigDir() (string, error) {
 	}
 
 	return dir, nil
+}
+
+func EnsureProjectEntry(configContent string, project string) string {
+	// check if there is already a project entry (with or without a comment)
+	re := regexp.MustCompile(`(?m)^#*\s*project:.*$`)
+	// if there  is not, append it
+	if !re.MatchString(configContent) {
+		return fmt.Sprintf("%s\nproject: %s\n", configContent, project)
+	}
+	// if there is, set it
+	return re.ReplaceAllString(configContent, fmt.Sprintf(`project: %s`, project))
 }
