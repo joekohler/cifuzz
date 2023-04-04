@@ -176,10 +176,7 @@ sudo chmod +x /usr/local/bin/bazel
 ```
 
 **macOS**
-<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
-```bash
-brew install llvm lcov openjdk bazelisk zip
-```
+Bazel C/C++ projects are currently not supported on macOS.
 
 **Windows**
 Bazel C/C++ projects are currently not supported on Windows.
