@@ -1,5 +1,5 @@
 ## Configuration for a CI Fuzz project
-## Generated on 2023-02-23
+## Generated on 2023-04-04
 
 ## The build system used to build this project. If not set, cifuzz tries
 ## to detect the build system automatically.
@@ -39,8 +39,8 @@
 ## Set to true to disable desktop notifications
 #no-notifications: true
 
-## Set URL of the CI Fuzz Server
-#server: https://app.code-intelligence.com
+## Set URL of the CI App
+#server: https://app.code-intelligence.com/
 
-## Set the project name on the CI Fuzz Server
+## Set the project name on the CI App
 #project: my-project-1a2b3c4d
