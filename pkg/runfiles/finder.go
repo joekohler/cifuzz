@@ -2,6 +2,7 @@ package runfiles
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -59,7 +60,7 @@ func (f RunfilesFinderImpl) LLVMSymbolizerPath() (string, error) {
 
 func (f RunfilesFinderImpl) GenHTMLPath() (string, error) {
 	if runtime.GOOS == "windows" {
-		path := os.Getenv("path")
+		path := os.Getenv("PATH")
 		for _, dir := range filepath.SplitList(path) {
 			path := filepath.Join(dir, "genhtml")
 			exists, err := fileutil.Exists(path)
@@ -188,6 +189,32 @@ func (f RunfilesFinderImpl) findFollowSymlinks(relativePath string) (string, err
 }
 
 func (f RunfilesFinderImpl) llvmToolPath(name string) (string, error) {
+	if runtime.GOOS == "windows" {
+		visualStudioPath, err := f.VisualStudioPath()
+		if err != nil {
+			return "", errors.New("Visual Studio not found.")
+		}
+
+		path := os.Getenv("PATH")
+		for _, dir := range filepath.SplitList(path) {
+			// Only look for llvm tools in the visual studio path
+			if !strings.HasPrefix(dir, visualStudioPath) {
+				continue
+			}
+
+			path = filepath.Join(dir, name+".exe")
+			exists, err := fileutil.Exists(path)
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+			if exists {
+				return path, nil
+			}
+		}
+
+		return "", errors.New(fmt.Sprintf("%s not found in %%PATH%%", name))
+	}
+
 	var err error
 	var path string
 	env := os.Environ()
