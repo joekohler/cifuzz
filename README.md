@@ -141,6 +141,8 @@ You can add these components anytime by choosing "Modify" in the Visual Studio I
 choco install lcov
 ```
 
+You may have to add %ChocolateyInstall%\lib\lcov\tools\bin to your PATH variable.
+
 </details>
 
 <details>
@@ -269,6 +271,7 @@ Run `cifuzz` in `Developer PowerShell for VS 2022` inside of `Windows Terminal`.
 **Windows**
 
 * C/C++ projects are only supported with CMake and fuzz tests cannot depend on shared libraries.
+* Continuous code coverage is not supported for C/C++ projects.
 
 ## Troubleshooting
 
