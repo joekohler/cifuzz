@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -208,7 +209,13 @@ func (c *createCmd) checkDependencies() {
 	case config.BuildSystemBazel:
 		deps = []dependencies.Key{dependencies.Bazel}
 	case config.BuildSystemCMake:
-		deps = []dependencies.Key{dependencies.Clang, dependencies.CMake}
+		deps = []dependencies.Key{dependencies.CMake}
+		switch runtime.GOOS {
+		case "linux", "darwin":
+			deps = append(deps, dependencies.Clang)
+		case "windows":
+			deps = append(deps, dependencies.VisualStudio)
+		}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.Clang}
 	}

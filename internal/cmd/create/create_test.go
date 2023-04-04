@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -112,6 +113,9 @@ func TestCMakeMissing(t *testing.T) {
 }
 
 func TestClangVersion(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
 	dependencies.TestMockAllDeps(t)
 	dep := dependencies.GetDep(dependencies.Clang)
 	version := dependencies.OverwriteGetVersionWith0(dep)
@@ -136,4 +140,34 @@ func TestClangVersion(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(output),
 		fmt.Sprintf(dependencies.MessageVersion, "clang", dep.MinVersion.String(), version))
+}
+
+func TestVisualStudioVersion(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip()
+	}
+	dependencies.TestMockAllDeps(t)
+	dep := dependencies.GetDep(dependencies.VisualStudio)
+	version := dependencies.OverwriteGetVersionWith0(dep)
+
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
+	defer cleanup()
+	args := []string{
+		"cpp",
+		"--output",
+		filepath.Join(testDir, "fuzz-test.cpp"),
+	}
+
+	opts := &createOpts{
+		BuildSystem: config.BuildSystemCMake,
+	}
+
+	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
+	// should not fail as this command has no hard dependencies, just recommendations
+	require.NoError(t, err)
+
+	output, err := io.ReadAll(testOut)
+	require.NoError(t, err)
+	assert.Contains(t, string(output),
+		fmt.Sprintf(dependencies.MessageVersion, "Visual Studio", dep.MinVersion.String(), version))
 }

@@ -1,6 +1,8 @@
 package reload
 
 import (
+	"runtime"
+
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/build/cmake"
@@ -103,7 +105,13 @@ func (c *reloadCmd) reloadCMake() error {
 func (c *reloadCmd) checkDependencies() error {
 	deps := []dependencies.Key{}
 	if c.opts.BuildSystem == config.BuildSystemCMake {
-		deps = append(deps, []dependencies.Key{dependencies.Clang, dependencies.CMake}...)
+		deps = []dependencies.Key{dependencies.CMake}
+		switch runtime.GOOS {
+		case "linux", "darwin":
+			deps = append(deps, dependencies.Clang)
+		case "windows":
+			deps = append(deps, dependencies.VisualStudio)
+		}
 	}
 	err := dependencies.Check(deps)
 	if err != nil {
