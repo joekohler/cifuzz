@@ -303,7 +303,7 @@ func (client *APIClient) IsTokenValid(token string) (bool, error) {
 	return true, nil
 }
 
-func ValidateURL(s string) error {
+func validateURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil {
 		return errors.WithStack(err)
@@ -312,6 +312,26 @@ func ValidateURL(s string) error {
 		return errors.Errorf("unsupported protocol scheme %q", u.Scheme)
 	}
 	return nil
+}
+
+func ValidateAndNormalizeServerURL(server string) (string, error) {
+	// Check if the server option is a valid URL
+	err := validateURL(server)
+	if err != nil {
+		// See if prefixing https:// makes it a valid URL
+		err = validateURL("https://" + server)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("server %q is not a valid URL", server))
+		}
+		server = "https://" + server
+	}
+
+	// normalize server URL
+	url, err := url.JoinPath(server)
+	if err != nil {
+		return "", err
+	}
+	return url, nil
 }
 
 func getCustomTransport() *http.Transport {

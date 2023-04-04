@@ -1,9 +1,7 @@
 package login
 
 import (
-	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"strings"
 
@@ -52,23 +50,11 @@ To learn more, visit https://www.code-intelligence.com.`,
 				Server:      viper.GetString("server"),
 			}
 
-			// Check if the server option is a valid URL
-			err := api.ValidateURL(opts.Server)
-			if err != nil {
-				// See if prefixing https:// makes it a valid URL
-				err = api.ValidateURL("https://" + opts.Server)
-				if err != nil {
-					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
-				}
-				opts.Server = "https://" + opts.Server
-			}
-
-			// normalize server URL
-			url, err := url.JoinPath(opts.Server)
+			var err error
+			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
 			if err != nil {
 				return err
 			}
-			opts.Server = url
 
 			cmd := loginCmd{Command: c, opts: opts}
 			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)

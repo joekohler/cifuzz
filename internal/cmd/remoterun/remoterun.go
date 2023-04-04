@@ -163,23 +163,10 @@ https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
 			}
 			opts.Stderr = cmd.ErrOrStderr()
 
-			// Check if the server option is a valid URL
-			err = api.ValidateURL(opts.Server)
+			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
 			if err != nil {
-				// See if prefixing https:// makes it a valid URL
-				err = api.ValidateURL("https://" + opts.Server)
-				if err != nil {
-					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
-				}
-				opts.Server = "https://" + opts.Server
+				return cmdutils.WrapSilentError(err)
 			}
-
-			// normalize server URL
-			url, err := url.JoinPath(opts.Server)
-			if err != nil {
-				return err
-			}
-			opts.Server = url
 
 			// Print warning that flags which only effect the build of
 			// the bundle are ignored when an existing bundle is specified

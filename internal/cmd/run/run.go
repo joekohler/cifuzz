@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -290,23 +289,12 @@ depends on the build system configured for the project.
 			return opts.validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			// Check if the server option is a valid URL
-			err := api.ValidateURL(opts.Server)
+			var err error
+			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
 			if err != nil {
-				// See if prefixing https:// makes it a valid URL
-				err = api.ValidateURL("https://" + opts.Server)
-				if err != nil {
-					log.Error(err, fmt.Sprintf("server %q is not a valid URL", opts.Server))
-				}
-				opts.Server = "https://" + opts.Server
+				log.Errorf(err, "Failed to validate server URL: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
 			}
-
-			// normalize server URL
-			url, err := url.JoinPath(opts.Server)
-			if err != nil {
-				return err
-			}
-			opts.Server = url
 
 			cmd := runCmd{Command: c, opts: opts}
 			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
@@ -791,23 +779,11 @@ func (c *runCmd) setupSync() (bool, error) {
 	}
 	var willSync bool
 
-	// Check if the server option is a valid URL
-	err := api.ValidateURL(c.opts.Server)
-	if err != nil {
-		// See if prefixing https:// makes it a valid URL
-		err = api.ValidateURL("https://" + c.opts.Server)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("server %q is not a valid URL", c.opts.Server))
-		}
-		c.opts.Server = "https://" + c.opts.Server
-	}
-
-	// normalize server URL
-	url, err := url.JoinPath(c.opts.Server)
+	var err error
+	c.opts.Server, err = api.ValidateAndNormalizeServerURL(c.opts.Server)
 	if err != nil {
 		return false, cmdutils.WrapSilentError(err)
 	}
-	c.opts.Server = url
 
 	authenticated, err := auth.GetAuthStatus(c.opts.Server)
 	if err != nil {

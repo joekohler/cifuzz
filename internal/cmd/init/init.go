@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
@@ -66,6 +67,12 @@ func New() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Project = viper.GetString("project")
 			opts.Server = viper.GetString("server")
+
+			var err error
+			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
+			if err != nil {
+				return err
+			}
 			return run(opts)
 		},
 	}

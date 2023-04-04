@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"net/url"
 
 	"github.com/spf13/viper"
 
@@ -24,23 +23,10 @@ func IsAuthenticated(server string, context messaging.MessagingContext) (bool, e
 		interactive = false
 	}
 
-	// Check if the server option is a valid URL
-	err := api.ValidateURL(server)
-	if err != nil {
-		// See if prefixing https:// makes it a valid URL
-		err = api.ValidateURL("https://" + server)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("server %q is not a valid URL", server))
-		}
-		server = "https://" + server
-	}
-
-	// normalize server URL
-	url, err := url.JoinPath(server)
+	server, err := api.ValidateAndNormalizeServerURL(server)
 	if err != nil {
 		return false, cmdutils.WrapSilentError(err)
 	}
-	server = url
 
 	authenticated, err := GetAuthStatus(server)
 	if err != nil {
