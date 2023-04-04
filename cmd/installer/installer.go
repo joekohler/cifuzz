@@ -247,7 +247,7 @@ func installCIFuzz(installDir string) error {
 		}
 	}
 
-	log.Note("Head over to https://app.code-intelligence.com or https://docs.code-intelligence.com\nand start fuzzing now!")
+	log.Note("Head over to https://app.code-intelligence.com or https://docs.code-intelligence.com and start fuzzing now!")
 
 	return nil
 }
