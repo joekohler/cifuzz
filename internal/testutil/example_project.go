@@ -41,7 +41,7 @@ func BootstrapEmptyProject(t *testing.T, prefix string) string {
 	require.NoError(t, err)
 
 	// Create an empty config file
-	_, err = config.CreateProjectConfig(projectDir)
+	_, err = config.CreateProjectConfig(projectDir, "", "")
 	require.NoError(t, err)
 
 	return projectDir

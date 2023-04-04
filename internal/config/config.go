@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"text/template"
 	"time"
 
@@ -55,16 +56,16 @@ var supportedBuildSystems = map[string][]string{
 	},
 }
 
-const projectConfigFile = "cifuzz.yaml"
+const ProjectConfigFile = "cifuzz.yaml"
 
 //go:embed cifuzz.yaml.tmpl
 var projectConfigTemplate string
 
 // CreateProjectConfig creates a new project config in the given directory
-func CreateProjectConfig(configDir string) (string, error) {
+func CreateProjectConfig(configDir string, server string, project string) (string, error) {
 	// try to open the target file, returns error if already exists
-	configpath := filepath.Join(configDir, projectConfigFile)
-	f, err := os.OpenFile(configpath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
+	configpath := filepath.Join(configDir, ProjectConfigFile)
+	f, err := os.OpenFile(configpath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {
 			return configpath, errors.WithStack(err)
@@ -72,9 +73,21 @@ func CreateProjectConfig(configDir string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 
+	// if the user is using the default server,
+	// we don't want to save it in the config file
+	if strings.Contains(server, "app.code-intelligence.com") {
+		server = ""
+	}
+
 	// setup config struct with (default) values
-	config := struct{ LastUpdated string }{
+	config := struct {
+		LastUpdated string
+		Server      string
+		Project     string
+	}{
 		time.Now().Format("2006-01-02"),
+		server,
+		project,
 	}
 
 	// parse the template and write it to config file
@@ -115,7 +128,7 @@ func FindAndParseProjectConfig(opts interface{}) error {
 }
 
 func ParseProjectConfig(configDir string, opts interface{}) error {
-	configpath := filepath.Join(configDir, projectConfigFile)
+	configpath := filepath.Join(configDir, ProjectConfigFile)
 	viper.SetConfigFile(configpath)
 
 	// Set defaults
@@ -245,17 +258,17 @@ func FindConfigDir() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	configFileExists, err := fileutil.Exists(filepath.Join(dir, projectConfigFile))
+	configFileExists, err := fileutil.Exists(filepath.Join(dir, ProjectConfigFile))
 	if err != nil {
 		return "", err
 	}
 	for !configFileExists {
 		if dir == filepath.Dir(dir) {
-			err = fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", projectConfigFile, os.ErrNotExist)
+			err = fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", ProjectConfigFile, os.ErrNotExist)
 			return "", err
 		}
 		dir = filepath.Dir(dir)
-		configFileExists, err = fileutil.Exists(filepath.Join(dir, projectConfigFile))
+		configFileExists, err = fileutil.Exists(filepath.Join(dir, ProjectConfigFile))
 		if err != nil {
 			return "", err
 		}

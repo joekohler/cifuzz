@@ -32,7 +32,7 @@ func TestCreateProjectConfig(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	path, err := CreateProjectConfig(projectDir)
+	path, err := CreateProjectConfig(projectDir, "", "")
 	assert.NoError(t, err)
 	expectedPath := filepath.Join(projectDir, "cifuzz.yaml")
 	assert.Equal(t, expectedPath, path)
@@ -47,7 +47,6 @@ func TestCreateProjectConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, content)
 	assert.Contains(t, string(content), "Configuration for")
-
 }
 
 // Should return error if not allowed to write to directory
@@ -57,10 +56,10 @@ func TestCreateProjectConfig_NoPerm(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	err = acl.Chmod(projectDir, 0555)
+	err = acl.Chmod(projectDir, 0o555)
 	require.NoError(t, err)
 
-	path, err := CreateProjectConfig(projectDir)
+	path, err := CreateProjectConfig(projectDir, "", "")
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, os.ErrPermission)
 	assert.Empty(t, path)
@@ -78,10 +77,10 @@ func TestCreateProjectConfig_Exists(t *testing.T) {
 	defer fileutil.Cleanup(projectDir)
 
 	existingPath := filepath.Join(projectDir, "cifuzz.yaml")
-	err = os.WriteFile(existingPath, []byte{}, 0644)
+	err = os.WriteFile(existingPath, []byte{}, 0o644)
 	require.NoError(t, err)
 
-	path, err := CreateProjectConfig(filepath.Dir(existingPath))
+	path, err := CreateProjectConfig(filepath.Dir(existingPath), "", "")
 	assert.Error(t, err)
 	// check if path of the existing config is return and the error indicates it too
 	assert.ErrorIs(t, err, os.ErrExist)
@@ -103,7 +102,7 @@ func TestParseProjectConfig(t *testing.T) {
 	}{}
 
 	configFile := filepath.Join(projectDir, "cifuzz.yaml")
-	err = os.WriteFile(configFile, []byte("build-system: "), 0644)
+	err = os.WriteFile(configFile, []byte("build-system: "), 0o644)
 	require.NoError(t, err)
 
 	err = ParseProjectConfig(projectDir, opts)
@@ -111,7 +110,7 @@ func TestParseProjectConfig(t *testing.T) {
 	require.Equal(t, BuildSystemOther, opts.BuildSystem)
 
 	// Set the build system to cmake
-	err = os.WriteFile(configFile, []byte("build-system: cmake"), 0644)
+	err = os.WriteFile(configFile, []byte("build-system: cmake"), 0o644)
 	require.NoError(t, err)
 
 	// Check that ParseProjectConfig now sets the build system to cmake
@@ -130,12 +129,12 @@ func TestParseProjectConfigCMake(t *testing.T) {
 	}{}
 
 	configFile := filepath.Join(projectDir, "cifuzz.yaml")
-	err = os.WriteFile(configFile, []byte("build-system: "), 0644)
+	err = os.WriteFile(configFile, []byte("build-system: "), 0o644)
 	require.NoError(t, err)
 
 	// Create a CMakeLists.txt in the project dir, which should cause
 	// the build system to be detected as CMake
-	err = os.WriteFile(filepath.Join(projectDir, "CMakeLists.txt"), []byte{}, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "CMakeLists.txt"), []byte{}, 0o644)
 	require.NoError(t, err)
 
 	err = ParseProjectConfig(projectDir, opts)
@@ -149,7 +148,7 @@ func TestDetermineBuildSystem_CMake(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	err = os.WriteFile(filepath.Join(projectDir, "CMakeLists.txt"), []byte{}, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "CMakeLists.txt"), []byte{}, 0o644)
 	require.NoError(t, err, "Failed to create CMakeLists.txt")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
@@ -161,7 +160,7 @@ func TestDetermineBuildSystem_Maven(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	err = os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte{}, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte{}, 0o644)
 	require.NoError(t, err, "Failed to create pom.xml")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
@@ -173,7 +172,7 @@ func TestDetermineBuildSystem_GradleGroovy(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	err = os.WriteFile(filepath.Join(projectDir, "build.gradle"), []byte{}, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "build.gradle"), []byte{}, 0o644)
 	require.NoError(t, err, "Failed to create build.gradle")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)
@@ -185,7 +184,7 @@ func TestDetermineBuildSystem_GradleKotlin(t *testing.T) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(projectDir)
 
-	err = os.WriteFile(filepath.Join(projectDir, "build.gradle.kts"), []byte{}, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "build.gradle.kts"), []byte{}, 0o644)
 	require.NoError(t, err, "Failed to create build.gradle.kts")
 	buildSystem, err := DetermineBuildSystem(projectDir)
 	require.NoError(t, err)

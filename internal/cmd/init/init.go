@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -22,9 +23,12 @@ const (
 type options struct {
 	Dir         string
 	BuildSystem string
+	Server      string `mapstructure:"server"`
+	Project     string `mapstructure:"project"`
 }
 
 func New() *cobra.Command {
+	var bindFlags func()
 	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -33,6 +37,10 @@ func New() *cobra.Command {
 'cifuzz.yaml' config file.`,
 		Args: cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			bindFlags()
 			var err error
 			if opts.Dir == "" {
 				opts.Dir, err = os.Getwd()
@@ -56,11 +64,21 @@ func New() *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Project = viper.GetString("project")
+			opts.Server = viper.GetString("server")
 			return run(opts)
 		},
 	}
 
 	cmdutils.DisableConfigCheck(cmd)
+
+	// Note: If a flag should be configurable via viper as well (i.e.
+	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
+	//       it to viper in the PreRun function.
+	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddProjectFlag,
+		cmdutils.AddServerFlag,
+	)
 
 	return cmd
 }
@@ -69,7 +87,8 @@ func run(opts *options) error {
 	setUpAndMentionBuildSystemIntegrations(opts.Dir, opts.BuildSystem)
 
 	log.Debugf("Creating config file in directory: %s", opts.Dir)
-	configpath, err := config.CreateProjectConfig(opts.Dir)
+
+	configpath, err := config.CreateProjectConfig(opts.Dir, opts.Server, opts.Project)
 	if err != nil {
 		// explicitly inform the user about an existing config file
 		if errors.Is(err, os.ErrExist) && configpath != "" {
