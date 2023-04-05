@@ -31,18 +31,23 @@ runs:
       shell: bash
 
     # change paths as soon as the new install path is released
-    - name: CMake Example (run + bundle)
+    - name: CMake Example (run)
+      run: |
+        cd examples/cmake
+        cifuzz run --interactive=false --use-sandbox=false my_fuzz_test
+        cifuzz findings --json | jq -r '.[].name' >> findings.old
+      shell: bash
+
+    # by now creating a bundle is not supported on windows
+    - name: CMake Example (bundle)
+      if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
         export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
-        cifuzz run --interactive=false --use-sandbox=false my_fuzz_test
-        cifuzz findings --json | jq -r '.[].name' >> findings.old
         cifuzz bundle my_fuzz_test
       shell: bash
 
-    # by now coverage runs are not supported on windows
     - name: Run CMake Example (coverage)
-      if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
         cifuzz coverage my_fuzz_test
@@ -66,18 +71,23 @@ runs:
         ./$INSTALLER
       shell: bash
 
-    - name: Run CMake Example again (run + bundle)
+    - name: Run CMake Example again (run)
+      run: |
+        cd examples/cmake
+        cifuzz run --interactive=false --use-sandbox=false my_fuzz_test
+        cifuzz findings --interactive=false --json | jq -r '.[].name' >> findings.new
+      shell: bash
+
+    # by now creating a bundle is not supported on windows
+    - name: CMake Example (bundle)
+      if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
         export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
-        cifuzz run --interactive=false --use-sandbox=false my_fuzz_test
-        cifuzz findings --interactive=false --json | jq -r '.[].name' >> findings.new
         cifuzz bundle my_fuzz_test
       shell: bash
 
-    # by now coverage runs are not supported on windows
     - name: Run CMake Example again (coverage)
-      if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
         cifuzz coverage my_fuzz_test
