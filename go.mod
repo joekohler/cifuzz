@@ -21,7 +21,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/u-root/u-root v0.11.1-0.20230225005747-5b46c23c3414
-	golang.org/x/net v0.8.0
+	golang.org/x/net v0.9.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/term v0.7.0
 )
@@ -67,7 +67,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	golang.org/x/exp v0.0.0-20230306221820-f0f767cdffd6
 	golang.org/x/sys v0.7.0
-	golang.org/x/text v0.8.0
+	golang.org/x/text v0.9.0
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
