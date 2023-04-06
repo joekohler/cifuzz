@@ -27,7 +27,7 @@ runs:
       shell: bash
 
     - name: Run Bazel Example
-      if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu') || contains(inputs.os, 'arch')
+      if: contains(inputs.os, 'ubuntu') || contains(inputs.os, 'arch')
       run: |
         cd examples/bazel
         cifuzz run -v src:explore_me_fuzz_test 2>&1 | tee fuzzing.log
