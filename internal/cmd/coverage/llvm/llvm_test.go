@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestLLVM(t *testing.T) {
+func TestIntegration_LLVM(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
