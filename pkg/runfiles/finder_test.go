@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestLlvmToolPath(t *testing.T) {
+func TestIntegration_LLVMToolPath(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
