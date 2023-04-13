@@ -13,9 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/integration-tests/shared"
 	"code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/mocks"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestMain(m *testing.M) {
@@ -28,6 +30,14 @@ func TestIntegration_LLVM(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	// Install cifuzz
+	testutil.RegisterTestDepOnCIFuzz()
+	installDir := shared.InstallCIFuzzInTemp(t)
+	t.Cleanup(func() { fileutil.Cleanup(installDir) })
+	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
+	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
+	require.NoError(t, err)
 
 	testCases := map[string]struct {
 		format string
@@ -68,10 +78,9 @@ func TestIntegration_LLVM(t *testing.T) {
 			var bOut bytes.Buffer
 			outBuf := io.Writer(&bOut)
 
-			testLLVM := &CoverageGenerator{
+			generator := &CoverageGenerator{
 				OutputFormat:   tc.format,
-				BuildSystem:    "other",
-				BuildCommand:   "make clean && make $FUZZ_TEST",
+				BuildSystem:    "cmake",
 				UseSandbox:     false,
 				FuzzTest:       "my_fuzz_test",
 				ProjectDir:     tmpDir,
@@ -80,9 +89,9 @@ func TestIntegration_LLVM(t *testing.T) {
 				runfilesFinder: finderMock,
 			}
 
-			err = testLLVM.BuildFuzzTestForCoverage()
+			err = generator.BuildFuzzTestForCoverage()
 			require.NoError(t, err)
-			reportPath, err := testLLVM.GenerateCoverageReport()
+			reportPath, err := generator.GenerateCoverageReport()
 			require.NoError(t, err)
 
 			if tc.format == "lcov" {
@@ -92,8 +101,6 @@ func TestIntegration_LLVM(t *testing.T) {
 				assert.DirExists(t, reportPath)
 				assert.FileExists(t, filepath.Join(reportPath, "index.html"))
 			}
-			assert.Contains(t, bOut.String(), "src/explore_me.cpp")
-			assert.Contains(t, bOut.String(), "my_fuzz_test.cpp")
 		})
 	}
 }
