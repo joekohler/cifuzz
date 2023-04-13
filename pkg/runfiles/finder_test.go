@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,31 +33,42 @@ func TestIntegration_LLVMToolPath(t *testing.T) {
 
 	finder := RunfilesFinderImpl{}
 
-	// Check that llvm-cov is found in CC
-	t.Setenv("CC", filepath.Join(tempDirCC, "clang"))
-	t.Setenv("CXX", filepath.Join(tempDirCC, "clang++"))
-	t.Setenv("PATH", tempDirPath)
-	path, err := finder.llvmToolPath("llvm-cov")
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(tempDirCC, "llvm-cov"), path)
+	if runtime.GOOS == "windows" {
+		// On Windows the finder looks for llvm tools in all folders in
+		// the path, which contain the Visual Studio directory as a prefix
+		visualStudioPath, err := finder.VisualStudioPath()
+		require.NoError(t, err)
 
-	// Check that llvm-cov is found in CXX if CC is not set
-	t.Setenv("CC", "")
-	path, err = finder.llvmToolPath("llvm-cov")
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(tempDirCC, "llvm-cov"), path)
+		path, err := finder.llvmToolPath("llvm-cov")
+		require.NoError(t, err)
+		assert.True(t, strings.HasPrefix(path, visualStudioPath))
+	} else {
+		// Check that llvm-cov is found in CC
+		t.Setenv("CC", filepath.Join(tempDirCC, "clang"))
+		t.Setenv("CXX", filepath.Join(tempDirCC, "clang++"))
+		t.Setenv("PATH", tempDirPath)
+		path, err := finder.llvmToolPath("llvm-cov")
+		require.NoError(t, err)
+		assert.Equal(t, filepath.Join(tempDirCC, "llvm-cov"), path)
 
-	// Check that llvm-cov is found in PATH if CC and CXX are not set
-	t.Setenv("CXX", "")
-	path, err = finder.llvmToolPath("llvm-cov")
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(tempDirPath, "llvm-cov"), path)
+		// Check that llvm-cov is found in CXX if CC is not set
+		t.Setenv("CC", "")
+		path, err = finder.llvmToolPath("llvm-cov")
+		require.NoError(t, err)
+		assert.Equal(t, filepath.Join(tempDirCC, "llvm-cov"), path)
 
-	// Check that llvm-cov is not found if CC, CXX and PATH are not set
-	t.Setenv("PATH", "")
-	path, err = finder.llvmToolPath("llvm-cov")
-	require.Error(t, err)
-	assert.Equal(t, "", path)
+		// Check that llvm-cov is found in PATH if CC and CXX are not set
+		t.Setenv("CXX", "")
+		path, err = finder.llvmToolPath("llvm-cov")
+		require.NoError(t, err)
+		assert.Equal(t, filepath.Join(tempDirPath, "llvm-cov"), path)
+
+		// Check that llvm-cov is not found if CC, CXX and PATH are not set
+		t.Setenv("PATH", "")
+		path, err = finder.llvmToolPath("llvm-cov")
+		require.Error(t, err)
+		assert.Equal(t, "", path)
+	}
 }
 
 func createDummyToolsInTempDir(dirName string) string {
