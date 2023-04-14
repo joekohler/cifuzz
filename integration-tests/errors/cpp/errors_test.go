@@ -61,6 +61,7 @@ func TestIntegration_CPPErrors(t *testing.T) {
 		},
 		{id: "out_of_memory"},
 		{id: "segmentation_fault"},
+		{id: "shift_exponent"},
 		{
 			id:   "slow_input",
 			args: []string{"--engine-arg=-report_slow_units=1", "--engine-arg=-timeout=3s", "--timeout=3s"},

@@ -1,0 +1,3 @@
+add_library(shift_exponent shift_exponent.cpp)
+add_fuzz_test(shift_exponent_fuzztest shift_exponent_fuzztest.cpp)
+target_link_libraries(shift_exponent_fuzztest PRIVATE shift_exponent)

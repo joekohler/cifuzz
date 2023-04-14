@@ -1,0 +1,16 @@
+runtime error: shift exponent 32 is too large for 32-bit type 'int'
+      #0 0x1022a8a74 in shift_exponent(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>) testdata/shift_exponent/shift_exponent.cpp:7:11
+      #1 0x1022a8f24 in LLVMFuzzerTestOneInputNoReturn(unsigned char const*, unsigned long) testdata/shift_exponent/shift_exponent_fuzztest.cpp:12:5
+      #2 0x1022a8d18 in LLVMFuzzerTestOneInput testdata/shift_exponent/shift_exponent_fuzztest.cpp:9:1
+      #3 0x1022cbcf4 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:617:13
+      #4 0x1022cb5e8 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:519:7
+      #5 0x1022cccc0 in fuzzer::Fuzzer::MutateAndTestOne() /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:763:19
+      #6 0x1022cdb04 in fuzzer::Fuzzer::Loop(std::__1::vector<fuzzer::SizedFile, std::__1::allocator<fuzzer::SizedFile>>&) /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:908:5
+      #7 0x1022bceac in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:912:6
+      #8 0x1022e9cd4 in main /tmp/llvm-20230405-7379-n4kq2z/llvm-project-16.0.1.src/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+      #9 0x18d6bbf24  (<unknown module>)
+      #10 0x834bfffffffffffc  (<unknown module>)
+
+  SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior testdata/shift_exponent/shift_exponent.cpp:7:11 in
+  MS: 5 ShuffleBytes-ChangeByte-PersAutoDict-ChangeBinInt-CMP- DE: "\001\000\000\177"-"FUZZING"-; base unit: b0a7c9ca2d08fee55ff3a2643404db9eb3e757b0
+
