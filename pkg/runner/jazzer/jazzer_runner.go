@@ -108,9 +108,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		args = append(args, options.LibFuzzerRSSLimitFlag("3000"))
 	}
 
-	// Tell libfuzzer which corpus directory it should use
-	args = append(args, r.GeneratedCorpusDir)
-
 	// Add any additional corpus directories as further positional arguments
 	args = append(args, r.SeedCorpusDirs...)
 
