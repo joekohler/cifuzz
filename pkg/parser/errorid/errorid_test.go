@@ -9,7 +9,6 @@ import (
 )
 
 func TestForFinding(t *testing.T) {
-
 	testCases := []struct {
 		id string
 		f  *finding.Finding
@@ -25,6 +24,7 @@ func TestForFinding(t *testing.T) {
 		{id: "out_of_memory", f: &finding.Finding{Details: "out-of-memory"}},
 		{id: "remote_code_execution", f: &finding.Finding{Details: "Security Issue: Remote Code Execution"}},
 		{id: "segmentation_fault", f: &finding.Finding{Details: "SEGV on unknown address"}},
+		{id: "shift_exponent", f: &finding.Finding{Details: "undefined behavior: shift exponent 32 is too large for 32-bit type 'int'"}},
 		{id: "signed_integer_overflow", f: &finding.Finding{Details: "undefined behavior: signed integer overflow"}},
 		{id: "slow_input", f: &finding.Finding{Details: "Slow input detected. Processing time: 10s"}},
 		{id: "stack_buffer_overflow", f: &finding.Finding{Details: "stack-buffer-overflow on address"}},

@@ -51,6 +51,10 @@ var matchers = []matcher{
 	{id: "stack_buffer_overflow", substrings: []string{"stack-buffer-overflow on address"}},
 	{id: "stack_exhaustion", substrings: []string{"stack-overflow on address"}},
 	{id: "timeout", regexs: []*regexp.Regexp{regexp.MustCompile(`timeout after \d+ \w+`)}},
+	{
+		id:     "shift_exponent",
+		regexs: []*regexp.Regexp{regexp.MustCompile(`undefined behaviou?r: shift exponent.+`)},
+	},
 	{id: "use_after_return", substrings: []string{"stack-use-after-return on address"}},
 	{id: "use_after_scope", substrings: []string{"stack-use-after-scope on address"}},
 	{id: "use_of_uninitialized_value", substrings: []string{"use-of-uninitialized-value"}},
