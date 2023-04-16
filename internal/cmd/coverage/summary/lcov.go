@@ -43,7 +43,7 @@ func ParseLcov(in io.Reader) *CoverageSummary {
 	// with `man geninfo`
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
-		parts := strings.Split(scanner.Text(), ":")
+		parts := strings.SplitN(scanner.Text(), ":", 2)
 		key := parts[0]
 
 		switch key {

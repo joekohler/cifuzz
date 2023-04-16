@@ -107,6 +107,22 @@ end_of_record
 	assert.Equal(t, 0, summary.Files[0].Coverage.FunctionsHit)
 }
 
+func TestParseLcov_DifferentFilePaths(t *testing.T) {
+	testCases := []struct {
+		report           string
+		expectedFilename string
+	}{
+		{report: "SF:foo.cpp", expectedFilename: "foo.cpp"},
+		{report: "SF:/path/to/foo.cpp", expectedFilename: "/path/to/foo.cpp"},
+		{report: "SF:C:\\path\\to\\foo.cpp", expectedFilename: "C:\\path\\to\\foo.cpp"},
+	}
+
+	for _, testCase := range testCases {
+		summary := ParseLcov(strings.NewReader(testCase.report))
+		assert.Equal(t, testCase.expectedFilename, summary.Files[0].Filename)
+	}
+}
+
 func TestParseLcov_Empty(t *testing.T) {
 	report := ""
 	summary := ParseLcov(strings.NewReader(report))
