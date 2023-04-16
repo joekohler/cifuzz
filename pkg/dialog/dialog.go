@@ -6,11 +6,9 @@ import (
 	"strings"
 
 	"atomicgo.dev/keyboard/keys"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"golang.org/x/exp/maps"
-	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -89,26 +87,10 @@ func Input(message string) (string, error) {
 	return result, nil
 }
 
-// ReadSecret reads a secret from the user without printing * characters.
-func ReadSecret(message string, file *os.File) (string, error) {
-	log.Info(message)
-	// TODO: print * characters instead of the actual secret
-	secret, err := term.ReadPassword(int(file.Fd()))
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return string(secret), nil
-}
-
-// ReadSecretWithFeedback reads a secret from the user and prints * characters
-// instead of the actual secret.
-func ReadSecretWithFeedback(message string) (string, error) {
-	secret := ""
-	prompt := &survey.Password{
-		Message: message,
-	}
-	err := survey.AskOne(prompt, &secret, nil)
+// ReadSecret reads a secret from the user and prints * characters instead of
+// the actual secret.
+func ReadSecret(message string) (string, error) {
+	secret, err := pterm.DefaultInteractiveTextInput.WithMask("*").Show(message)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
