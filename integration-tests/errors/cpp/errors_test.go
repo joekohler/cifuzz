@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,11 @@ import (
 
 func TestIntegration_CPPErrors(t *testing.T) {
 	if testing.Short() {
+		t.Skip()
+	}
+
+	// These tests run 20+ minutes on Windows
+	if runtime.GOOS == "windows" {
 		t.Skip()
 	}
 
