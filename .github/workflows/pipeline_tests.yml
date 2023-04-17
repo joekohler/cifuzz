@@ -72,13 +72,24 @@ jobs:
     name: integration tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # testing on ubuntu-20.04 is necessary
         # testing on ubuntu-latest is for ensuring compatibility with current version
         # we have to use macos-12 as after upgrading the external
         # action for llvm setup as it seems that this is breaking
         # with macos-11
-        os: [ubuntu-20.04, ubuntu-latest, macos-12] # windows-2022 is quarantined, see below
+        os: [ubuntu-20.04, ubuntu-latest, macos-12, windows-2022]
+        ci_index: [0, 1, 2]
+        include:
+          # Windows runs on more containers
+          - os: windows-2022
+            ci_index: 3
+          - os: windows-2022
+            ci_index: 4
+          - os: windows-2022
+            ci_index: 5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -89,72 +100,21 @@ jobs:
 
       - name: Run integration tests
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
-        # We run the integration tests sequentially here to avoid that
-        # tests write to stderr at the same time, which makes it hard to
-        # figure out which output belongs to which test.
-        run: make test/integration/sequential
+        run: make test/integration/linux-mac/${{ matrix.ci_index }}
         shell: bash
 
       - name: Run integration tests
         if: contains(matrix.os, 'windows')
-        # We allow a maximum of 2 attempts in order to give flaky tests a
-        # better chance to pass.
-        uses: nick-fields/retry@v2
-        with:
-          # Aligning with 20 minutes timeout in the go test command
-          timeout_minutes: 20
-          max_attempts: 2
-          # We run the integration tests sequentially here to avoid that
-          # tests write to stderr at the same time, which makes it hard to
-          # figure out which output belongs to which test.
-          command: make test/integration/sequential
-          shell: pwsh
+        run: make test/integration/win/${{ matrix.ci_index }}
 
       # Upload the original go test log as an artifact for later review.
       - name: Upload test log
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: test-log
+          name: test-log-${{ matrix.os }}-${{ matrix.ci_index }}
           path: gotest.log
           if-no-files-found: error
-
-  # Copy of integration tests - but without the "Required" status check for PRs
-  quarantine_integration_tests:
-    name: Quarantine integration tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-2022]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup VM for cifuzz
-        uses: ./.github/actions/vm_setup
-        with:
-          os: ${{ matrix.os }}
-
-      - name: Run integration tests
-        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
-        # We run the integration tests sequentially here to avoid that
-        # tests write to stderr at the same time, which makes it hard to
-        # figure out which output belongs to which test.
-        run: make test/integration/sequential
-        shell: bash
-
-      - name: Run integration tests
-        if: contains(matrix.os, 'windows')
-        # We allow a maximum of 2 attempts in order to give flaky tests a
-        # better chance to pass.
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 20
-          max_attempts: 2
-          # We run the integration tests sequentially here to avoid that
-          # tests write to stderr at the same time, which makes it hard to
-          # figure out which output belongs to which test.
-          command: make test/integration/sequential
-          shell: pwsh
 
   prerelease_tests:
     name: test with CIFUZZ_PRERELEASE (ubuntu-latest)

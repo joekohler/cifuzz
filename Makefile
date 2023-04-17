@@ -61,6 +61,7 @@ deps:
 
 .PHONY: deps/integration-tests
 deps/integration-tests:
+	./tools/test-bucket-generator/check-buckets.sh
 	go install github.com/bazelbuild/buildtools/buildozer@latest
 
 .PHONY: deps/dev
@@ -162,13 +163,16 @@ test: deps build/$(current_os)
 test/unit: deps deps/test
 	go test -json -v ./... -short 2>&1 | tee gotest.log | gotestfmt -hide all
 
+INTEGRATION_TEST_PLATFORM := $(word 3, $(subst /, ,$(MAKECMDGOALS)))
+INTEGRATION_TEST_BUCKET := $(word 4, $(subst /, ,$(MAKECMDGOALS)))
+.PHONY: test/integration/%
+test/integration/%: deps deps/test deps/integration-tests
+	@echo $(INTEGRATION_TEST_PLATFORM)
+	go test -json -v -timeout=20m -run 'TestIntegration.*' $(shell cat ./tools/test-bucket-generator/$(INTEGRATION_TEST_PLATFORM)/bucket-$(INTEGRATION_TEST_BUCKET).txt) 2>&1 | tee gotest.log | gotestfmt -hide all
+
 .PHONY: test/integration
 test/integration: deps deps/test deps/integration-tests
 	go test -json -v -timeout=20m ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
-
-.PHONY: test/integration/sequential
-test/integration/sequential: deps deps/test deps/integration-tests
-	go test -json -v -timeout=20m -parallel=1 ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/e2e
 test/e2e: deps deps/test install
