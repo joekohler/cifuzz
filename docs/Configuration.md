@@ -74,13 +74,30 @@ dict: path/to/dictionary.dct
 <a id="engine-args"></a>
 
 ### engine-args
-Command-line arguments to pass to libFuzzer.
-See https://llvm.org/docs/LibFuzzer.html#options.
+Command-line arguments to pass to libFuzzer or Jazzer.
+
+For libFuzzer see https://llvm.org/docs/LibFuzzer.html#options.
+
+#### Example 
+```yaml
+engine-args:
+ - -rss_limit_mb=4096
+```
+
+For Jazzer, the prefix for Java System properties `-Djazzer.` has to be added to the argument. 
 
 #### Example
 ```yaml
 engine-args:
- - -rss_limit_mb=4096
+ - -Djazzer.instrumentation_includes=com.** 
+```
+
+Specific for **Gradle**, the following code has to be added to the `build.gradle` file 
+in the project to allow using system properties via `-D` flags. 
+```groovy
+tasks.test {
+    systemProperties System.getProperties()
+}
 ```
 
 <a id="timeout"></a>
