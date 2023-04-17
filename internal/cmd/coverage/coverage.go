@@ -305,6 +305,7 @@ func (c *coverageCmd) run() error {
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
+			EngineArgs: c.opts.EngineArgs,
 			Parallel: gradle.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 			},
