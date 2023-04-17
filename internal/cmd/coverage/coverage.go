@@ -38,21 +38,22 @@ type Generator interface {
 }
 
 type coverageOptions struct {
-	OutputFormat          string   `mapstructure:"format"`
-	OutputPath            string   `mapstructure:"output"`
-	BuildSystem           string   `mapstructure:"build-system"`
-	BuildCommand          string   `mapstructure:"build-command"`
-	CleanCommand          string   `mapstructure:"clean-command"`
-	NumBuildJobs          uint     `mapstructure:"build-jobs"`
-	SeedCorpusDirs        []string `mapstructure:"seed-corpus-dirs"`
-	UseSandbox            bool     `mapstructure:"use-sandbox"`
-	Preset                string
+	OutputFormat   string   `mapstructure:"format"`
+	OutputPath     string   `mapstructure:"output"`
+	BuildSystem    string   `mapstructure:"build-system"`
+	BuildCommand   string   `mapstructure:"build-command"`
+	CleanCommand   string   `mapstructure:"clean-command"`
+	NumBuildJobs   uint     `mapstructure:"build-jobs"`
+	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
+	UseSandbox     bool     `mapstructure:"use-sandbox"`
+	EngineArgs     []string `mapstructure:"engine-args"`
+
 	ResolveSourceFilePath bool
+	Preset                string
 	ProjectDir            string
 
-	fuzzTest   string
-	argsToPass []string
-
+	fuzzTest    string
+	argsToPass  []string
 	buildStdout io.Writer
 	buildStderr io.Writer
 }
@@ -198,13 +199,14 @@ or a lcov trace file.
 	// bind it to viper in the PreRunE function.
 	bindFlags = cmdutils.AddFlags(cmd,
 		cmdutils.AddBuildCommandFlag,
-		cmdutils.AddCleanCommandFlag,
 		cmdutils.AddBuildJobsFlag,
+		cmdutils.AddCleanCommandFlag,
+		cmdutils.AddEngineArgFlag,
+		cmdutils.AddPresetFlag,
 		cmdutils.AddProjectDirFlag,
+		cmdutils.AddResolveSourceFileFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddUseSandboxFlag,
-		cmdutils.AddPresetFlag,
-		cmdutils.AddResolveSourceFileFlag,
 	)
 	// This flag is not supposed to be called by a user
 	err := cmd.Flags().MarkHidden("preset")
@@ -320,6 +322,7 @@ func (c *coverageCmd) run() error {
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
+			EngineArgs: c.opts.EngineArgs,
 			Parallel: maven.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,

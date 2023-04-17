@@ -26,10 +26,13 @@ type CoverageGenerator struct {
 	OutputPath   string
 	FuzzTest     string
 	ProjectDir   string
-	Parallel     maven.ParallelOptions
-	Stderr       io.Writer
-	BuildStdout  io.Writer
-	BuildStderr  io.Writer
+	EngineArgs   []string
+
+	Parallel maven.ParallelOptions
+
+	Stderr      io.Writer
+	BuildStdout io.Writer
+	BuildStderr io.Writer
 
 	runfilesFinder runfiles.RunfilesFinder
 }
@@ -40,15 +43,20 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		cov.runfilesFinder = runfiles.Finder
 	}
 
-	mavenTestArgs := []string{
-		// Maven tests fail if fuzz tests fail, so we ignore the error here.
-		// We still want to generate the coverage report, so use this flag:
-		"-Dmaven.test.failure.ignore=true",
-		"-Djazzer.hooks=false",
+	// Maven tests fail if fuzz tests fail, so we ignore the error here,
+	// so we can still generate the coverage report
+	mavenTestArgs := []string{"-Dmaven.test.failure.ignore=true"}
+
+	// Flags for jazzer
+	mavenTestArgs = append(mavenTestArgs, "-Djazzer.hooks=false")
+	mavenTestArgs = append(mavenTestArgs, cov.EngineArgs...)
+
+	// Flags for cifuzz
+	mavenTestArgs = append(mavenTestArgs,
 		"-Pcifuzz",
 		fmt.Sprintf("-Dtest=%s", cov.FuzzTest),
-		"test",
-	}
+		"test")
+
 	if cov.Parallel.Enabled {
 		mavenTestArgs = append(mavenTestArgs, "-T")
 		if cov.Parallel.NumJobs != 0 {
