@@ -615,25 +615,14 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 	}
 	log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
 
-	// Use user-specified seed corpus dirs (if any) and the default seed
-	// corpus (if it exists)
-	seedCorpusDirs := c.opts.SeedCorpusDirs
-	exists, err := fileutil.Exists(buildResult.SeedCorpus)
-	if err != nil {
-		return err
-	}
-	if exists {
-		seedCorpusDirs = append(seedCorpusDirs, buildResult.SeedCorpus)
-	}
-
 	// Ensure that symlinks are resolved to be able to add minijail
 	// bindings for the corpus dirs.
 	buildResult.GeneratedCorpus, err = filepath.EvalSymlinks(buildResult.GeneratedCorpus)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	for i, dir := range seedCorpusDirs {
-		seedCorpusDirs[i], err = filepath.EvalSymlinks(dir)
+	for i, dir := range c.opts.SeedCorpusDirs {
+		c.opts.SeedCorpusDirs[i], err = filepath.EvalSymlinks(dir)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -673,7 +662,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		ProjectDir:         c.opts.ProjectDir,
 		ReadOnlyBindings:   []string{buildResult.BuildDir},
 		ReportHandler:      c.reportHandler,
-		SeedCorpusDirs:     seedCorpusDirs,
+		SeedCorpusDirs:     c.opts.SeedCorpusDirs,
 		Timeout:            c.opts.Timeout,
 		UseMinijail:        c.opts.UseSandbox,
 		Verbose:            viper.GetBool("verbose"),
