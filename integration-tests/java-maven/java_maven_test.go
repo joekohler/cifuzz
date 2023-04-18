@@ -147,6 +147,9 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 
 	// Run cifuzz bundle and verify the contents of the archive.
 	shared.TestBundleMaven(t, projectDir, cifuzz, "com.example.FuzzTestCase")
+
+	// Check if adding additional jazzer parameters via flags is respected
+	shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
 }
 
 func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
