@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -30,10 +28,8 @@ func (opts *options) Validate() error {
 	}
 
 	if opts.BuildSystem == config.BuildSystemNodeJS {
-		err := errors.Errorf(`Creating a bundle is currently not supported for %[1]s projects. If you
-are interested in using this feature with %[1]s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))
-		log.Print(err.Error())
+		err = errors.Errorf(config.NotSupportedErrorMessage("bundle", opts.BuildSystem))
+		log.Error(err)
 		return cmdutils.WrapSilentError(err)
 	}
 
@@ -152,17 +148,11 @@ on the build system. This can be overridden with a docker-image flag.
 			// all platforms.
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
 				opts.BuildSystem == config.BuildSystemGradle
-			system := cases.Title(language.Und).String(runtime.GOOS)
 			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
 				runtime.GOOS != "linux" &&
 				!isOSIndependent {
-				if runtime.GOOS == "darwin" {
-					system = "macOS"
-				}
-				err := errors.Errorf(`Creating a bundle for %s is currently only supported on Linux. If you are
-interested in using this feature on %s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, opts.BuildSystem, system)
-				log.Print(err.Error())
+				err = errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))
+				log.Error(err)
 				return cmdutils.WrapSilentError(err)
 			}
 

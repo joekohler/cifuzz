@@ -11,8 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -24,7 +22,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
-	"code-intelligence.com/cifuzz/util/sliceutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -50,10 +47,8 @@ func (opts *remoteRunOpts) Validate() error {
 	}
 
 	if opts.BuildSystem == config.BuildSystemNodeJS {
-		err := errors.Errorf(`Starting a remote run is currently not supported for %[1]s projects. If you
-are interested in using this feature with %[1]s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, cases.Title(language.Und).String(opts.BuildSystem))
-		log.Print(err.Error())
+		err = errors.Errorf(config.NotSupportedErrorMessage("remote run", opts.BuildSystem))
+		log.Error(err)
 		return cmdutils.WrapSilentError(err)
 	}
 
@@ -129,18 +124,11 @@ variable or by running 'cifuzz login' first.
 			}
 
 			// Fail early if the platform is not supported
-			if runtime.GOOS != "linux" {
-				if !sliceutil.Contains([]string{config.BuildSystemMaven, config.BuildSystemGradle}, opts.BuildSystem) {
-					system := cases.Title(language.Und).String(runtime.GOOS)
-					if runtime.GOOS == "darwin" {
-						system = "macOS"
-					}
-					err := errors.Errorf(`Starting a remote run is currently only supported on Linux. If you are
-interested in using this feature on %s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, system)
-					log.Print(err.Error())
-					return cmdutils.WrapSilentError(err)
-				}
+			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven || opts.BuildSystem == config.BuildSystemGradle
+			if runtime.GOOS != "linux" && !isOSIndependent {
+				err = errors.Errorf(config.NotSupportedErrorMessage("remote run", runtime.GOOS))
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
 			}
 
 			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)

@@ -177,17 +177,11 @@ func ParseProjectConfig(configDir string, opts interface{}) error {
 
 func ValidateBuildSystem(buildSystem string) error {
 	if !stringutil.Contains(buildSystemTypes, buildSystem) {
-		return errors.Errorf("Unsupported build system \"%s\"", buildSystem)
+		return errors.Errorf("cifuzz currently does not support \"%s\"", buildSystem)
 	}
 
 	if !stringutil.Contains(supportedBuildSystems[runtime.GOOS], buildSystem) {
-		osName := cases.Title(language.Und).String(runtime.GOOS)
-		if runtime.GOOS == "darwin" {
-			osName = "macOS"
-		}
-		return errors.Errorf(`Build system %[1]s is currently not supported on %[2]s. If you
-are interested in using this feature with %[1]s, please file an issue at
-https://github.com/CodeIntelligenceTesting/cifuzz/issues`, buildSystem, osName)
+		return errors.Errorf(NotSupportedErrorMessage(buildSystem, runtime.GOOS))
 	}
 
 	return nil
@@ -287,4 +281,30 @@ func EnsureProjectEntry(configContent string, project string) string {
 	}
 	// if there is, set it
 	return re.ReplaceAllString(configContent, fmt.Sprintf(`project: %s`, project))
+}
+
+func NotSupportedErrorMessage(tool string, platform string) string {
+	prettyString := func(text string) string {
+		switch text {
+		case "maven", "gradle", "bazel", "linux", "windows":
+			return cases.Title(language.Und).String(text)
+		case "other":
+			return "other build systems"
+		case "cmake":
+			return "CMake"
+		case "nodejs":
+			return "NodeJS"
+		case "darwin":
+			return "macOS"
+		case "bundle", "coverage", "remote run", "run":
+			return fmt.Sprintf("'%s'", text)
+		default:
+			return text
+		}
+	}
+
+	return fmt.Sprintf(
+		`cifuzz currently does not support %s with %s.
+If you are interested in using this feature, please contact us via cifuzz@code-intelligence.com.`,
+		prettyString(tool), prettyString(platform))
 }

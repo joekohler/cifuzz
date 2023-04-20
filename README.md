@@ -280,4 +280,4 @@ for possible solutions.
 Want to help improve cifuzz? Check out our [contributing documentation](CONTRIBUTING.md).
 There you will find instructions for building the tool locally.
 
-If you find an issue, please report it on the issue tracker.
+If you find an issue, please report it to cifuzz@code-intelligence.com.
