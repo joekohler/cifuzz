@@ -10,12 +10,10 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 )
 
-var ErrDeps = errors.New(`Unable to run command due to missing/invalid dependencies.
+var errDeps = errors.New(`unable to run command due to missing/invalid dependencies.
 For installation instruction see:
 
-	https://github.com/CodeIntelligenceTesting/cifuzz#installation
-
-`)
+	https://github.com/CodeIntelligenceTesting/cifuzz#installation`)
 
 type Key string
 
@@ -111,7 +109,7 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error 
 	}
 
 	if !allFine {
-		return ErrDeps
+		return errDeps
 	}
 	return nil
 }
