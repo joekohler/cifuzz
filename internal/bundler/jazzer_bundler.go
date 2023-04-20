@@ -60,7 +60,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 
 	// Iterate over build results to fill archive and create fuzzers
 	for _, buildResult := range buildResults {
-		log.Printf("build dir: %s\n", buildResult.BuildDir)
+		log.Debugf("build dir: %s\n", buildResult.BuildDir)
 		// copy seeds for every fuzz test
 		archiveSeedsDir, err := b.copySeeds()
 		if err != nil {
