@@ -104,9 +104,7 @@ func ParseJacocoXML(in io.Reader) *CoverageSummary {
 			}
 			for _, counter := range sourcefile.Counter {
 				countJacoco(summary.Total, &counter)
-				if currentFile != nil {
-					countJacoco(currentFile.Coverage, &counter)
-				}
+				countJacoco(currentFile.Coverage, &counter)
 			}
 			summary.Files = append(summary.Files, currentFile)
 		}

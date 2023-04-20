@@ -104,7 +104,7 @@ func (cov *CoverageGenerator) runGradleCommand(args []string) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	go func() {
-		_ = <-sigs
+		<-sigs
 		err = cmd.TerminateProcessGroup()
 		if err != nil {
 			log.Error(err, err.Error())
