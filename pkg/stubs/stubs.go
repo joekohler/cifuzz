@@ -60,7 +60,7 @@ func Create(path string, testType config.FuzzTestType) error {
 
 			packageName := fmt.Sprintf("package %s;", packagePath)
 			if testType == config.Kotlin {
-				strings.TrimSuffix(packageName, ";")
+				packageName = strings.TrimSuffix(packageName, ";")
 			}
 			content = []byte(strings.Replace(string(content), "__PACKAGE__", packageName, 1))
 		}
