@@ -44,8 +44,7 @@ func TestOk(t *testing.T) {
 		"--output", outputFile,
 	}
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
-	assert.NoError(t, err)
-
+	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
 
@@ -53,26 +52,46 @@ func TestOkMaven(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemMaven)
 	defer cleanup()
 
+	outputFile := filepath.Join(testDir, "FuzzTestCase.java")
 	args := []string{
 		"java",
-		"--output",
-		filepath.Join(testDir, "FuzzTestCase.java"),
+		"--output", outputFile,
 	}
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+	require.FileExists(t, outputFile)
 }
 
 func TestOkGradle(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemGradle)
 	defer cleanup()
 
+	outputFile := filepath.Join(testDir, "FuzzTestCase.java")
 	args := []string{
 		"java",
-		"--output",
-		filepath.Join(testDir, "FuzzTestCase.java"),
+		"--output", outputFile,
 	}
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+	require.FileExists(t, outputFile)
+}
+
+func TestOkJavaScript(t *testing.T) {
+	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
+	}
+
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemNodeJS)
+	defer cleanup()
+
+	outputFile := filepath.Join(testDir, "myTest.fuzz.js")
+	args := []string{
+		"js",
+		"--output", outputFile,
+	}
+	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	require.NoError(t, err)
+	require.FileExists(t, outputFile)
 }
 
 func TestInvalidType(t *testing.T) {
@@ -80,7 +99,7 @@ func TestInvalidType(t *testing.T) {
 		"foo",
 	}
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestCreateCmd_OutDir(t *testing.T) {
