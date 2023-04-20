@@ -43,4 +43,4 @@ jobs:
           git add tools/test-bucket-generator
           git commit -m "test: update integration test timing buckets"
           git push --force --set-upstream origin test/update-buckets
-          gh pr create --title="Test: Fresh buckets for integration tests" --body="Automatic bucket rebalancer" --head test/fresh-buckets
+          gh pr create -B main -H test/update-buckets --title="Test: Fresh buckets for integration tests" --body="Automatic bucket rebalancer"
