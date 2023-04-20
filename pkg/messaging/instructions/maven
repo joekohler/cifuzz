@@ -19,9 +19,16 @@ dependency to your pom.xml:
       <scope>test</scope>
     </dependency>
 
+For Jacoco coverage reports, please make sure to include the
+Jacoco plugin in the build section of your pom.xml. 
 
-For Jacoco coverage reports, please make sure to include
-jacoco in your pom.xml, for more info see:
+    <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.9</version>
+    </plugin>
+
+For more information see:
 https://www.jacoco.org/jacoco/trunk/doc/maven.html
 
 Also, please add the following profile in your profiles:

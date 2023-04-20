@@ -44,14 +44,15 @@ func TestIntegration_Maven_InitCreateRun(t *testing.T) {
 	}
 
 	// Execute the init command
-	// The instructions file for maven includes both dependencies and a profile section for jacoco that
-	// need to be included at different locations in the pom.xml, so we split the instructions file
-	// at the <profile> occurrence.
+	// The instructions file for maven includes dependencies, plugin and a profile section for jacoco that
+	// need to be included at different locations in the pom.xml, so we split the instructions file up into
+	// <dependency> and <profile> and ignore the code adding the jacoco plugin because the user should already
+	// have it, the instruction is just a nudge so it doesn't get overlooked and doesn't need to be tested.
 	linesToAdd := cifuzzRunner.CommandWithFilterForInstructions(t, "init", nil)
 	assert.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
-		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<profile>")[0], "\n"),
+		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<plugin>")[0], "\n"),
 		"    </dependencies>",
 		false,
 	)
