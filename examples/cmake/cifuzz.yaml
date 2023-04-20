@@ -40,7 +40,7 @@
 #no-notifications: true
 
 ## Set URL of the CI App
-#server: https://app.code-intelligence.com/
+#server: https://app.code-intelligence.com
 
 ## Set the project name on the CI App
 #project: my-project-1a2b3c4d
