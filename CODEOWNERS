@@ -1,15 +1,1 @@
 * @CodeIntelligenceTesting/cifuzz-devs
-
-/tools/cmake @fmeum
-/tools/replayer @fmeum
-
-/docs/assets/tapes @MarkusZoppelt
-/internal/api @MarkusZoppelt
-
-/.github @jochil
-/docs @jochil 
-/examples @jochil
-/pkg/coverage @jochil
-/pkg/dependencies @jochil
-/pkg/desktop @jochil
-/pkg/java @jochil
