@@ -33,3 +33,27 @@ func TestGetAndSet(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "token2", token)
 }
+
+func TestGet(t *testing.T) {
+	accessTokens = map[string]string{
+		"app.example.com":                    "123",
+		"app.code-intelligence.com":          "456",
+		"app.staging.code-intelligence.com/": "789",
+	}
+
+	// Test exact match
+	token := Get("app.example.com")
+	require.Equal(t, "123", token)
+
+	// Test target with trailing slash (should match the same as without)
+	token = Get("app.code-intelligence.com/")
+	require.Equal(t, "456", token)
+
+	// Test target without trailing slash (should match the same as with)
+	token = Get("app.staging.code-intelligence.com")
+	require.Equal(t, "789", token)
+
+	// Test non-existing target
+	token = Get("example.org")
+	require.Empty(t, token)
+}

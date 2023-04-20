@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -67,8 +68,20 @@ func Set(target, token string) error {
 	return nil
 }
 
+// Get returns the access token for the given target
+// If the given target doesn't exist, try to add or remove a trailing slash
+// and return the access token for that target
 func Get(target string) string {
-	return accessTokens[target]
+	if token, ok := accessTokens[target]; ok {
+		return token
+	}
+	if token, ok := accessTokens[strings.TrimSuffix(target, "/")]; ok {
+		return token
+	}
+	if token, ok := accessTokens[target+"/"]; ok {
+		return token
+	}
+	return ""
 }
 
 func GetServerURLs() []string {

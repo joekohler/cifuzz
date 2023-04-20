@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -326,11 +327,13 @@ func ValidateAndNormalizeServerURL(server string) (string, error) {
 		server = "https://" + server
 	}
 
-	// normalize server URL
-	url, err := url.JoinPath(server)
+	// normalize server URL by removing trailing slash
+	url, err := url.JoinPath(server, "")
 	if err != nil {
 		return "", err
 	}
+	url = strings.TrimSuffix(url, "/")
+
 	return url, nil
 }
 
