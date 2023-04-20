@@ -3,9 +3,10 @@ package config
 type FuzzTestType string
 
 const (
-	CPP    FuzzTestType = "cpp"
-	Java   FuzzTestType = "java"
-	Kotlin FuzzTestType = "kotlin"
+	CPP        FuzzTestType = "cpp"
+	Java       FuzzTestType = "java"
+	Kotlin     FuzzTestType = "kotlin"
+	JavaScript FuzzTestType = "js"
 )
 
 type GradleBuildLanguage string

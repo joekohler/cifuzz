@@ -22,6 +22,9 @@ var javaStub []byte
 //go:embed fuzzTest.ktl.tmpl
 var kotlinStub []byte
 
+//go:embed test.fuzz.js.tmpl
+var javaScriptStub []byte
+
 // Create creates a stub based for the given test type
 func Create(path string, testType config.FuzzTestType) error {
 	exists, err := fileutil.Exists(path)
@@ -38,37 +41,40 @@ func Create(path string, testType config.FuzzTestType) error {
 	case config.CPP:
 		content = cppStub
 	case config.Java, config.Kotlin:
-		stub := string(javaStub)
-		if testType == config.Kotlin {
-			stub = string(kotlinStub)
-		}
-
-		fileNameExtension, found := config.TestTypeFileNameExtension(testType)
-		if !found {
-			return errors.WithStack(err)
-		}
-
-		baseName := strings.TrimSuffix(filepath.Base(path), fileNameExtension)
-		content = []byte(strings.Replace(stub, "__CLASS_NAME__", baseName, 1))
-
-		// If we have a valid package name we add it to the template
-		// We assume the project has the standard java project structure
-		if filepath.Dir(path) != "" {
-			packagePath := strings.TrimPrefix(filepath.Dir(path),
-				filepath.Join("src", "test", string(testType))+string(os.PathSeparator))
-			packagePath = strings.ReplaceAll(packagePath, string(os.PathSeparator), ".")
-
-			packageName := fmt.Sprintf("package %s;", packagePath)
+		{
+			stub := string(javaStub)
 			if testType == config.Kotlin {
-				packageName = strings.TrimSuffix(packageName, ";")
+				stub = string(kotlinStub)
 			}
-			content = []byte(strings.Replace(string(content), "__PACKAGE__", packageName, 1))
+			fileNameExtension, found := config.TestTypeFileNameExtension(testType)
+			if !found {
+				return errors.WithStack(err)
+			}
+
+			baseName := strings.TrimSuffix(filepath.Base(path), fileNameExtension)
+			content = []byte(strings.Replace(stub, "__CLASS_NAME__", baseName, 1))
+
+			// If we have a valid package name we add it to the template
+			// We assume the project has the standard java project structure
+			if filepath.Dir(path) != "" {
+				packagePath := strings.TrimPrefix(filepath.Dir(path),
+					filepath.Join("src", "test", string(testType))+string(os.PathSeparator))
+				packagePath = strings.ReplaceAll(packagePath, string(os.PathSeparator), ".")
+
+				packageName := fmt.Sprintf("package %s;", packagePath)
+				if testType == config.Kotlin {
+					packageName = strings.TrimSuffix(packageName, ";")
+				}
+				content = []byte(strings.Replace(string(content), "__PACKAGE__", packageName, 1))
+			}
 		}
+	case config.JavaScript:
+		content = javaScriptStub
 	}
 
 	// write stub
 	if content != nil && path != "" {
-		if err := os.WriteFile(path, content, 0644); err != nil {
+		if err := os.WriteFile(path, content, 0o644); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -93,6 +99,10 @@ func FuzzTestFilename(testType config.FuzzTestType) (string, error) {
 	case config.Java:
 		basename = "MyClassFuzzTest"
 		ext = "java"
+		filePattern = "%s%d.%s"
+	case config.JavaScript:
+		basename = "myTest"
+		ext = "fuzz.js"
 		filePattern = "%s%d.%s"
 	default:
 		return "", errors.New("unable to suggest filename: unknown test type")
