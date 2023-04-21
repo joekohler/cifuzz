@@ -350,5 +350,5 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) {
 		}
 	}
 
-	log.Infof("No error details found for finding %s", f.Name)
+	log.Debugf("No error details found for finding %s", f.Name)
 }

@@ -2,7 +2,7 @@
 	"schema_version": 1,
 	"error_details": [
 		{
-			"id": "undefined behavior: .*",
+			"id": "undefined_behavior",
 			"name": "Undefined Behavior",
 			"description": "An operation has been detected which is undefined by the C/C++ standard. The result will \nbe compiler dependent and is often unpredictable.",
 			"severity": {
