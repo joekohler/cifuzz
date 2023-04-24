@@ -143,12 +143,15 @@ on the build system. This can be overridden with a docker-image flag.
 			// user can't do anything useful with a bundle created on
 			// other platforms.
 			//
-			// We set CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS in tests to
+			// We set CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS in tests to
 			// still be able to test that creating the bundle works on
 			// all platforms.
+			// TODO: remove CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS after the new
+			//  CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
 				opts.BuildSystem == config.BuildSystemGradle
 			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
+				os.Getenv("CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS") == "" &&
 				runtime.GOOS != "linux" &&
 				!isOSIndependent {
 				err = errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))

@@ -43,7 +43,8 @@ runs:
       if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
-        export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
+        export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1  # TODO: remove me when CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
+        export CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS=1
         cifuzz bundle my_fuzz_test
       shell: bash
 
@@ -83,7 +84,8 @@ runs:
       if: "!contains(inputs.os, 'windows')"
       run: |
         cd examples/cmake
-        export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1
+        export CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS=1 # TODO: remove me when CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
+        export CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS=1
         cifuzz bundle my_fuzz_test
       shell: bash
 
