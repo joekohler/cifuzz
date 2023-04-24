@@ -19,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
@@ -138,7 +139,7 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 
 	t.Run("bundle", func(t *testing.T) {
-		if runtime.GOOS != "linux" {
+		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 			t.Skip("Creating a bundle for CMake is currently only supported on Linux")
 		}
 		// Run cifuzz bundle and verify the contents of the archive.
@@ -151,7 +152,7 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
-		if runtime.GOOS != "linux" {
+		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 			t.Skip("The remote-run command is currently only supported on Linux")
 		}
 		testRemoteRun(t, cifuzzRunner)

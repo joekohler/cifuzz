@@ -46,7 +46,7 @@ func (opts *remoteRunOpts) Validate() error {
 		return cmdutils.WrapSilentError(err)
 	}
 
-	if opts.BuildSystem == config.BuildSystemNodeJS {
+	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
 		err = errors.Errorf(config.NotSupportedErrorMessage("remote run", opts.BuildSystem))
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)
@@ -125,7 +125,7 @@ variable or by running 'cifuzz login' first.
 
 			// Fail early if the platform is not supported
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven || opts.BuildSystem == config.BuildSystemGradle
-			if runtime.GOOS != "linux" && !isOSIndependent {
+			if runtime.GOOS != "linux" && !isOSIndependent && !config.AllowUnsupportedPlatforms() {
 				err = errors.Errorf(config.NotSupportedErrorMessage("remote run", runtime.GOOS))
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)

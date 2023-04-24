@@ -27,7 +27,7 @@ func (opts *options) Validate() error {
 		return cmdutils.WrapSilentError(err)
 	}
 
-	if opts.BuildSystem == config.BuildSystemNodeJS {
+	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
 		err = errors.Errorf(config.NotSupportedErrorMessage("bundle", opts.BuildSystem))
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)
@@ -150,10 +150,9 @@ on the build system. This can be overridden with a docker-image flag.
 			//  CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
 				opts.BuildSystem == config.BuildSystemGradle
-			if os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
-				os.Getenv("CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS") == "" &&
-				runtime.GOOS != "linux" &&
-				!isOSIndependent {
+			if runtime.GOOS != "linux" && !isOSIndependent &&
+				os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
+				!config.AllowUnsupportedPlatforms() {
 				err = errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)

@@ -72,7 +72,7 @@ func (opts *coverageOptions) validate() error {
 		}
 	}
 
-	if opts.BuildSystem == config.BuildSystemNodeJS {
+	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
 		err = errors.Errorf(config.NotSupportedErrorMessage("coverage", opts.BuildSystem))
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

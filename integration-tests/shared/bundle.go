@@ -15,6 +15,7 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -26,12 +27,10 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 
 	// Make the bundle command not fail on unsupported platforms to be
 	// able to test it on all platforms
-	if runtime.GOOS != "linux" {
-		err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1") // TODO: remove me when CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
-		require.NoError(t, err)
-		err = os.Setenv("CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS", "1")
-		require.NoError(t, err)
-	}
+	err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1") // TODO: remove me when CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
+	require.NoError(t, err)
+	err = os.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
+	require.NoError(t, err)
 
 	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
 	require.NoError(t, err)

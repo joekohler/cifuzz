@@ -17,6 +17,7 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
@@ -29,7 +30,7 @@ func TestIntegration_Bazel(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Using cifuzz with bazel is currently only supported on Linux")
 	}
 
@@ -118,7 +119,7 @@ func TestIntegration_Bazel(t *testing.T) {
 
 	t.Run("remoteRun", func(t *testing.T) {
 		// The remote-run command is currently only supported on Linux
-		if runtime.GOOS != "linux" {
+		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 			t.Skip()
 		}
 		testRemoteRun(t, cifuzzRunner)
@@ -137,7 +138,7 @@ func TestIntegration_Bazel(t *testing.T) {
 }
 
 func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Coverage is currently not working on our macOS CI")
 	}
 
@@ -156,7 +157,7 @@ func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Bundle is currently not supported on macOS")
 	}
 
@@ -290,7 +291,7 @@ func testRunWithAsanOptions(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Bundle is currently not supported on macOS")
 	}
 	cifuzz := cifuzzRunner.CIFuzzPath
@@ -314,7 +315,7 @@ func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRu
 
 func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	// TODO: fix coverage on macOS CI
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Coverage is currently not working on our macOS CI")
 	}
 	cifuzz := cifuzzRunner.CIFuzzPath
@@ -358,7 +359,7 @@ func testNoCIFuzz(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 func testLCOVCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	// TODO: fix coverage on macOS CI
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
 		t.Skip("Coverage is currently not working on our macOS CI")
 	}
 	cifuzz := cifuzzRunner.CIFuzzPath

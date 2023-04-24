@@ -18,6 +18,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -58,6 +59,8 @@ var supportedBuildSystems = map[string][]string{
 }
 
 const ProjectConfigFile = "cifuzz.yaml"
+
+const AllowUnsupportedPlatformsEnv = "CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS"
 
 //go:embed cifuzz.yaml.tmpl
 var projectConfigTemplate string
@@ -176,6 +179,11 @@ func ParseProjectConfig(configDir string, opts interface{}) error {
 }
 
 func ValidateBuildSystem(buildSystem string) error {
+	if os.Getenv(AllowUnsupportedPlatformsEnv) != "" {
+		log.Infof("%s is set. Be aware that this skips all OS/build system checks and can cause unforeseen results.", AllowUnsupportedPlatformsEnv)
+		return nil
+	}
+
 	if !stringutil.Contains(buildSystemTypes, buildSystem) {
 		return errors.Errorf("cifuzz currently does not support \"%s\"", buildSystem)
 	}
@@ -307,4 +315,8 @@ func NotSupportedErrorMessage(tool string, platform string) string {
 		`cifuzz currently does not support %s with %s.
 If you are interested in using this feature, please contact us via cifuzz@code-intelligence.com.`,
 		prettyString(tool), prettyString(platform))
+}
+
+func AllowUnsupportedPlatforms() bool {
+	return os.Getenv(AllowUnsupportedPlatformsEnv) != ""
 }

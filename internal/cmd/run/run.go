@@ -100,7 +100,7 @@ func (opts *runOptions) validate() error {
 		}
 	}
 
-	if opts.BuildSystem == config.BuildSystemNodeJS {
+	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
 		err = errors.Errorf(config.NotSupportedErrorMessage("run", opts.BuildSystem))
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)
