@@ -44,7 +44,6 @@ type coverageOptions struct {
 	NumBuildJobs   uint     `mapstructure:"build-jobs"`
 	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
 	UseSandbox     bool     `mapstructure:"use-sandbox"`
-	EngineArgs     []string `mapstructure:"engine-args"`
 
 	ResolveSourceFilePath bool
 	Preset                string
@@ -301,7 +300,6 @@ func (c *coverageCmd) run() error {
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
-			EngineArgs: c.opts.EngineArgs,
 			Parallel: gradle.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 			},
@@ -319,7 +317,6 @@ func (c *coverageCmd) run() error {
 			OutputPath: c.opts.OutputPath,
 			FuzzTest:   c.opts.fuzzTest,
 			ProjectDir: c.opts.ProjectDir,
-			EngineArgs: c.opts.EngineArgs,
 			Parallel: maven.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,

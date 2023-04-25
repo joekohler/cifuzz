@@ -28,7 +28,6 @@ type CoverageGenerator struct {
 	OutputPath   string
 	FuzzTest     string
 	ProjectDir   string
-	EngineArgs   []string
 
 	Parallel gradle.ParallelOptions
 
@@ -48,7 +47,6 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	gradleArgs := []string{
 		fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest),
 	}
-	gradleArgs = append(gradleArgs, cov.EngineArgs...)
 
 	if cov.OutputPath == "" {
 		buildDir, err := gradle.GetBuildDirectory(cov.ProjectDir)

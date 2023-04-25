@@ -26,7 +26,6 @@ type CoverageGenerator struct {
 	OutputPath   string
 	FuzzTest     string
 	ProjectDir   string
-	EngineArgs   []string
 
 	Parallel maven.ParallelOptions
 
@@ -49,7 +48,6 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 
 	// Flags for jazzer
 	mavenTestArgs = append(mavenTestArgs, "-Djazzer.hooks=false")
-	mavenTestArgs = append(mavenTestArgs, cov.EngineArgs...)
 
 	// Flags for cifuzz
 	mavenTestArgs = append(mavenTestArgs,
