@@ -205,14 +205,21 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		if err != nil {
 			return err
 		}
-		PrintMoreDetails(f)
 
+		// only show more details if the user is authenticated
+		if auth, err := auth.GetAuthStatus(cmd.opts.Server); err == nil && auth {
+			PrintMoreDetails(f)
+		}
 	}
 	return nil
 }
 
 func PrintMoreDetails(f *finding.Finding) {
 	if f.MoreDetails == nil {
+		return
+	}
+	// the finding might have non-nil MoreDetails, but no information
+	if f.MoreDetails.Name == "" || f.MoreDetails.Severity == nil {
 		return
 	}
 
@@ -245,18 +252,19 @@ func PrintMoreDetails(f *finding.Finding) {
 		}
 	}
 
-	err := pterm.DefaultTable.WithData(data).WithBoxed().Render()
+	tableString, err := pterm.DefaultTable.WithData(data).WithBoxed().Srender()
 	if err != nil {
 		log.Error(err)
 	}
+	log.Print(tableString)
 
 	if f.MoreDetails.Description != "" {
-		pterm.Println(pterm.Blue("Description:"))
-		fmt.Println(f.MoreDetails.Description)
+		log.Print(pterm.Blue("Description:"))
+		log.Print(f.MoreDetails.Description)
 	}
 	if f.MoreDetails.Mitigation != "" {
-		pterm.Println(pterm.Blue("\nMitigation:"))
-		fmt.Println(f.MoreDetails.Mitigation)
+		log.Print(pterm.Blue("\nMitigation:"))
+		log.Print(f.MoreDetails.Mitigation)
 	}
 }
 
