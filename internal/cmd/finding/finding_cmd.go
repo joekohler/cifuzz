@@ -242,13 +242,13 @@ func PrintMoreDetails(f *finding.Finding) {
 	if f.MoreDetails.OwaspDetails != nil {
 		if f.MoreDetails.OwaspDetails.Description != "" {
 			data = append(data, []string{"OWASP Name", f.MoreDetails.OwaspDetails.Name})
-			data = append(data, []string{"OWASP Description", f.MoreDetails.OwaspDetails.Description})
+			data = append(data, []string{"OWASP Description", wrapLongStringToMultiline(f.MoreDetails.OwaspDetails.Description, 80)})
 		}
 	}
 	if f.MoreDetails.CweDetails != nil {
 		if f.MoreDetails.CweDetails.Description != "" {
 			data = append(data, []string{"CWE Name", f.MoreDetails.CweDetails.Name})
-			data = append(data, []string{"CWE Description", f.MoreDetails.CweDetails.Description})
+			data = append(data, []string{"CWE Description", wrapLongStringToMultiline(f.MoreDetails.CweDetails.Description, 80)})
 		}
 	}
 
@@ -277,6 +277,27 @@ func getColorFunctionForSeverity(severity float32) func(a ...interface{}) string
 	default:
 		return pterm.Gray
 	}
+}
+
+// wrapLongStringToMultiline wraps a long string to multiple lines.
+// It tries to wrap at the last space before the maxLineLength to avoid
+// breaking words.
+func wrapLongStringToMultiline(s string, maxLineLength int) string {
+	var result string
+	var currentLine string
+	var currentLineLength int
+
+	for _, word := range strings.Split(s, " ") {
+		if currentLineLength+len(word)+1 > maxLineLength {
+			result += currentLine + "\n"
+			currentLine = ""
+			currentLineLength = 0
+		}
+		currentLine += word + " "
+		currentLineLength += len(word) + 1
+	}
+	result += currentLine
+	return result
 }
 
 // checkForErrorDetails tries to get error details from the API.
