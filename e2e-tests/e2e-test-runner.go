@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,8 +19,10 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-const ciServerToUseForE2ETests = "https://app.code-intelligence.com/"
-const envvarWithE2EUserToken = "E2E_TEST_CIFUZZ_API_TOKEN"
+const (
+	ciServerToUseForE2ETests = "https://app.staging.code-intelligence.com"
+	envvarWithE2EUserToken   = "E2E_TEST_CIFUZZ_API_TOKEN"
+)
 
 type Assertion func(*testing.T, CommandOutput)
 
@@ -161,6 +164,9 @@ func runTest(t *testing.T, testCase *TestCase) {
 
 	for index, testCaseRun := range testCaseRuns {
 		t.Run(fmt.Sprintf("[%d/%d] cifuzz %s %s", index+1, len(testCaseRuns), testCaseRun.command, testCaseRun.args), func(t *testing.T) {
+			if testCase.CIUser != AnonymousCIUser {
+				testCaseRun.args = "--server=" + ciServerToUseForE2ETests + " " + testCaseRun.args
+			}
 			fmt.Println("Running test:", testCase.Description)
 			fmt.Println("Command:", "cifuzz", testCaseRun.command, testCaseRun.args)
 			fmt.Println(" ")
@@ -171,7 +177,8 @@ func runTest(t *testing.T, testCase *TestCase) {
 			// exec.Cmd can't handle empty args
 			var cmd *exec.Cmd
 			if len(testCaseRun.args) > 0 {
-				cmd = exec.Command("cifuzz", testCaseRun.command, testCaseRun.args)
+				argsSplice := deleteEmpty(append([]string{testCaseRun.command}, strings.Split(testCaseRun.args, " ")...))
+				cmd = exec.Command("cifuzz", argsSplice...)
 			} else {
 				cmd = exec.Command("cifuzz", testCaseRun.command)
 			}
@@ -213,4 +220,14 @@ func runTest(t *testing.T, testCase *TestCase) {
 			})
 		})
 	}
+}
+
+func deleteEmpty(s []string) []string {
+	var r []string
+	for _, str := range s {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+	return r
 }
