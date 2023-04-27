@@ -23,7 +23,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestIntegration_Maven_InitCreateRun(t *testing.T) {
+func TestIntegration_Maven(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

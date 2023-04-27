@@ -23,7 +23,7 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestIntegration_GradleKotlin_InitCreateRun(t *testing.T) {
+func TestIntegration_GradleKotlin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
