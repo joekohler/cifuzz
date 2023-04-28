@@ -36,7 +36,9 @@ func CreateManifestJar(entries map[string]string, directory string) (string, err
 
 	// add manifest file
 	fh = &zip.FileHeader{
-		Name: filepath.Join("META-INF", "MANIFEST.MF"),
+		// explicitly use forward slashes as requested from the
+		// zip.FileHeader struct / zip spec
+		Name: "META-INF/MANIFEST.MF",
 	}
 	fh.SetMode(0o644)
 	manifestFile, err := jarWriter.CreateHeader(fh)

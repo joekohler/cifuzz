@@ -1,6 +1,7 @@
 package java
 
 import (
+	"archive/zip"
 	"bytes"
 	"io"
 	"os"
@@ -28,6 +29,17 @@ func TestCreateManifestJar(t *testing.T) {
 	jarPath, err := CreateManifestJar(entries, tempDir)
 	require.NoError(t, err)
 	assert.FileExists(t, jarPath)
+
+	// check file header ...
+	zipReader, err := zip.OpenReader(jarPath)
+	require.NoError(t, err)
+	defer zipReader.Close()
+	// ... it should contain 2 entries
+	// and no matter what OS they should contain
+	// forward slashes
+	require.Len(t, zipReader.File, 2)
+	assert.Equal(t, "META-INF/", zipReader.File[0].Name)
+	assert.Equal(t, "META-INF/MANIFEST.MF", zipReader.File[1].Name)
 
 	// unzip the jar and inspect content
 	err = archiveutil.Unzip(jarPath, tempDir)
