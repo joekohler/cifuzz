@@ -2,6 +2,7 @@ package bundler
 
 import (
 	"bufio"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/build"
@@ -72,12 +74,14 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	err = bundle.Close()
 	require.NoError(t, err)
 
+	// we expect forward slashes even on windows, see also:
+	// TestAssembleArtifactsJava_WindowsForwardSlashes
 	expectedDeps := []string{
 		// manifest.jar should always be first element in runtime paths
-		filepath.Join(fuzzTest, "manifest.jar"),
-		filepath.Join("runtime_deps", "mylib.jar"),
-		filepath.Join("runtime_deps", "classes"),
-		filepath.Join("runtime_deps", "test-classes"),
+		fmt.Sprintf("%s/manifest.jar", fuzzTest),
+		"runtime_deps/mylib.jar",
+		"runtime_deps/classes",
+		"runtime_deps/test-classes",
 	}
 	expectedFuzzer := &archive.Fuzzer{
 		Name:         buildResult.Name,
@@ -196,4 +200,50 @@ func listFilesRecursively(dir string) ([]string, error) {
 		return nil
 	})
 	return paths, err
+}
+
+// As long as we only have linux based runner we should make sure
+// that the runtime paths are using forward slashes even if the
+// bundle was created on windows
+func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
+	projectDir := filepath.Join("testdata", "jazzer", "project")
+	runtimeDeps := []string{
+		filepath.Join(projectDir, "lib", "mylib.jar"),
+	}
+
+	buildResults := []*build.Result{
+		&build.Result{
+			Name:        "com.example.FuzzTest",
+			BuildDir:    filepath.Join(projectDir, "target"),
+			RuntimeDeps: runtimeDeps,
+			ProjectDir:  projectDir,
+		},
+	}
+
+	bundle, err := os.CreateTemp("", "bundle-archive-")
+	require.NoError(t, err)
+	bufWriter := bufio.NewWriter(bundle)
+	archiveWriter := archive.NewArchiveWriter(bufWriter)
+	t.Cleanup(func() {
+		archiveWriter.Close()
+		bufWriter.Flush()
+		bundle.Close()
+	})
+
+	tempDir, err := os.MkdirTemp("", "bundle-*")
+	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
+
+	b := newJazzerBundler(&Opts{
+		tempDir: tempDir,
+	}, archiveWriter)
+
+	fuzzers, err := b.assembleArtifacts(buildResults)
+	require.NoError(t, err)
+
+	for _, fuzzer := range fuzzers {
+		for _, runtimePath := range fuzzer.RuntimePaths {
+			assert.NotContains(t, runtimePath, "\\")
+		}
+	}
 }

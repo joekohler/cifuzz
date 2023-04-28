@@ -84,6 +84,7 @@ func (b *Bundler) Bundle() error {
 		},
 		CodeRevision: b.getCodeRevision(),
 	}
+
 	metadataYamlContent, err := metadata.ToYaml()
 	if err != nil {
 		return err

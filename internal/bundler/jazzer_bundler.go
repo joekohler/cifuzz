@@ -3,6 +3,7 @@ package bundler
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -120,6 +121,18 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 					return nil, err
 				}
 				runtimePaths = append(runtimePaths, archivePath)
+			}
+		}
+
+		// convert back slashes to forward slashes on windows to make
+		// sure that the bundle can be executed on the linux based
+		// workers
+		// it is done here, right before the creation of the fuzzer struct,
+		// to make sure that we do not accidentally miss a runtime path with
+		// back slashes
+		if runtime.GOOS == "windows" {
+			for i, runtimePath := range runtimePaths {
+				runtimePaths[i] = filepath.ToSlash(runtimePath)
 			}
 		}
 
