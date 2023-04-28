@@ -61,6 +61,10 @@ func (w *ArchiveWriter) WriteFile(archivePath string, sourcePath string) error {
 // error when passed a directory. If passed a directory, it creates an
 // empty directory at archivePath.
 func (w *ArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath string) error {
+	// To match the tar specification, which requires forward slashes as path separators,
+	// we convert potential windows path separators to forward slashes.
+	// Otherwise tars created on Windows will not work correctly on other platforms.
+	archivePath = filepath.ToSlash(archivePath)
 	existingAbsPath, conflict := w.manifest[archivePath]
 	if conflict {
 		if existingAbsPath == sourcePath {

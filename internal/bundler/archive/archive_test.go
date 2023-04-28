@@ -1,7 +1,9 @@
 package archive
 
 import (
+	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"io/fs"
 	"os"
@@ -137,4 +139,46 @@ func TestWriteArchive(t *testing.T) {
 		msg.WriteString(fmt.Sprintf("  %q\n", missingEntry.RelPath))
 	}
 	require.Empty(t, remainingExpectedEntries, "Archive did not contain the following expected entries: %s", msg.String())
+}
+
+// Independently from the operating system, path separators in archive files have
+// to be always forward slashes.
+func TestInternalPaths(t *testing.T) {
+	testFile := filepath.Join("testdata", "archive_test", "dir1", "dir2", "test.txt")
+	require.FileExists(t, testFile)
+
+	bundle, err := os.CreateTemp("", "bundle-*.tar.gz")
+	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(bundle.Name()) })
+
+	writer := bufio.NewWriter(bundle)
+	archiveWriter := NewArchiveWriter(writer)
+	err = archiveWriter.WriteFile(filepath.Join("archive-dir", "hello"), testFile)
+	require.NoError(t, err)
+
+	err = archiveWriter.Close()
+	require.NoError(t, err)
+	err = writer.Flush()
+	require.NoError(t, err)
+	bundle.Close()
+	require.NoError(t, err)
+
+	// Verify that file header has correct path separators.
+	// Unfortunately extracting the archive under Windows
+	// with the tar command or the archiveutils.Untar function
+	// will not show the actual problem, as it seems there are
+	// workarounds already in place.
+	bundleRead, err := os.Open(bundle.Name())
+	require.NoError(t, err)
+	t.Cleanup(func() { bundleRead.Close() })
+
+	gr, err := gzip.NewReader(bundleRead)
+	require.NoError(t, err)
+	t.Cleanup(func() { gr.Close() })
+
+	tr := tar.NewReader(gr)
+	header, err := tr.Next()
+	require.NoError(t, err)
+
+	assert.Equal(t, "archive-dir/hello", header.Name)
 }
