@@ -44,7 +44,6 @@ type RunnerTest struct {
 	GeneratedCorpusDir string
 	Timeout            time.Duration
 	EngineArgs         []string
-	FuzzTestArgs       []string
 	FuzzerEnv          []string
 	DisableMinijail    bool
 	RunsLimit          int
@@ -86,7 +85,6 @@ func (test *RunnerTest) Start(t *testing.T, reportCh chan *report.Report) error 
 		EngineArgs:         test.EngineArgs,
 		EnvVars:            test.FuzzerEnv,
 		FuzzTarget:         test.FuzzTarget,
-		FuzzTestArgs:       test.FuzzTestArgs,
 		GeneratedCorpusDir: test.GeneratedCorpusDir,
 		// To ease debugging, we write the output to stderr in addition
 		// to the test.LogOutput buffer

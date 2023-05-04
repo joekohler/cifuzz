@@ -42,7 +42,6 @@ type RunnerOptions struct {
 	EngineArgs         []string
 	EnvVars            []string
 	FuzzTarget         string
-	FuzzTestArgs       []string
 	GeneratedCorpusDir string
 	KeepColor          bool
 	LibraryDirs        []string
@@ -134,12 +133,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	defer fileutil.Cleanup(outputDir)
 	args = append(args, options.LibFuzzerArtifactPrefixFlag(outputDir+"/"))
-
-	if len(r.FuzzTestArgs) > 0 {
-		// separate the libfuzzer and fuzz test arguments with a "--"
-		args = append(args, "--")
-		args = append(args, r.FuzzTestArgs...)
-	}
 
 	// The environment to run libfuzzer in
 	env, err := r.FuzzerEnvironment()

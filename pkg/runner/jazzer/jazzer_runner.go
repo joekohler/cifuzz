@@ -107,17 +107,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	// Add any additional corpus directories as further positional arguments
 	args = append(args, r.SeedCorpusDirs...)
 
-	// -----------------------------
-	// --- fuzz target arguments ---
-	// -----------------------------
-	if len(r.FuzzTestArgs) > 0 {
-		// separate the Jazzer/libfuzzer arguments and fuzz test
-		// arguments with a "--"
-		args = append(args, "--")
-		args = append(args, r.FuzzTestArgs...)
-	}
-	// -----------------------------
-
 	// The environment we run the fuzzer in
 	env, err := r.FuzzerEnvironment()
 	if err != nil {
