@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - name: Check Commit Messages
+        # we can skip this check on merge groups (it is also not supported by the used action)
+        if: ${{ github.event_name != 'merge_group' }}
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(?!WIP|XXX|fixup).*'
