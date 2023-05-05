@@ -54,6 +54,7 @@ based tests into your project.
 ![VSCode](/docs/assets/tools/vscode.png)
 ![C++](/docs/assets/tools/cpp.png)
 ![Java](/docs/assets/tools/java.png)
+![Android](/docs/assets/tools/android.png)
 ![CMake](/docs/assets/tools/cmake.png)
 ![gradle](/docs/assets/tools/gradle.png)
 ![Maven](/docs/assets/tools/maven.png)
@@ -254,6 +255,20 @@ brew install openjdk gradle
 ```bash
 choco install microsoft-openjdk gradle
 ```
+
+</details>
+
+<details>
+ <summary>Android</summary>
+
+**Info:** Currently cifuzz is **not** supporting fuzz tests running in an
+emulator or on a device, it is still possible to run local tests. 
+You can find more information and an example at
+the [cifuzz-gradle-plugin](https://github.com/CodeIntelligenceTesting/cifuzz-gradle-plugin)
+repository.
+
+* [Gradle](https://gradle.org/install/) >= 7.5
+* [Android Gradle Plugin](https://developer.android.com/build) >= 7.4.2
 
 </details>
 
