@@ -1,6 +1,6 @@
 plugins {
     id("java-library")
-    id("com.code-intelligence.cifuzz") version "1.0.0"
+    id("com.code-intelligence.cifuzz") version "1.1.1"
 }
 
 repositories.mavenCentral()
