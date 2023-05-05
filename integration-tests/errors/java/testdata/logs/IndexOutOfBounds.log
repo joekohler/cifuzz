@@ -1,0 +1,12 @@
+java.lang.ArrayIndexOutOfBoundsException: Index 10 out of bounds for length 2 in outOfBounds (com.collection.ArrayOutOfBounds:7)
+Date: 2023-04-25 09:20:36.950299 +0200 CEST
+
+  == Java Exception: java.lang.ArrayIndexOutOfBoundsException: Index 10 out of bounds for length 2
+        at com.collection.ArrayOutOfBounds.outOfBounds(ArrayOutOfBounds.java:7)
+        at com.collection.ArrayOutOfBoundsFuzzTest.fuzzTest(ArrayOutOfBoundsFuzzTest.java:13)
+  == libFuzzer crashing input ==
+  MS: 0 ; base unit: 0000000000000000000000000000000000000000
+  0xa,
+  \012
+  artifact_prefix='/java-error-collection/src/test/resources/com/collection/ArrayOutOfBoundsFuzzTestInputs/'; Test unit written to .cifuzz-findings/predictive_mallard/crashing-input
+  Base64: Cg==

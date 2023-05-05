@@ -1,0 +1,15 @@
+Security Issue: SQL Injection in checkSqlExecute (com.code_intelligence.jazzer.sanitizers.SqlInjection:100)
+Date: 2023-04-25 10:07:01.85573 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: SQL Injection
+  Injected query: INSERT INTO pet (name) VALUES (''%')
+  
+        at com.code_intelligence.jazzer.sanitizers.SqlInjection.checkSqlExecute(SqlInjection.java:100)
+        at com.collection.SQLInjectionFuzzTest.insecureInsertUser(SQLInjectionFuzzTest.java:18)
+        at com.collection.SQLInjectionFuzzTest.fuzzTest(SQLInjectionFuzzTest.java:37)
+  == libFuzzer crashing input ==
+  MS: 0 ; base unit: 0000000000000000000000000000000000000000
+  0x27,0x25,
+  '%
+  artifact_prefix='/Users/msandner/IdeaProjects/java-error-collection/src/test/resources/com/collection/SQLInjectionFuzzTestInputs/'; Test unit written to .cifuzz-findings/wandering_amoeba/crashing-input
+  Base64: JyU=

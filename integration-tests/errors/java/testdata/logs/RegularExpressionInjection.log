@@ -1,0 +1,37 @@
+Security Issue: Regular Expression Injection in hookInternal (com.code_intelligence.jazzer.sanitizers.RegexInjection:151)
+Date: 2023-05-02 12:43:39.31443 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueLow: Regular Expression Injection
+  Regular expression patterns that contain unescaped untrusted input can consume
+  arbitrary amounts of CPU time. To properly escape the input, wrap it with
+  Pattern.quote(...).
+        at com.code_intelligence.jazzer.sanitizers.RegexInjection.hookInternal(RegexInjection.kt:151)
+        at com.code_intelligence.jazzer.sanitizers.RegexInjection.patternHook(RegexInjection.kt:74)
+        at java.base/java.util.regex.Pattern.matches(Pattern.java:1184)
+        at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:731)
+        at com.code_intelligence.jazzer.sanitizers.RegexInjection.hookInternal(RegexInjection.kt:142)
+        at com.code_intelligence.jazzer.sanitizers.RegexInjection.patternHook(RegexInjection.kt:74)
+        at com.collection.RegexInjectionFuzzTest.insecureQuote(RegexInjectionFuzzTest.java:22)
+        at com.collection.RegexInjectionFuzzTest.fuzzTest(RegexInjectionFuzzTest.java:29)
+  Caused by: java.util.regex.PatternSyntaxException: Illegal/unsupported escape sequence near index 4
+  \Q
+  \E]\E]]]]]]
+  \E
+      ^
+        at java.base/java.util.regex.Pattern.error(Pattern.java:2038)
+        at java.base/java.util.regex.Pattern.escape(Pattern.java:2618)
+        at java.base/java.util.regex.Pattern.atom(Pattern.java:2296)
+        at java.base/java.util.regex.Pattern.sequence(Pattern.java:2169)
+        at java.base/java.util.regex.Pattern.expr(Pattern.java:2079)
+        at java.base/java.util.regex.Pattern.compile(Pattern.java:1793)
+        at java.base/java.util.regex.Pattern.<init>(Pattern.java:1440)
+        at java.base/java.util.regex.Pattern.compile(Pattern.java:1079)
+        at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:731)
+        at com.code_intelligence.jazzer.sanitizers.RegexInjection.hookInternal(RegexInjection.kt:142)
+        ... 7 more
+  == libFuzzer crashing input ==
+  MS: 4 CopyPart-Custom-CMP-Custom- DE: "\\E]\\E]]]]]]"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0xa,0x5c,0x45,0x5d,0x5c,0x45,0x5d,0x5d,0x5d,0x5d,0x5d,0x5d,0xa,
+  \012\\E]\\E]]]]]]\012
+  artifact_prefix='/java-error-collection/src/test/resources/com/collection/RegexInjectionFuzzTestInputs/'; Test unit written to .cifuzz-findings/upbeat_leopard/crashing-input
+  Base64: ClxFXVxFXV1dXV1dCg==

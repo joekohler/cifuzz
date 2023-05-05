@@ -1,0 +1,14 @@
+Security Issue: LDAP Injection in searchLdapContext (com.code_intelligence.jazzer.sanitizers.LdapInjection:114)
+Date: 2023-04-25 10:18:45.036234 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: LDAP Injection 
+  Distinguished Names based on untrusted data must be escaped as specified in RFC 2253.
+        at com.code_intelligence.jazzer.sanitizers.LdapInjection.searchLdapContext(LdapInjection.kt:114)
+        at com.collection.LDAPDnInjectionFuzzTest.fuzzerTestOneInput(LDAPDnInjectionFuzzTest.java:15)
+  == libFuzzer crashing input ==
+  MS: 10 ChangeByte-Custom-CrossOver-Custom-ShuffleBytes-Custom-EraseBytes-Custom-InsertByte-Custom-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x2b,0xa,0x33,
+  +\0123
+  artifact_prefix='./'; Test unit written to .cifuzz-findings/loving_platypus/crashing-input
+  Base64: Kwoz
+  reproducer_path='.'; Java reproducer written to ./Crash_993d2c13f98daa628b0a68782cdc9cfa20065a92.java

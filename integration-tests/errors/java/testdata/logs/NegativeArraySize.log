@@ -1,0 +1,12 @@
+java.lang.NegativeArraySizeException: -10 in negative (com.collection.NegativeArraySize:5)
+Date: 2023-04-25 09:23:56.638692 +0200 CEST
+
+  == Java Exception: java.lang.NegativeArraySizeException: -10
+        at com.collection.NegativeArraySize.negative(NegativeArraySize.java:5)
+        at com.collection.NegativeArraySizeFuzzTest.fuzzTest(NegativeArraySizeFuzzTest.java:13)
+  == libFuzzer crashing input ==
+  MS: 0 ; base unit: 0000000000000000000000000000000000000000
+  0xa,
+  \012
+  artifact_prefix='/java-error-collection/src/test/resources/com/collection/NegativeArraySizeFuzzTestInputs/'; Test unit written to .cifuzz-findings/rational_lobster/crashing-input
+  Base64: Cg==

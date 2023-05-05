@@ -1,0 +1,28 @@
+Security Issue: XPath Injection in checkXpathExecute (com.code_intelligence.jazzer.sanitizers.XPathInjection:66)
+Date: 2023-05-02 12:47:35.3173 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: XPath Injection
+  Injected query: /user[@name='#'' and @pass='']
+        at com.code_intelligence.jazzer.sanitizers.XPathInjection.checkXpathExecute(XPathInjection.kt:66)
+        at com.collection.XPathInjectionFuzzTest.xPath(XPathInjectionFuzzTest.java:34)
+        at com.collection.XPathInjectionFuzzTest.fuzzTest(XPathInjectionFuzzTest.java:42)
+  Caused by: javax.xml.xpath.XPathExpressionException: javax.xml.transform.TransformerException: Literal in falschen Anführungszeichen... Einzelne Anführungszeichen erwartet.
+        at java.xml/com.sun.org.apache.xpath.internal.jaxp.XPathImpl.evaluate(XPathImpl.java:149)
+        at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:731)
+        at com.code_intelligence.jazzer.sanitizers.XPathInjection.checkXpathExecute(XPathInjection.kt:56)
+        ... 2 more
+  Caused by: javax.xml.transform.TransformerException: Literal in falschen Anführungszeichen... Einzelne Anführungszeichen erwartet.
+        at java.xml/com.sun.org.apache.xpath.internal.compiler.XPathParser.error(XPathParser.java:627)
+        at java.xml/com.sun.org.apache.xpath.internal.compiler.Lexer.tokenize(Lexer.java:234)
+        at java.xml/com.sun.org.apache.xpath.internal.compiler.Lexer.tokenize(Lexer.java:129)
+        at java.xml/com.sun.org.apache.xpath.internal.compiler.XPathParser.initXPath(XPathParser.java:121)
+        at java.xml/com.sun.org.apache.xpath.internal.XPath.<init>(XPath.java:207)
+        at java.xml/com.sun.org.apache.xpath.internal.jaxp.XPathImpl.eval(XPathImpl.java:120)
+        at java.xml/com.sun.org.apache.xpath.internal.jaxp.XPathImpl.evaluate(XPathImpl.java:135)
+        ... 4 more
+  == libFuzzer crashing input ==
+  MS: 10 InsertByte-Custom-EraseBytes-Custom-ShuffleBytes-Custom-CopyPart-Custom-ChangeBit-Custom-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x23,0x27,
+  #'
+  artifact_prefix='/Users/msandner/IdeaProjects/java-error-collection/src/test/resources/com/collection/XPathInjectionFuzzTestInputs/'; Test unit written to .cifuzz-findings/nervous_axolotl/crashing-input
+  Base64: Iyc=

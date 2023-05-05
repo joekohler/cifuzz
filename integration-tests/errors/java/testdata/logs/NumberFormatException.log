@@ -1,0 +1,14 @@
+java.lang.NumberFormatException: Cannot parse null string in numberFormat (com.collection.NumberFormatExceptionFuzzTest:9)
+Date: 2023-05-02 13:13:15.160964 +0200 CEST
+
+  == Java Exception: java.lang.NumberFormatException: Cannot parse null string
+        at java.base/java.lang.Integer.parseInt(Integer.java:630)
+        at java.base/java.lang.Integer.parseInt(Integer.java:784)
+        at com.collection.NumberFormatExceptionFuzzTest.numberFormat(NumberFormatExceptionFuzzTest.java:9)
+        at com.collection.NumberFormatExceptionFuzzTest.fuzzTest(NumberFormatExceptionFuzzTest.java:15)
+  == libFuzzer crashing input ==
+  MS: 6 ChangeBit-Custom-ChangeByte-Custom-InsertByte-Custom-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x40,0x2b,
+  @+
+  artifact_prefix='/Users/msandner/IdeaProjects/java-error-collection/src/test/resources/com/collection/NumberFormatExceptionFuzzTestInputs/'; Test unit written to .cifuzz-findings/friendly_narwhal/crashing-input
+  Base64: QCs=

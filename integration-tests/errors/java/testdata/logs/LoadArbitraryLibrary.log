@@ -1,0 +1,13 @@
+Security Issue: load arbitrary library in loadLibraryHook (com.code_intelligence.jazzer.sanitizers.ReflectiveCall:68)
+Date: 2023-05-02 12:30:03.488901 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: load arbitrary library
+        at com.code_intelligence.jazzer.sanitizers.ReflectiveCall.loadLibraryHook(ReflectiveCall.kt:68)
+        at com.collection.LoadArbitraryLibraryFuzzTest.loadLibrary(LoadArbitraryLibraryFuzzTest.java:9)
+        at com.collection.LoadArbitraryLibraryFuzzTest.fuzzTest(LoadArbitraryLibraryFuzzTest.java:16)
+  == libFuzzer crashing input ==
+  MS: 8 ChangeBit-Custom-InsertRepeatedBytes-Custom-ChangeByte-Custom-CMP-Custom- DE: "jazzer_honeypot"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x6a,0x61,0x7a,0x7a,0x65,0x72,0x5f,0x68,0x6f,0x6e,0x65,0x79,0x70,0x6f,0x74,
+  jazzer_honeypot
+  artifact_prefix='/Users/msandner/IdeaProjects/java-error-collection/src/test/resources/com/collection/LoadArbitraryLibraryFuzzTestInputs/'; Test unit written to .cifuzz-findings/hyperactive_nutria/crashing-input
+  Base64: amF6emVyX2hvbmV5cG90

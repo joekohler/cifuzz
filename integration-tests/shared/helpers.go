@@ -123,6 +123,31 @@ func CopyTestdataDir(t *testing.T, name string) string {
 	return dir
 }
 
+// CopyCustomTestdataDir copies a custom named testdata directory in the current
+// working directory to a temporary directory called "cifuzz-<name>-testdata" and
+// returns the path.
+func CopyCustomTestdataDir(t *testing.T, dir, name string) string {
+	fileutil.ForceLongPathTempDir()
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	tempDir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
+	require.NoError(t, err)
+
+	tempDir, err = filepath.EvalSymlinks(tempDir)
+	require.NoError(t, err)
+
+	// Get the path to the custom testdata dir
+	testDataDir := filepath.Join(cwd, dir)
+
+	// Copy the testdata dir to the temporary directory
+	err = copy.Copy(testDataDir, tempDir)
+	require.NoError(t, err)
+
+	return tempDir
+}
+
 func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
 	cmd := executil.Command(cifuzz, "findings", "--json", "--interactive=false")
 	cmd.Dir = dir

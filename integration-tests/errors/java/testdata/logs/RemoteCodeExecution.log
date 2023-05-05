@@ -1,0 +1,22 @@
+Security Issue: Remote Code Execution in remote (com.collection.RemoteCodeExecution:8)
+Date: 2023-04-24 15:18:37.694643 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Remote Code Execution
+  Unrestricted class/object creation based on externally controlled data may allow
+  remote code execution depending on available classes on the classpath.
+        at jaz.Zer.reportFinding(Zer.java:100)
+        at jaz.Zer.reportFindingIfEnabled(Zer.java:95)
+        at jaz.Zer.<init>(Zer.java:68)
+        at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:67)
+        at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+        at java.base/java.lang.reflect.ReflectAccess.newInstance(ReflectAccess.java:128)
+        at java.base/jdk.internal.reflect.ReflectionFactory.newInstance(ReflectionFactory.java:341)
+        at java.base/java.lang.Class.newInstance(Class.java:677)
+        at com.collection.RemoteCodeExecution.remote(RemoteCodeExecution.java:8)
+        at com.collection.RemoteCodeExecutionFuzzTest.fuzzTest(RemoteCodeExecutionFuzzTest.java:12)
+  == libFuzzer crashing input ==
+  MS: 8 CrossOver-Custom-CMP-Custom-ChangeBit-Custom-CMP-Custom- DE: "\377\377\377\377"-"jaz.Zer"-; base unit: a7c13e6fe60eee08b9aac00a095a9301ea1a9824
+  0x40,0x6a,0x61,0x7a,0x2e,0x5a,0x65,0x72,
+  @jaz.Zer
+  artifact_prefix='/Users/msandner/IdeaProjects/java-error-collection/src/test/resources/com/collection/RemoteCodeExecutionFuzzTestInputs/'; Test unit written to .cifuzz-findings/goofy_seal/crashing-input
+  Base64: QGphei5aZXI=

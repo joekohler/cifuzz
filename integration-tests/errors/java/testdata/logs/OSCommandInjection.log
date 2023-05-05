@@ -1,0 +1,19 @@
+Security Issue: OS Command Injection in processImplStartHook (com.code_intelligence.jazzer.sanitizers.OsCommandInjection:52)
+Date: 2023-05-02 12:32:07.461603 +0200 CEST
+
+  == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: OS Command Injection
+  Executing OS commands with attacker-controlled data can lead to remote code execution.
+        at com.code_intelligence.jazzer.sanitizers.OsCommandInjection.processImplStartHook(OsCommandInjection.kt:52)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1110)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1073)
+        at java.base/java.lang.Runtime.exec(Runtime.java:615)
+        at java.base/java.lang.Runtime.exec(Runtime.java:439)
+        at java.base/java.lang.Runtime.exec(Runtime.java:370)
+        at com.collection.OSCommandInjectionFuzzTest.commandInjection(OSCommandInjectionFuzzTest.java:13)
+        at com.collection.OSCommandInjectionFuzzTest.fuzzTest(OSCommandInjectionFuzzTest.java:25)
+  == libFuzzer crashing input ==
+  MS: 10 ChangeBit-Custom-CMP-Custom-CrossOver-Custom-CrossOver-Custom-CrossOver-Custom- DE: "jazze"-; base unit: d9195fced226237df50c28223f6c823a4e2454e0
+  0xa,0x6a,0x61,0x7a,0x7a,0x65,0xa,0xa,
+  \012jazze\012\012
+  artifact_prefix='/java-error-collection/src/test/resources/com/collection/OSCommandInjectionFuzzTestInputs/'; Test unit written to .cifuzz-findings/cranky_pronghorn/crashing-input
+  Base64: CmphenplCgo=
