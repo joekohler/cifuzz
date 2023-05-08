@@ -69,6 +69,7 @@ func (w *ArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath strin
 	if conflict {
 		if existingAbsPath == sourcePath {
 			log.Debugf("Skipping file %q, was already added to the archive", sourcePath)
+			return nil
 		} else {
 			return errors.Errorf("archive path %q has two source files: %q and %q", archivePath, existingAbsPath, sourcePath)
 		}
