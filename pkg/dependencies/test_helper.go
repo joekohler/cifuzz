@@ -32,7 +32,7 @@ func TestMockAllDeps(t *testing.T) {
 	versionFunc := func(dep *Dependency) (*semver.Version, error) {
 		return &dep.MinVersion, nil
 	}
-	installedFunc := func(dep *Dependency) bool {
+	installedFunc := func(dep *Dependency, _ string) bool {
 		return true
 	}
 
@@ -56,7 +56,7 @@ func OverwriteGetVersionWith0(dep *Dependency) *semver.Version {
 
 // OverwriteUninstalled marks the specified dependency as uninstalled
 func OverwriteUninstalled(dep *Dependency) {
-	dep.Installed = func(d *Dependency) bool {
+	dep.Installed = func(d *Dependency, _ string) bool {
 		return false
 	}
 }

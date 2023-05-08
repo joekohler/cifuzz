@@ -3,7 +3,6 @@ package coverage
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -440,22 +439,9 @@ func (c *coverageCmd) checkDependencies() error {
 			deps = append(deps, dependencies.VisualStudio, dependencies.Perl)
 		}
 	case config.BuildSystemMaven:
-		deps = []dependencies.Key{
-			dependencies.Maven,
-		}
+		deps = []dependencies.Key{dependencies.Maven}
 	case config.BuildSystemGradle:
-		// First check if gradle wrapper exists and check for gradle in path otherwise
-		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
-		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		if wrapper != "" {
-			return nil
-		}
-
-		deps = []dependencies.Key{
-			dependencies.Gradle,
-		}
+		deps = []dependencies.Key{dependencies.Gradle}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{
 			dependencies.Clang,
@@ -467,7 +453,7 @@ func (c *coverageCmd) checkDependencies() error {
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
-	err := dependencies.Check(deps)
+	err := dependencies.Check(deps, c.opts.ProjectDir)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

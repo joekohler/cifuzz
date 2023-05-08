@@ -232,7 +232,7 @@ func (c *createCmd) checkDependencies() {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.Clang}
 	}
-	err := dependencies.Check(deps)
+	err := dependencies.Check(deps, "")
 	if err != nil {
 		// we ignore errors here because this command has no actual
 		// dependencies and we just want to give recommendations

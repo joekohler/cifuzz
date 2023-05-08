@@ -22,7 +22,7 @@ func TestCheck(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePath").Return("cmake", nil)
 
-	err := check(keys, deps, finder)
+	err := check(keys, deps, finder, "")
 	require.NoError(t, err)
 }
 
@@ -33,7 +33,7 @@ func TestCheck_NotInstalled(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePath").Return("", errors.New("missing-error"))
 
-	err := check(keys, deps, finder)
+	err := check(keys, deps, finder, "")
 	require.Error(t, err)
 }
 
@@ -50,7 +50,7 @@ func TestCheck_WrongVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePath").Return("cmake", nil)
 
-	err := check(keys, deps, finder)
+	err := check(keys, deps, finder, "")
 	require.Error(t, err)
 }
 
@@ -67,7 +67,7 @@ func TestCheck_ShortVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePath").Return("cmake", nil)
 
-	err := check(keys, deps, finder)
+	err := check(keys, deps, finder, "")
 	require.NoError(t, err)
 }
 
@@ -84,6 +84,6 @@ func TestCheck_UnableToGetVersion(t *testing.T) {
 	finder := &mocks.RunfilesFinderMock{}
 	finder.On("CMakePath").Return("cmake", nil)
 
-	err := check(keys, deps, finder)
+	err := check(keys, deps, finder, "")
 	require.NoError(t, err)
 }

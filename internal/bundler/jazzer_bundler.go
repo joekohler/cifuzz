@@ -179,7 +179,7 @@ func (b *jazzerBundler) checkDependencies() error {
 	case config.BuildSystemGradle:
 		deps = []dependencies.Key{dependencies.Java, dependencies.Gradle}
 	}
-	err := dependencies.Check(deps)
+	err := dependencies.Check(deps, b.opts.ProjectDir)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

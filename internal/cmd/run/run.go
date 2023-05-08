@@ -711,17 +711,6 @@ func (c *runCmd) checkDependencies() error {
 			dependencies.Maven,
 		}
 	case config.BuildSystemGradle:
-		// First check if gradle wrapper exists and check for gradle in path otherwise
-		wrapper, err := gradle.FindGradleWrapper(c.opts.ProjectDir)
-		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		// TODO: Do we really not want to check that Java is installed
-		// too when we found the gradle wrapper?
-		if wrapper != "" {
-			return nil
-		}
-
 		deps = []dependencies.Key{
 			dependencies.Java,
 			dependencies.Gradle,
@@ -748,7 +737,7 @@ func (c *runCmd) checkDependencies() error {
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
 
-	depsErr := dependencies.Check(deps)
+	depsErr := dependencies.Check(deps, c.opts.ProjectDir)
 	if depsErr != nil {
 		log.Error(depsErr)
 		return cmdutils.WrapSilentError(depsErr)

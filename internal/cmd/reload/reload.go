@@ -113,7 +113,7 @@ func (c *reloadCmd) checkDependencies() error {
 			deps = append(deps, dependencies.VisualStudio)
 		}
 	}
-	err := dependencies.Check(deps)
+	err := dependencies.Check(deps, c.opts.ProjectDir)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

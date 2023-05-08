@@ -363,7 +363,7 @@ func (b *libfuzzerBundler) checkDependencies() error {
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.Clang}
 	}
-	err := dependencies.Check(deps)
+	err := dependencies.Check(deps, b.opts.ProjectDir)
 	if err != nil {
 		log.Error(err)
 		return cmdutils.WrapSilentError(err)

@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -21,7 +23,7 @@ var deps = Dependencies{
 		Key:        Bazel,
 		MinVersion: getMinVersionBazel(),
 		GetVersion: bazelVersion,
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.BazelPath)
 		},
 	},
@@ -31,7 +33,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return clangVersion(dep, clangCheck)
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			var clang string
 			cc := os.Getenv("CC")
 			if cc != "" && strings.Contains(path.Base(cc), "clang") {
@@ -59,7 +61,7 @@ var deps = Dependencies{
 		Key:        CMake,
 		MinVersion: *semver.MustParse("3.16.0"),
 		GetVersion: cmakeVersion,
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.CMakePath)
 		},
 	},
@@ -78,7 +80,7 @@ var deps = Dependencies{
 			log.Debugf("Found llvm-cov version %s in: %s", version, path)
 			return version, nil
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.LLVMCovPath)
 		},
 	},
@@ -89,7 +91,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			path, err := dep.finder.LLVMProfDataPath()
 			if err != nil {
 				return false
@@ -113,7 +115,7 @@ var deps = Dependencies{
 			log.Debugf("Found llvm-symbolizer version %s in: %s", version, path)
 			return version, nil
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.LLVMSymbolizerPath)
 		},
 	},
@@ -123,7 +125,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			path, err := dep.finder.GenHTMLPath()
 			if err != nil {
 				return false
@@ -138,7 +140,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.PerlPath)
 		},
 	},
@@ -146,7 +148,7 @@ var deps = Dependencies{
 		Key:        Java,
 		MinVersion: *semver.MustParse("1.8.0"),
 		GetVersion: javaVersion,
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.JavaHomePath)
 		},
 	},
@@ -156,7 +158,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.MavenPath)
 		},
 	},
@@ -166,7 +168,19 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
+			if projectDir != "" {
+				// Using the gradlew in the project dir is the preferred way
+				wrapper, err := gradle.FindGradleWrapper(projectDir)
+				if err != nil && !errors.Is(err, os.ErrNotExist) {
+					log.Error(errors.Wrap(err, "Error while checking for existing 'gradlew' in project dir. Gradle will be checked instead"))
+					return dep.checkFinder(dep.finder.GradlePath)
+				}
+				if wrapper != "" {
+					return true
+				}
+			}
+
 			return dep.checkFinder(dep.finder.GradlePath)
 		},
 	},
@@ -176,7 +190,7 @@ var deps = Dependencies{
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
 			return visualStudioVersion()
 		},
-		Installed: func(dep *Dependency) bool {
+		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.VisualStudioPath)
 		},
 	},

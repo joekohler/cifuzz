@@ -48,7 +48,7 @@ type Dependency struct {
 	// retrieve version or installation information for the
 	// specific dependency
 	GetVersion func(*Dependency) (*semver.Version, error)
-	Installed  func(*Dependency) bool
+	Installed  func(*Dependency, string) bool
 }
 
 // Compares MinVersion against GetVersion
@@ -76,11 +76,11 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 }
 
 // Check iterates of a list of dependencies and checks if they are fulfilled
-func Check(keys []Key) error {
-	return check(keys, deps, runfiles.Finder)
+func Check(keys []Key, projectDir string) error {
+	return check(keys, deps, runfiles.Finder, projectDir)
 }
 
-func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error {
+func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder, projectDir string) error {
 	allFine := true
 	for _, key := range keys {
 		dep, found := deps[key]
@@ -90,7 +90,7 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder) error 
 
 		dep.finder = finder
 
-		if !dep.Installed(dep) {
+		if !dep.Installed(dep, projectDir) {
 			log.Warnf(MessageMissing, dep.Key)
 			allFine = false
 			continue
