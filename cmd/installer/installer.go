@@ -40,10 +40,15 @@ func main() {
 	ignoreCheck := flags.Bool("ignore-installation-check", false, "Doesn't check if a previous installation already exists")
 	cmdutils.ViperMustBindPFlag("verbose", flags.Lookup("verbose"))
 
+	exit := func() {
+		showConfirmDialogOnWindows()
+		os.Exit(1)
+	}
+
 	err := flags.Parse(os.Args)
 	if err != nil {
 		log.Error(errors.WithStack(err))
-		os.Exit(1)
+		exit()
 	}
 
 	if *helpRequested {
@@ -59,7 +64,7 @@ func main() {
 		installDir, err = getInstallDir()
 		if err != nil {
 			log.Error(err)
-			os.Exit(1)
+			exit()
 		}
 	}
 
@@ -68,24 +73,17 @@ func main() {
 		err = checkExistingCIFuzz(installDir)
 		if err != nil {
 			log.Error(err)
-			os.Exit(1)
+			exit()
 		}
 	}
 
 	err = installCIFuzz(installDir)
 	if err != nil {
 		log.Error(err)
-		os.Exit(1)
+		exit()
 	}
 
-	// When running on Windows, the installer is run in a new console window
-	// and users need to press 'Enter' to close the window. Otherwise, the
-	// installer will close immediately and users won't see the installation
-	// notes. We don't want to wait for 'Enter' when running in CI, though.
-	if runtime.GOOS == "windows" && cicheck.IsCIEnvironment() {
-		log.Printf("Press 'Enter' to terminate the installer")
-		fmt.Scanln()
-	}
+	showConfirmDialogOnWindows()
 }
 
 func installCIFuzz(installDir string) error {
@@ -588,4 +586,15 @@ func cifuzzVersion(installDir string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return string(version), nil
+}
+
+func showConfirmDialogOnWindows() {
+	// When running on Windows, the installer is run in a new console window
+	// and users need to press 'Enter' to close the window. Otherwise, the
+	// installer will close immediately and users won't see the installation
+	// notes. We don't want to wait for 'Enter' when running in CI, though.
+	if runtime.GOOS == "windows" && !cicheck.IsCIEnvironment() {
+		log.Printf("Press 'Enter' to terminate the installer")
+		fmt.Scanln()
+	}
 }
