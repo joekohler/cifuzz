@@ -1,7 +1,6 @@
 package bundle
 
 import (
-	"os"
 	"runtime"
 
 	"github.com/pkg/errors"
@@ -146,12 +145,9 @@ on the build system. This can be overridden with a docker-image flag.
 			// We set CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS in tests to
 			// still be able to test that creating the bundle works on
 			// all platforms.
-			// TODO: remove CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS after the new
-			//  CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven ||
 				opts.BuildSystem == config.BuildSystemGradle
 			if runtime.GOOS != "linux" && !isOSIndependent &&
-				os.Getenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS") == "" &&
 				!config.AllowUnsupportedPlatforms() {
 				err = errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))
 				log.Error(err)

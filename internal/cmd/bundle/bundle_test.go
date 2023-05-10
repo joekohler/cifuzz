@@ -32,12 +32,7 @@ func TestMain(m *testing.M) {
 
 	// Make the bundle command not fail on unsupported platforms to be
 	// able to test it on all platforms
-
-	err := os.Setenv("CIFUZZ_BUNDLE_ON_UNSUPPORTED_PLATFORMS", "1") // TODO: remove me when CIFUZZ_ALLOW_UNSUPPORTED_PLATFORMS is released
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
+	err := os.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
 	if err != nil {
 		panic(err)
 	}
