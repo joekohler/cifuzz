@@ -74,30 +74,25 @@ dict: path/to/dictionary.dct
 <a id="engine-args"></a>
 
 ### engine-args
-Command-line arguments to pass to libFuzzer or Jazzer.
+Command-line arguments to pass to libFuzzer or Jazzer for running fuzz tests. 
+Engine-args are not supported for running ```cifuzz coverage``` on JVM-projects.
 
-For libFuzzer see https://llvm.org/docs/LibFuzzer.html#options.
+For possible libFuzzer options see https://llvm.org/docs/LibFuzzer.html#options.
 
-#### Example 
+For advanced configuration with Jazzer parameters see https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/advanced.md.
+
+#### Example Libfuzzer
 ```yaml
 engine-args:
  - -rss_limit_mb=4096
+ - -timeout=5s 
 ```
 
-For Jazzer, the prefix for Java System properties `-Djazzer.` has to be added to the argument. 
-
-#### Example
+#### Example Jazzer
 ```yaml
 engine-args:
- - -Djazzer.instrumentation_includes=com.** 
-```
-
-Specific for **Gradle**, the following code has to be added to the `build.gradle` file 
-in the project to allow using system properties via `-D` flags. 
-```groovy
-tasks.test {
-    systemProperties System.getProperties()
-}
+ - --instrumentation_includes=com.** 
+ - --keep_going
 ```
 
 <a id="timeout"></a>
