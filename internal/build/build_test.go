@@ -1,7 +1,6 @@
 package build
 
 import (
-	"os"
 	"runtime"
 	"testing"
 
@@ -16,8 +15,8 @@ func TestCommonBuildEnv_SetClang(t *testing.T) {
 		t.Skip("We are using clang-cl for windows")
 	}
 
-	os.Setenv("CC", "")
-	os.Setenv("CXX", "")
+	t.Setenv("CC", "")
+	t.Setenv("CXX", "")
 
 	env, err := CommonBuildEnv()
 	require.NoError(t, err)
@@ -30,8 +29,8 @@ func TestCommonBuildEnv_ClangDontOverwrite(t *testing.T) {
 		t.Skip("We are using clang-cl for windows")
 	}
 
-	os.Setenv("CC", "/my/clang")
-	os.Setenv("CXX", "/my/clang++")
+	t.Setenv("CC", "/my/clang")
+	t.Setenv("CXX", "/my/clang++")
 
 	env, err := CommonBuildEnv()
 	require.NoError(t, err)

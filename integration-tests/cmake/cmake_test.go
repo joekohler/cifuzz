@@ -38,8 +38,7 @@ func TestIntegration_CMake(t *testing.T) {
 	installDir := shared.InstallCIFuzzInTemp(t)
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
-	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
-	require.NoError(t, err)
+	t.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 
 	// Copy testdata
 	dir := shared.CopyTestdataDir(t, "cmake")

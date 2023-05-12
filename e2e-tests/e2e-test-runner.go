@@ -99,7 +99,7 @@ func RunTests(t *testing.T, testCases []TestCase) {
 		token := login.GetToken(ciServerToUseForE2ETests)
 		if token != "" {
 			fmt.Println("Found local token with login.GetToken, going to use it for the tests.")
-			os.Setenv(envvarWithE2EUserToken, token)
+			t.Setenv(envvarWithE2EUserToken, token)
 			tokenFilePath := tokenstorage.GetTokenFilePath()
 			if _, err := os.Stat(tokenFilePath); err == nil {
 				fmt.Println("Backing up existing access token file")

@@ -34,8 +34,7 @@ func TestIntegration_LLVM(t *testing.T) {
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
 	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
-	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
-	require.NoError(t, err)
+	t.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 
 	testCases := map[string]struct {
 		format string

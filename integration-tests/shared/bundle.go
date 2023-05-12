@@ -27,8 +27,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 
 	// Make the bundle command not fail on unsupported platforms to be
 	// able to test it on all platforms
-	err := os.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
-	require.NoError(t, err)
+	t.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
 
 	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
 	require.NoError(t, err)
@@ -88,9 +87,10 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 	var fuzzerMetadata *archive.Fuzzer
 	var coverageMetadata *archive.Fuzzer
 	for _, fuzzer := range metadata.Fuzzers {
-		if fuzzer.Engine == "LIBFUZZER" {
+		switch fuzzer.Engine {
+		case "LIBFUZZER":
 			fuzzerMetadata = fuzzer
-		} else if fuzzer.Engine == "LLVM_COV" {
+		case "LLVM_COV":
 			coverageMetadata = fuzzer
 		}
 	}

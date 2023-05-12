@@ -52,10 +52,17 @@ func TestMain(m *testing.M) {
 	}
 
 	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
+	cmakePrefixPathEnv := os.Getenv("CMAKE_PREFIX_PATH")
+	defer func() {
+		err = os.Setenv("CMAKE_PREFIX_PATH", cmakePrefixPathEnv)
+		if err != nil {
+			log.Fatalf("Failed to restore CMAKE_PREFIX_PATH: %+v", err)
+		}
+	}()
 	err = os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 	if err != nil {
 		builder.Cleanup()
-		log.Fatalf("Failed to install CMake integration: %+v", err)
+		log.Panicf("Failed to install CMake integration: %+v", err)
 	}
 
 	m.Run()

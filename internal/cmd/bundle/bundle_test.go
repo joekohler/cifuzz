@@ -31,7 +31,14 @@ func TestMain(m *testing.M) {
 	viper.Set("verbose", true)
 
 	// Make the bundle command not fail on unsupported platforms to be
-	// able to test it on all platforms
+	// able to test it on all platforms, reset the env variable after the test.
+	allowUnsupportedPlatformsEnv := os.Getenv(config.AllowUnsupportedPlatformsEnv)
+	defer func() {
+		err := os.Setenv(config.AllowUnsupportedPlatformsEnv, allowUnsupportedPlatformsEnv)
+		if err != nil {
+			panic(err)
+		}
+	}()
 	err := os.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
 	if err != nil {
 		panic(err)
@@ -122,8 +129,7 @@ func TestEnvVarsSetInConfigFile(t *testing.T) {
 	err := os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0644)
 	require.NoError(t, err)
 
-	err = os.Setenv("BAR", "bar")
-	require.NoError(t, err)
+	t.Setenv("BAR", "bar")
 
 	opts := &options{bundler.Opts{
 		ProjectDir:  projectDir,
