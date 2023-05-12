@@ -17,7 +17,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/mocks"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestMain(m *testing.M) {
@@ -34,7 +33,6 @@ func TestIntegration_LLVM(t *testing.T) {
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
-	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	// Include the CMake package by setting the CMAKE_PREFIX_PATH.
 	err := os.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 	require.NoError(t, err)

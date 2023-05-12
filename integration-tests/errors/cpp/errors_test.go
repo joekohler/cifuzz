@@ -31,7 +31,6 @@ func TestIntegration_CPPErrors(t *testing.T) {
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
-	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 	t.Setenv("CMAKE_PREFIX_PATH", filepath.Join(installDir, "share", "cmake"))
 

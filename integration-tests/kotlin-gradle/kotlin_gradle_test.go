@@ -29,7 +29,6 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	}
 
 	installDir := shared.InstallCIFuzzInTemp(t)
-	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata

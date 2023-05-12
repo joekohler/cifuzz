@@ -37,7 +37,6 @@ func TestIntegration_Bazel(t *testing.T) {
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
-	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata

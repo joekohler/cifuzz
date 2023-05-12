@@ -30,7 +30,6 @@ func TestIntegration_Maven(t *testing.T) {
 
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
-	t.Cleanup(func() { fileutil.Cleanup(installDir) })
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata

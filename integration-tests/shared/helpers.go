@@ -23,9 +23,11 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-var installOnce sync.Once
-var installMutex *filemutex.FileMutex
-var installDir string
+var (
+	installOnce  sync.Once
+	installMutex *filemutex.FileMutex
+	installDir   string
+)
 
 // AddLinesToFileAtBreakPoint adds the given lines before or after the breakpoint
 // to the file at the given path.
@@ -134,8 +136,9 @@ func GetFindings(t *testing.T, cifuzz string, dir string) []*finding.Finding {
 }
 
 // InstallCIFuzzInTemp creates an installation builder and extracts it
-// into a temporary directory. The caller should clean up the returned
-// directory.
+// into a temporary directory.
+// The temporary directory should *not* be deleted by the caller because it is
+// shared between tests and deleting it would cause side effects.
 func InstallCIFuzzInTemp(t *testing.T) string {
 	t.Helper()
 
