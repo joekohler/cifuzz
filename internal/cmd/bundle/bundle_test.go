@@ -52,6 +52,9 @@ func TestMain(m *testing.M) {
 func TestUnknownBuildSystem(t *testing.T) {
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin)
 	require.Error(t, err)
+
+	// In this scenario a log with the error message will be created and we do not care about it here
+	fileutil.Cleanup(".cifuzz-build")
 }
 
 func TestClangMissing(t *testing.T) {

@@ -397,6 +397,10 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	TerminateOnSignal(t, cmd)
 
 	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// In case of an error print out the full output to help debug the process
+		t.Log(string(out))
+	}
 	require.NoError(t, err)
 	require.FileExists(t, bundlePath)
 	assert.Contains(t, string(out), "Successfully created bundle: "+bundlePath)
@@ -435,6 +439,9 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	metadata := &archive.Metadata{}
 	err = yaml.Unmarshal(metadataYaml, metadata)
 	require.NoError(t, err)
+
+	// Verify that a build log has been added to the archive
+	require.FileExists(t, filepath.Join(archiveDir, "build.log"))
 
 	return metadata, archiveDir
 }
