@@ -1,12 +1,4 @@
-code-intelligence.com/cifuzz/integration-tests/kotlin-gradle
-code-intelligence.com/cifuzz/integration-tests/java-gradle
-code-intelligence.com/cifuzz/integration-tests/cmake
+code-intelligence.com/cifuzz/integration-tests/java-maven
+code-intelligence.com/cifuzz/integration-tests/java-maven-spring
 code-intelligence.com/cifuzz/integration-tests/other
 code-intelligence.com/cifuzz/tools/replayer
-code-intelligence.com/cifuzz/internal/cmd/coverage/summary
-code-intelligence.com/cifuzz/e2e-tests/init
-code-intelligence.com/cifuzz/pkg/stubs
-code-intelligence.com/cifuzz/internal/cmd/init
-code-intelligence.com/cifuzz/internal/tokenstorage
-code-intelligence.com/cifuzz/util/regexutil
-code-intelligence.com/cifuzz/e2e-tests/help
