@@ -14,7 +14,9 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
+	"code-intelligence.com/cifuzz/internal/cmd/bundle"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
@@ -110,6 +112,12 @@ variable or by running 'cifuzz login' first.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
+			err := bundle.SetUpBundleLogging(cmd, &opts.Opts)
+			if err != nil {
+				log.Errorf(err, "Failed to setup logging: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+
 			var argsToPass []string
 			if cmd.ArgsLenAtDash() != -1 {
 				argsToPass = args[cmd.ArgsLenAtDash():]
@@ -117,7 +125,7 @@ variable or by running 'cifuzz login' first.
 			}
 
 			cmdutils.ViperMustBindPFlag("bundle", cmd.Flags().Lookup("bundle"))
-			err := config.FindAndParseProjectConfig(opts)
+			err = config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
@@ -164,17 +172,6 @@ variable or by running 'cifuzz login' first.
 						log.Warnf("Flag --%s is ignored when --bundle is used", flag)
 					}
 				}
-			}
-
-			opts.BuildStdout = cmd.OutOrStdout()
-			opts.BuildStderr = cmd.OutOrStderr()
-			if cmdutils.ShouldLogBuildToFile() {
-				opts.BuildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, opts.FuzzTests)
-				if err != nil {
-					log.Errorf(err, "Failed to setup logging: %v", err.Error())
-					return cmdutils.WrapSilentError(err)
-				}
-				opts.BuildStderr = opts.BuildStdout
 			}
 
 			return opts.Validate()
@@ -292,16 +289,16 @@ func (c *runRemoteCmd) run() error {
 		c.opts.BundlePath = bundlePath
 		c.opts.OutputPath = bundlePath
 
-		if cmdutils.ShouldLogBuildToFile() {
+		if logging.ShouldLogBuildToFile() {
 			log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
 		}
 
 		b := bundler.New(&c.opts.Opts)
 		err = b.Bundle()
 		if err != nil {
-			if cmdutils.ShouldLogBuildToFile() {
+			if logging.ShouldLogBuildToFile() {
 				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
-				printErr := cmdutils.PrintBuildLogOnStdout()
+				printErr := logging.PrintBuildLogOnStdout()
 				if printErr != nil {
 					log.Error(printErr)
 				}
@@ -319,9 +316,9 @@ func (c *runRemoteCmd) run() error {
 			return err
 		}
 
-		if cmdutils.ShouldLogBuildToFile() {
+		if logging.ShouldLogBuildToFile() {
 			log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
-			log.Info(cmdutils.GetMsgPathToBuildLog())
+			log.Info(logging.GetMsgPathToBuildLog())
 		}
 	}
 

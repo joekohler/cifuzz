@@ -46,6 +46,7 @@ type Opts struct {
 	tempDir string `mapstructure:"-"`
 
 	ResolveSourceFilePath bool
+	BundleBuildLogFile    string
 }
 
 func (opts *Opts) Validate() error {

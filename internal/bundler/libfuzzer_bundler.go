@@ -22,6 +22,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -229,7 +230,7 @@ func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant, i int) {
 	// Print a newline to separate the build logs unless this is the
 
 	// first variant build
-	if i > 0 && !cmdutils.ShouldLogBuildToFile() {
+	if i > 0 && !logging.ShouldLogBuildToFile() {
 		log.Print()
 	}
 

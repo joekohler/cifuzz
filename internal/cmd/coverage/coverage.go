@@ -20,6 +20,7 @@ import (
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -172,8 +173,8 @@ or a lcov trace file.
 
 			opts.buildStdout = cmd.OutOrStdout()
 			opts.buildStderr = cmd.OutOrStderr()
-			if cmdutils.ShouldLogBuildToFile() {
-				opts.buildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
+			if logging.ShouldLogBuildToFile() {
+				opts.buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
 				if err != nil {
 					log.Errorf(err, "Failed to setup logging: %v", err.Error())
 					return cmdutils.WrapSilentError(err)
@@ -223,7 +224,7 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
-	if cmdutils.ShouldLogBuildToFile() {
+	if logging.ShouldLogBuildToFile() {
 		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
 	}
 
@@ -330,9 +331,9 @@ func (c *coverageCmd) run() error {
 
 	err = gen.BuildFuzzTestForCoverage()
 	if err != nil {
-		if cmdutils.ShouldLogBuildToFile() {
+		if logging.ShouldLogBuildToFile() {
 			log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
-			printErr := cmdutils.PrintBuildLogOnStdout()
+			printErr := logging.PrintBuildLogOnStdout()
 			if printErr != nil {
 				log.Error(printErr)
 			}
@@ -349,9 +350,9 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
-	if cmdutils.ShouldLogBuildToFile() {
+	if logging.ShouldLogBuildToFile() {
 		log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
-		log.Info(cmdutils.GetMsgPathToBuildLog())
+		log.Info(logging.GetMsgPathToBuildLog())
 	}
 
 	reportPath, err := gen.GenerateCoverageReport()

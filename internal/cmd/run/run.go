@@ -29,6 +29,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
@@ -273,8 +274,8 @@ depends on the build system configured for the project.
 
 			opts.buildStdout = cmd.OutOrStdout()
 			opts.buildStderr = cmd.OutOrStderr()
-			if cmdutils.ShouldLogBuildToFile() {
-				opts.buildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
+			if logging.ShouldLogBuildToFile() {
+				opts.buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
 				if err != nil {
 					log.Errorf(err, "Failed to setup logging: %v", err.Error())
 					return cmdutils.WrapSilentError(err)
@@ -419,18 +420,18 @@ func (c *runCmd) run() error {
 func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 	var err error
 
-	if cmdutils.ShouldLogBuildToFile() {
+	if logging.ShouldLogBuildToFile() {
 		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
 		defer func(err *error) {
 			if *err != nil {
 				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
-				printErr := cmdutils.PrintBuildLogOnStdout()
+				printErr := logging.PrintBuildLogOnStdout()
 				if printErr != nil {
 					log.Error(printErr)
 				}
 			} else {
 				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
-				log.Info(cmdutils.GetMsgPathToBuildLog())
+				log.Info(logging.GetMsgPathToBuildLog())
 			}
 		}(&err)
 	}

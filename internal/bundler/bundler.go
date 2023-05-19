@@ -134,6 +134,11 @@ func (b *Bundler) Bundle() error {
 		}
 	}
 
+	err = archiveWriter.WriteFile("build.log", b.opts.BundleBuildLogFile)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	err = archiveWriter.Close()
 	if err != nil {
 		return errors.WithStack(err)

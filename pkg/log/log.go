@@ -13,7 +13,13 @@ import (
 
 var disableColor bool
 
+// Output is the primary outlet for the log to write to.
 var Output io.Writer
+
+// VerboseSecondaryOutput captures the complete verbose output
+// of the primary output, even when the command is not called
+// in verbose mode. It provides a secondary output option.
+var VerboseSecondaryOutput io.Writer
 
 func init() {
 	Output = os.Stderr
@@ -57,12 +63,31 @@ func log(style pterm.Style, icon string, a ...any) {
 		// We only need to set this if we have to restart the spinner
 		currentProgressSpinner.RemoveWhenDone = true
 		_ = currentProgressSpinner.Stop()
+
 		_, _ = fmt.Fprint(Output, s)
+		logToSecondaryOutput(icon, a...)
+
 		currentProgressSpinner, _ = currentProgressSpinner.Start(currentProgressSpinner.Text)
 		return
 	}
 
 	_, _ = fmt.Fprint(Output, s)
+	logToSecondaryOutput(icon, a...)
+}
+
+func logToSecondaryOutput(icon string, a ...any) {
+	if VerboseSecondaryOutput == nil {
+		// Do nothing if this is not set
+		return
+	}
+
+	s := icon + fmt.Sprint(a...)
+	if len(s) == 0 || s[len(s)-1] != '\n' {
+		s += "\n"
+	}
+
+	s = pterm.RemoveColorFromString(s)
+	_, _ = fmt.Fprint(VerboseSecondaryOutput, s)
 }
 
 // Successf highlights a message as successful
@@ -130,7 +155,12 @@ func Debugf(format string, a ...any) {
 func Debug(a ...any) {
 	if viper.GetBool("verbose") {
 		log(pterm.Style{pterm.Fuzzy}, "🔍 ", a...)
+		return
 	}
+
+	// Secondary output catches full verbose log even
+	// if it is not called in verbose mode
+	logToSecondaryOutput("🔍 ", a...)
 }
 
 // Printf writes without any colors

@@ -1,6 +1,10 @@
 package bundle
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/pkg/errors"
@@ -9,6 +13,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -124,13 +129,19 @@ on the build system. This can be overridden with a docker-image flag.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
+			err := SetUpBundleLogging(cmd, &opts.Opts)
+			if err != nil {
+				log.Errorf(err, "Failed to setup logging: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+
 			var argsToPass []string
 			if cmd.ArgsLenAtDash() != -1 {
 				argsToPass = args[cmd.ArgsLenAtDash():]
 				args = args[:cmd.ArgsLenAtDash()]
 			}
 
-			err := config.FindAndParseProjectConfig(opts)
+			err = config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
@@ -162,29 +173,18 @@ on the build system. This can be overridden with a docker-image flag.
 			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
-			opts.BuildStdout = cmd.OutOrStdout()
-			opts.BuildStderr = cmd.OutOrStderr()
-			if cmdutils.ShouldLogBuildToFile() {
-				opts.BuildStdout, err = cmdutils.BuildOutputToFile(opts.ProjectDir, opts.FuzzTests)
-				if err != nil {
-					log.Errorf(err, "Failed to setup logging: %v", err.Error())
-					return cmdutils.WrapSilentError(err)
-				}
-				opts.BuildStderr = opts.BuildStdout
-			}
-
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			if cmdutils.ShouldLogBuildToFile() {
+			if logging.ShouldLogBuildToFile() {
 				log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
 			}
 
 			err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
-				if cmdutils.ShouldLogBuildToFile() {
+				if logging.ShouldLogBuildToFile() {
 					log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
-					printErr := cmdutils.PrintBuildLogOnStdout()
+					printErr := logging.PrintBuildLogOnStdout()
 					if printErr != nil {
 						log.Error(printErr)
 					}
@@ -202,9 +202,9 @@ on the build system. This can be overridden with a docker-image flag.
 				return err
 			}
 
-			if cmdutils.ShouldLogBuildToFile() {
+			if logging.ShouldLogBuildToFile() {
 				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
-				log.Info(cmdutils.GetMsgPathToBuildLog())
+				log.Info(logging.GetMsgPathToBuildLog())
 			}
 
 			log.Successf("Successfully created bundle: %s", opts.OutputPath)
@@ -232,4 +232,37 @@ on the build system. This can be overridden with a docker-image flag.
 	cmd.Flags().StringVarP(&opts.OutputPath, "output", "o", "", "Output path of the bundle (.tar.gz)")
 
 	return cmd
+}
+
+// SetUpBundleLogging configures the verbose log and build log file for the bundle command.
+func SetUpBundleLogging(cmd *cobra.Command, opts *bundler.Opts) error {
+	var err error
+
+	logDir, err := logging.CreateLogDir(opts.ProjectDir)
+	if err != nil {
+		return err
+	}
+	logSuffix := logging.SuffixForLog(opts.FuzzTests)
+	opts.BundleBuildLogFile = filepath.Join(logDir, fmt.Sprintf("%s.log", logSuffix))
+
+	log.VerboseSecondaryOutput, err = os.OpenFile(opts.BundleBuildLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	if logging.ShouldLogBuildToFile() {
+		var buildStdout io.Writer
+		buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, opts.FuzzTests)
+		if err != nil {
+			return err
+		}
+
+		opts.BuildStdout = io.MultiWriter(buildStdout, log.VerboseSecondaryOutput)
+		opts.BuildStderr = io.MultiWriter(opts.BuildStdout, log.VerboseSecondaryOutput)
+		return nil
+	}
+
+	opts.BuildStdout = io.MultiWriter(cmd.OutOrStdout(), log.VerboseSecondaryOutput)
+	opts.BuildStderr = io.MultiWriter(cmd.OutOrStderr(), log.VerboseSecondaryOutput)
+	return nil
 }

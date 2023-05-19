@@ -1,11 +1,10 @@
-package cmdutils
+package logging
 
 import (
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -16,23 +15,8 @@ import (
 var buildLogPath string
 
 func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, error) {
-	// Determine identifier for file
-	var logSuffix string
-	switch {
-	case len(fuzzTestNames) == 0 || (len(fuzzTestNames) == 1 && fuzzTestNames[0] == ""):
-		logSuffix = "all"
-	case len(fuzzTestNames) > 1:
-		logSuffix = strings.Join(fuzzTestNames, "_")
-	default:
-		logSuffix = fuzzTestNames[0]
-	}
-	// Make sure that calling fuzz tests in subdirs don't mess up the build log path
-	logSuffix = strings.ReplaceAll(logSuffix, string(os.PathSeparator), "_")
-	logFile := fmt.Sprintf("build-%s.log", logSuffix)
-
-	logDir := filepath.Join(projectDir, ".cifuzz-build", "logs")
-	// create logs dir if it doesn't exist
-	err := os.MkdirAll(logDir, 0755)
+	logFile := fmt.Sprintf("build-%s.log", SuffixForLog(fuzzTestNames))
+	logDir, err := CreateLogDir(projectDir)
 	if err != nil {
 		return nil, err
 	}
