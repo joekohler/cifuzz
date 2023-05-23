@@ -84,9 +84,9 @@ func newWithOptions(opts *remoteRunOpts) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "remote-run [flags] [<fuzz test>]...",
-		Short: "Build fuzz tests and run them on a CI Fuzz Server instance",
+		Short: "Build fuzz tests and run them on CI Sense",
 		Long: `This command builds fuzz tests, packages all runtime artifacts into a
-bundle and uploads that to a CI Fuzz Server instance to start a remote
+bundle and uploads it to CI Sense to start a remote
 fuzzing run.
 
 The inputs found in the inputs directory of the fuzz test are also added
@@ -215,7 +215,7 @@ func (c *runRemoteCmd) run() error {
 
 	token := login.GetToken(c.opts.Server)
 	if token == "" {
-		log.Print("You need to authenticate to a CI Fuzz Server instance to use this command.")
+		log.Print("You need to authenticate to CI Sense to use this command.")
 
 		if !c.opts.Interactive {
 			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")

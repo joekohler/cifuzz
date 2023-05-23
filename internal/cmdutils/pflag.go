@@ -129,7 +129,7 @@ func AddDockerImageFlag(cmd *cobra.Command) func() {
 	// It will be set by the bundle command depending on the build system, unless user overrides it
 	cmd.Flags().String("docker-image", "",
 		"Docker image to use in the bundle config. This image will be used when\n"+
-			"the bundle is executed on a CI Fuzz Server instance.\n"+
+			"the bundle is executed on CI Sense.\n"+
 			"By default, the image is chosen automatically based on the build system.")
 	return func() {
 		ViperMustBindPFlag("docker-image", cmd.Flags().Lookup("docker-image"))
@@ -223,7 +223,7 @@ func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 }
 
 func AddServerFlag(cmd *cobra.Command) func() {
-	cmd.PersistentFlags().String("server", "https://app.code-intelligence.com", "Address of the CI Fuzz Server instance")
+	cmd.PersistentFlags().String("server", "https://app.code-intelligence.com", "Address of CI Sense")
 	return func() {
 		ViperMustBindPFlag("server", cmd.Flags().Lookup("server"))
 	}

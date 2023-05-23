@@ -33,8 +33,8 @@ func New() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with a CI Fuzz Server instance",
-		Long: `This command is used to authenticate with a CI Fuzz Server instance.
+		Short: "Authenticate with CI Sense",
+		Long: `This command is used to authenticate with CI Sense.
 To learn more, visit https://www.code-intelligence.com.`,
 		Example: "$ cifuzz login",
 		PreRunE: func(cmd *cobra.Command, args []string) error {

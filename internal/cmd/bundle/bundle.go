@@ -46,7 +46,7 @@ func newWithOptions(opts *options) *cobra.Command {
 		Short: "Bundles fuzz tests into an archive",
 		Long: `This command bundles all runtime artifacts required by the
 given fuzz tests into a self-contained archive (bundle) that can be executed
-by a CI Fuzz Server instance.
+on CI Sense.
 
 The inputs found in the inputs directory of the fuzz test are also added
 to the bundle in addition to optional input directories specified with
