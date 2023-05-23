@@ -52,6 +52,7 @@ func (b *Bundler) Bundle() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create fuzzing artifact archive")
 	}
+	defer bundle.Close()
 
 	bufWriter := bufio.NewWriter(bundle)
 	archiveWriter := archive.NewArchiveWriter(bufWriter)
