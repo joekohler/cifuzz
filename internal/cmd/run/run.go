@@ -774,12 +774,12 @@ func (c *runCmd) setupSync() (bool, error) {
 
 	if authenticated {
 		willSync = true
-		log.Infof(`✓ You are authenticated.
-Your results will be synced to the remote fuzzing server at %s`, c.opts.Server)
+		log.Infof(`✓ You are authenticated with CI Sense.
+Your results will be synced to %s`, c.opts.Server)
 	} else if !interactive {
 		willSync = false
-		log.Warn(`You are not authenticated with a remote fuzzing server.
-Your results will not be synced to a remote fuzzing server.`)
+		log.Warn(`You are not authenticated with CI Sense.
+Your results will not be synced.`)
 	}
 
 	if interactive && !authenticated {
@@ -878,7 +878,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 			return err
 		}
 	}
-	log.Notef("Uploaded %d findings to CI Fuzz Server at: %s", len(c.reportHandler.Findings), c.opts.Server)
+	log.Notef("Uploaded %d findings to CI Sense at: %s", len(c.reportHandler.Findings), c.opts.Server)
 	log.Infof("You can view the findings at %s/dashboard/%s/findings?origin=cli", c.opts.Server, campaignRunName)
 
 	return nil

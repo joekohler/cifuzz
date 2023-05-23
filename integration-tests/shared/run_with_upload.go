@@ -64,6 +64,6 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, args ...string) 
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 
-	assert.Contains(t, string(out), "✓ You are authenticated.")
+	assert.Contains(t, string(out), "You are authenticated")
 	assert.Contains(t, string(out), "You can view the findings at http://127.0.0.1")
 }
