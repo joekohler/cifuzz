@@ -612,6 +612,16 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 	}
 	log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
 
+	// Use user-specified seed corpus dirs (if any) and the default seed
+	// corpus (if it exists)
+	exists, err := fileutil.Exists(buildResult.SeedCorpus)
+	if err != nil {
+		return err
+	}
+	if exists {
+		c.opts.SeedCorpusDirs = append(c.opts.SeedCorpusDirs, buildResult.SeedCorpus)
+	}
+
 	// Ensure that symlinks are resolved to be able to add minijail
 	// bindings for the corpus dirs.
 	buildResult.GeneratedCorpus, err = filepath.EvalSymlinks(buildResult.GeneratedCorpus)
