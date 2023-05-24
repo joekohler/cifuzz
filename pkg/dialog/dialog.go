@@ -110,19 +110,13 @@ You can change these values later by editing the file.`, false)
 	if persist {
 		project := strings.TrimPrefix(projectName, "projects/")
 
-		f, err := os.OpenFile(config.ProjectConfigFile, os.O_WRONLY, 0o644)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer f.Close()
-
 		contents, err := os.ReadFile(config.ProjectConfigFile)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		updatedContents := config.EnsureProjectEntry(string(contents), project)
 
-		_, err = f.WriteString(updatedContents)
+		err = os.WriteFile(config.ProjectConfigFile, []byte(updatedContents), 0o644)
 		if err != nil {
 			return errors.WithStack(err)
 		}
