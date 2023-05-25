@@ -270,8 +270,16 @@ func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
 	}
 
 	duration := time.Since(h.startedAt)
-	totalCorpusEntries := numCorpusEntries
-	newCorpusEntries := totalCorpusEntries - h.numSeedsAtInit
+	newCorpusEntries := numCorpusEntries - h.numSeedsAtInit
+
+	// If the number of new corpus entries exceeds the total corpus entries, it
+	// indicates an unexpected scenario where the total corpus entries are zero
+	// (e.g., when running with `--engine-arg=-runs=10`) and cifuzz discovers new
+	// seeds during subsequent runs. To avoid any issues related to unsigned
+	// integers, we set the new corpus entries to 0 in such cases.
+	if newCorpusEntries > numCorpusEntries {
+		newCorpusEntries = 0
+	}
 
 	var averageExecsStr string
 
@@ -302,7 +310,7 @@ func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
 		metrics.DescString("Execution time:\t") + metrics.NumberString(durationStr),
 		metrics.DescString("Average exec/s:\t") + averageExecsStr,
 		metrics.DescString("Findings:\t") + metrics.NumberString("%d", len(h.Findings)),
-		metrics.DescString("Corpus entries:\t") + metrics.NumberString("%d", totalCorpusEntries) +
+		metrics.DescString("Corpus entries:\t") + metrics.NumberString("%d", numCorpusEntries) +
 			metrics.DescString(" (+%s)", metrics.NumberString("%d", newCorpusEntries)),
 	}
 
