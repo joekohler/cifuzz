@@ -103,6 +103,10 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 
 	t.Run("run", func(t *testing.T) {
+		t.Run("runCheckCorrectCorpusCount", func(t *testing.T) {
+			testCorrectCorpusCount(t, cifuzzRunner)
+		})
+
 		testRun(t, cifuzzRunner)
 
 		t.Run("htmlReport", func(t *testing.T) {
@@ -399,6 +403,22 @@ func testRunWithSecretEnvVar(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		Env:              env,
 		UnexpectedOutput: regexp.MustCompile(`verysecret`),
 	})
+}
+
+// testCorrectCorpusCount checks that the corpus count is correct
+func testCorrectCorpusCount(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run two times with `--engine-arg=-runs=10` to make sure that the corpus
+	// count is correct and does not underflow.
+	for i := 0; i < 2; i++ {
+		cifuzzRunner.Run(t,
+			&shared.RunOptions{
+				Args: []string{"--engine-arg=-runs=10"},
+				ExpectedOutputs: []*regexp.Regexp{
+					regexp.MustCompile(`Findings:       0`),
+					regexp.MustCompile(`Corpus entries: 0 \(\+0\)`),
+				},
+			})
+	}
 }
 
 func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
