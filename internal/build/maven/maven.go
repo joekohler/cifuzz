@@ -164,6 +164,8 @@ func (b *Builder) getLocalDependencies() ([]string, error) {
 func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
 	// always run it with the cifuzz profile
 	args = append(args, "-Pcifuzz")
+	// remove color from output
+	args = append(args, "-B")
 	cmd := exec.Command(
 		"mvn",
 		args...,
