@@ -158,13 +158,6 @@ func (b *Builder) getLocalDependencies() ([]string, error) {
 		project.Build.TestOutputDirectory,
 	}
 
-	for _, resource := range project.Build.Resources.Resource {
-		localDeps = append(localDeps, resource.Directory)
-	}
-	for _, resource := range project.Build.TestResources.TestResource {
-		localDeps = append(localDeps, resource.Directory)
-	}
-
 	return localDeps, nil
 }
 
