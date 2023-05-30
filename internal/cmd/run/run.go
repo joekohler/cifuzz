@@ -839,6 +839,12 @@ func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingM
 			return cmdutils.WrapSilentError(err)
 		}
 
+		// if the user cancels the project selection, we don't want to upload
+		if project == "<<cancel>>" {
+			log.Info("Upload cancelled by user.")
+			return nil
+		}
+
 		// this will ask users via a y/N prompt if they want to persist the
 		// project choice
 		err = dialog.AskToPersistProjectChoice(project)
@@ -983,12 +989,16 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 	// add option to create a new project
 	items["<Create a new project>"] = "<<new>>"
 
+	// add option to cancel
+	items["<Cancel>"] = "<<cancel>>"
+
 	projectName, err := dialog.Select("Select the project you want to upload your findings to", items, true)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	if projectName == "<<new>>" {
+	switch projectName {
+	case "<<new>>":
 		// ask user for project name
 		projectName, err = dialog.Input("Enter the name of the project you want to create")
 		if err != nil {
@@ -1000,8 +1010,10 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-
 		return project.Name, nil
+
+	case "<<cancel>>":
+		return "<<cancel>>", nil
 	}
 
 	return projectName, nil

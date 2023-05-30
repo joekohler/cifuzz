@@ -255,6 +255,11 @@ func (c *runRemoteCmd) run() error {
 				return err
 			}
 
+			if c.opts.ProjectName == "<<cancel>>" {
+				log.Info("Remote run cancelled.")
+				return nil
+			}
+
 			// this will ask users via a y/N prompt if they want to persist the
 			// project choice
 			err = dialog.AskToPersistProjectChoice(c.opts.ProjectName)
@@ -376,6 +381,7 @@ func (c *runRemoteCmd) run() error {
 	return nil
 }
 
+// selectProject lets the user select a project from a list of projects.
 func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
 	// Let the user select a project
 	var displayNames []string
@@ -391,7 +397,10 @@ func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
 		items[key] = names[i]
 	}
 
-	if len(items) == 0 {
+	// add an option to cancel the command
+	items["<Cancel>"] = "<<cancel>>"
+
+	if len(items) == 1 {
 		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.Server)
 		log.Error(err)
 		return "", cmdutils.WrapSilentError(err)
@@ -400,6 +409,10 @@ func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
 	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items, true)
 	if err != nil {
 		return "", errors.WithStack(err)
+	}
+
+	if projectName == "<<cancel>>" {
+		return "<<cancel>>", nil
 	}
 
 	return projectName, nil
