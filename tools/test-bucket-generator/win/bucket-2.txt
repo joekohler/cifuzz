@@ -1,2 +1,2 @@
-code-intelligence.com/cifuzz/integration-tests/java-gradle
-code-intelligence.com/cifuzz/internal/cmd/coverage/llvm
+code-intelligence.com/cifuzz/integration-tests/kotlin-gradle
+code-intelligence.com/cifuzz/integration-tests/other

@@ -1,3 +1,4 @@
 code-intelligence.com/cifuzz/integration-tests/java-maven-spring
+code-intelligence.com/cifuzz/integration-tests/errors/cpp
 code-intelligence.com/cifuzz/tools/cmake
 code-intelligence.com/cifuzz/tools/replayer
