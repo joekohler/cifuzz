@@ -157,15 +157,17 @@ func (cmd *findingCmd) run(args []string) error {
 					f.ShortDescriptionColumns()[0],
 					// showing the fuzz test name is a SaaS only feature...
 					f.FuzzTest,
-					f.ShortDescriptionColumns()[1],
 				})
 			} else {
 				data = append(data, []string{
 					"n/a",
 					f.Name,
 					f.ShortDescriptionColumns()[0],
-					f.ShortDescriptionColumns()[1],
 				})
+			}
+			// add location (file, function, line) if available
+			if len(f.ShortDescriptionColumns()) > 1 {
+				data = append(data, []string{f.ShortDescriptionColumns()[1]})
 			}
 		}
 		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
