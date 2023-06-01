@@ -135,6 +135,7 @@ Please make sure to
 * select **"Develop Desktop C++ applications"** in the Visual Studio Installer
 * check **"C++ Clang Compiler for Windows"** in the "Individual Components" tab
 * check **"C++ CMake Tools for Windows"** in the "Individual Components" tab
+* check **"MSBuild support for LLVM (clang-cl) toolset"** in the "Individual Components" tab
 
 You can add these components anytime by choosing "Modify" in the Visual Studio Installer.
 
