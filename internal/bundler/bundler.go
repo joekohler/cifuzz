@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/vcs"
@@ -30,7 +31,7 @@ func New(opts *Opts) *Bundler {
 }
 
 func (b *Bundler) Bundle() error {
-	var dockerImageUsedInBundle = b.opts.DockerImage
+	dockerImageUsedInBundle := b.opts.DockerImage
 
 	// create temp dir
 	var err error
@@ -155,6 +156,8 @@ func (b *Bundler) Bundle() error {
 	return nil
 }
 
+// getCodeRevision returns the code revision of the project, if it can be
+// determined. If it cannot be determined, nil is returned.
 func (b *Bundler) getCodeRevision() *archive.CodeRevision {
 	var err error
 	var gitCommit string
@@ -163,7 +166,11 @@ func (b *Bundler) getCodeRevision() *archive.CodeRevision {
 	if b.opts.Commit == "" {
 		gitCommit, err = vcs.GitCommit()
 		if err != nil {
-			log.Debugf("failed to get Git commit: %+v", err)
+			// if this returns an error (e.g. if users don't have git installed), we
+			// don't want to fail the bundle creation, so we just log that we
+			// couldn't get the git commit and branch and continue without it.
+			log.Debugf("failed to get Git commit. continuing without Git commit and branch. error: %+v",
+				cmdutils.WrapSilentError(err))
 			return nil
 		}
 	} else {
@@ -173,7 +180,8 @@ func (b *Bundler) getCodeRevision() *archive.CodeRevision {
 	if b.opts.Branch == "" {
 		gitBranch, err = vcs.GitBranch()
 		if err != nil {
-			log.Debugf("failed to get Git branch: %+v", err)
+			log.Debugf("failed to get Git branch. continuing without Git commit and branch. error: %+v",
+				cmdutils.WrapSilentError(err))
 			return nil
 		}
 	} else {
