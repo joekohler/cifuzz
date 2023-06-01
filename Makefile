@@ -70,8 +70,9 @@ deps/dev: deps
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
 
 .PHONY: deps/test
+# TODO: use a version of gotestfmt ^2.4.2 when it's released
 deps/test:
-	go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.4.1
+	go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@b870aff77ad39547466e58f79725ca4d1bd92881
 
 .PHONY: install
 install:
