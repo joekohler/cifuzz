@@ -70,6 +70,11 @@ func (co *CommandOutput) OutputContains(expected string) *CommandOutput {
 	return co
 }
 
+func (co *CommandOutput) OutputNotContains(expected string) *CommandOutput {
+	assert.NotContains(co.t, co.Stdout, expected)
+	return co
+}
+
 func (co *CommandOutput) ErrorContains(expected string) *CommandOutput {
 	assert.Contains(co.t, co.Stderr, expected)
 	return co

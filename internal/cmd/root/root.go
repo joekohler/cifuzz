@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	bundleCmd "code-intelligence.com/cifuzz/internal/cmd/bundle"
+	containerCmd "code-intelligence.com/cifuzz/internal/cmd/container"
 	coverageCmd "code-intelligence.com/cifuzz/internal/cmd/coverage"
 	createCmd "code-intelligence.com/cifuzz/internal/cmd/create"
 	findingCmd "code-intelligence.com/cifuzz/internal/cmd/finding"
@@ -98,6 +99,11 @@ func New() (*cobra.Command, error) {
 	rootCmd.AddCommand(coverageCmd.New())
 	rootCmd.AddCommand(findingCmd.New())
 	rootCmd.AddCommand(integrateCmd.New())
+
+	// Only add containers command if envvar CIFUZZ_PRERELEASE is set
+	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		rootCmd.AddCommand(containerCmd.New())
+	}
 
 	return rootCmd, nil
 }
