@@ -40,12 +40,11 @@ func New() (*cobra.Command, error) {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-
 			log.Infof("cifuzz version %s", version)
 
 			err := cmdutils.Chdir()
 			if err != nil {
-				log.Error(err, err.Error())
+				log.Error(err)
 				return cmdutils.ErrSilent
 			}
 
@@ -55,7 +54,7 @@ func New() (*cobra.Command, error) {
 					// The project directory doesn't exist, this is an expected
 					// error, so we print it and return a silent error to avoid
 					// printing a stack trace
-					log.Error(err, fmt.Sprintf("%s\nUse 'cifuzz init' to set up a project for use with cifuzz.", err.Error()))
+					log.Error(err, fmt.Sprintf("%v\nUse 'cifuzz init' to set up a project for use with cifuzz.", err))
 					return cmdutils.ErrSilent
 				}
 				if err != nil {

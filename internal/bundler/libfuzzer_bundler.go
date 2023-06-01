@@ -320,7 +320,7 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 	})
 
 	for i, dep := range buildResult.RuntimeDeps {
-		isBelow, err := fileutil.IsBelow(dep, buildResult.BuildDir)
+		isBelow, err = fileutil.IsBelow(dep, buildResult.BuildDir)
 		if err != nil {
 			return err
 		}
@@ -342,13 +342,13 @@ func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tem
 		// by ldd and added into the bundle are valid files.
 		resolvedPath, err := filepath.EvalSymlinks(dep)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		err = copy.Copy(resolvedPath, newDepPath)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
 		buildResult.RuntimeDeps[i] = newDepPath
 	}
 	buildResult.BuildDir = tempDir

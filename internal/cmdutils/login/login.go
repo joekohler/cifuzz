@@ -28,7 +28,7 @@ func GetToken(server string) string {
 func ReadTokenInteractively(server string, additionalParams *url.Values) (string, error) {
 	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	values := url.Values{}
@@ -46,7 +46,7 @@ func ReadTokenInteractively(server string, additionalParams *url.Values) (string
 
 	url, err := url.Parse(path)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	url.RawQuery = values.Encode()
 
@@ -60,6 +60,7 @@ func ReadTokenInteractively(server string, additionalParams *url.Values) (string
 	if openBrowser {
 		err = browser.OpenURL(url.String())
 		if err != nil {
+			err = errors.WithStack(err)
 			log.Errorf(err, "Failed to open browser: %v", err)
 		}
 	}

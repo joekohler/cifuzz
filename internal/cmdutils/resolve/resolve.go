@@ -155,7 +155,7 @@ func FuzzTestArgument(resolveSourceFile bool, args []string, buildSystem, projec
 	if resolveSourceFile {
 		fuzzTest, err := resolve(args[0], buildSystem, projectDir)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to resolve source file")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to resolve source file %s", args[0]))
 		}
 		return []string{fuzzTest}, nil
 	}

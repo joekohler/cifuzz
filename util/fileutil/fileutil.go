@@ -210,11 +210,13 @@ func IsSystemLibrary(library string) bool {
 	for _, systemLibraryPath := range systemLibraryPaths[runtime.GOOS] {
 		isBelowLibPath, err := IsBelow(library, systemLibraryPath)
 		if err != nil {
+			log.Errorf(err, "error while checking system library: %s", library)
 			return false
 		}
 		if isBelowLibPath {
 			return true
 		}
 	}
+
 	return false
 }

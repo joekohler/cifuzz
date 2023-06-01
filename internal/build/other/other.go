@@ -151,6 +151,7 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if executable == "" {
 		return nil, cmdutils.WrapExecError(errors.Errorf("Could not find executable for fuzz test %q", fuzzTest), cmd)
 	}
@@ -162,10 +163,12 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	wd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
+
 	generatedCorpus := filepath.Join(b.ProjectDir, ".cifuzz-corpus", fuzzTest)
 	return &build.Result{
 		Name:            fuzzTest,
