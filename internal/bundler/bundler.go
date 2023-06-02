@@ -55,8 +55,9 @@ func (b *Bundler) Bundle() error {
 	}
 	defer bundle.Close()
 
+	// Create archive writer
 	bufWriter := bufio.NewWriter(bundle)
-	archiveWriter := archive.NewArchiveWriter(bufWriter)
+	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
 
 	var fuzzers []*archive.Fuzzer
 

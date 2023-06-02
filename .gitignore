@@ -14,6 +14,7 @@
 coverage.out
 *.coverage.html
 
+*.tar
 *.tar.gz
 
 /cifuzz.yaml

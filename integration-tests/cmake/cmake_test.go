@@ -227,7 +227,7 @@ func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
 	require.NoError(t, err)
 	defer fileutil.Cleanup(archiveDir)
 
-	err = archive.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
+	err = archive.Extract(bundlePath, archiveDir)
 	require.NoError(t, err)
 
 	for _, tc := range test {

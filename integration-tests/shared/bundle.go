@@ -408,7 +408,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
 	require.NoError(t, err)
 	t.Cleanup(func() { fileutil.Cleanup(archiveDir) })
-	err = archive.ExtractArchiveForTestsOnly(bundlePath, archiveDir)
+	err = archive.Extract(bundlePath, archiveDir)
 	require.NoError(t, err)
 
 	// List the files in the archive for easier debugging

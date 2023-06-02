@@ -48,7 +48,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 	bundle, err := os.CreateTemp("", "bundle-archive-")
 	require.NoError(t, err)
 	bufWriter := bufio.NewWriter(bundle)
-	archiveWriter := archive.NewArchiveWriter(bufWriter)
+	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
 
 	b := newLibfuzzerBundler(&Opts{
 		Env:     []string{"FOO=foo"},

@@ -22,10 +22,19 @@ type ArchiveWriter struct {
 	gzipWriter *gzip.Writer
 }
 
-func NewArchiveWriter(w io.Writer) *ArchiveWriter {
-	gzipWriter := gzip.NewWriter(w)
+func NewArchiveWriter(w io.Writer, compress bool) *ArchiveWriter {
+	var gzipWriter *gzip.Writer
+	var writer *tar.Writer
+
+	if compress {
+		gzipWriter = gzip.NewWriter(w)
+		writer = tar.NewWriter(gzipWriter)
+	} else {
+		writer = tar.NewWriter(w)
+	}
+
 	return &ArchiveWriter{
-		Writer:     tar.NewWriter(gzipWriter),
+		Writer:     writer,
 		manifest:   make(map[string]string),
 		gzipWriter: gzipWriter,
 	}
@@ -39,7 +48,11 @@ func (w *ArchiveWriter) Close() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = w.gzipWriter.Close()
+
+	if w.gzipWriter != nil {
+		err = w.gzipWriter.Close()
+	}
+
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -150,6 +163,11 @@ func (w *ArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) error
 		}
 		archivePath := filepath.Join(archiveBasePath, relPath)
 
+		// skip self referencing directories
+		if relPath == "." && archivePath == "." {
+			return nil
+		}
+
 		// There is no harm in creating tar entries for empty directories, even though they are not necessary.
 		return w.writeFileOrEmptyDir(archivePath, path)
 	})
@@ -164,9 +182,8 @@ func (w *ArchiveWriter) HasFileEntry(archivePath string) bool {
 	return exists
 }
 
-// ExtractArchiveForTestsOnly extracts the gzip-compressed tar archive
-// bundle into dir.
-func ExtractArchiveForTestsOnly(bundle, dir string) error {
+// Extract extracts the gzip-compressed tar archive bundle into dir.
+func Extract(bundle, dir string) error {
 	f, err := os.Open(bundle)
 	if err != nil {
 		return errors.WithStack(err)
