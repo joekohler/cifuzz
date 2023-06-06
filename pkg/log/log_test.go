@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/pterm/pterm"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,6 +64,49 @@ func TestInfo(t *testing.T) {
 func TestWarn(t *testing.T) {
 	Warn("Test")
 	checkOutput(t, "Test\n")
+}
+
+func TestStylePretty(t *testing.T) {
+	disableColor = false
+	viper.Set("style", "pretty")
+
+	Success("Test")
+	hasColor, out := checkForColoredOutput(t)
+	require.True(t, hasColor)
+	require.Contains(t, out, "✅")
+}
+
+func TestStyleColor(t *testing.T) {
+	disableColor = false
+	viper.Set("style", "color")
+
+	Success("Test")
+	hasColor, out := checkForColoredOutput(t)
+	require.True(t, hasColor)
+	require.NotContains(t, out, "✅")
+}
+
+func TestStylePlain(t *testing.T) {
+	viper.Set("style", "plain")
+
+	Success("Test")
+	hasColor, out := checkForColoredOutput(t)
+	require.False(t, hasColor)
+	require.NotContains(t, out, "✅")
+
+	// To make sure that all other tests are not influenced
+	// by the pterm.DisableColor() call in the log() func
+	pterm.EnableColor()
+}
+
+// checkForColoredOutput tests if removing color codes from the string
+// results in a shorter string, confirming there are colors in the output.
+func checkForColoredOutput(t *testing.T) (bool, string) {
+	out, err := io.ReadAll(testOut)
+	require.NoError(t, err)
+	lenOutput := len(out)
+	colorlessOutput := pterm.RemoveColorFromString(string(out))
+	return len(colorlessOutput) < lenOutput, string(out)
 }
 
 func checkOutput(t *testing.T, a ...string) string {
