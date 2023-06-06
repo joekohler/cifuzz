@@ -16,6 +16,7 @@ precedence over the respective config file setting.
 [no-notifications](#no-notifications) <br/>
 [server](#server) <br/>
 [project](#project) <br/>
+[style](#style) <br/>
 
 <a id="build-system"></a>
 
@@ -157,3 +158,16 @@ Set the project name of the CI App project
 ```yaml
 project: my-project-1a2b3c4d
 ```
+
+### style
+
+Choose the style to run cifuzz in
+- ```pretty```: Colored output and icons (default)
+- ```color```: Colored output
+- ```plain```: Pure text without any styles
+
+#### Example
+```yaml
+style: plain
+```
+

@@ -36,11 +36,14 @@
 ## Set to true to print output of the `cifuzz run` command as JSON.
 #print-json: true
 
-## Set to true to disable desktop notifications
+## Set to true to disable desktop notifications.
 #no-notifications: true
 
-## Set URL of the CI App
+## Set URL of the CI App.
 {{if .Server}}server: {{.Server}}{{else}}#server: https://app.code-intelligence.com{{end}}
 
-## Set the project name on the CI App
+## Set the project name on the CI App.
 {{if .Project}}project: {{.Project}}{{else}}#project: my-project-1a2b3c4d{{end}}
+
+## Style for CI Fuzz.
+#style: plain
