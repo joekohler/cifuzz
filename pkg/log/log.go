@@ -76,23 +76,23 @@ func log(style pterm.Style, icon string, a ...any) {
 		_ = currentProgressSpinner.Stop()
 
 		_, _ = fmt.Fprint(Output, s)
-		logToSecondaryOutput(icon, a...)
+		logToSecondaryOutput(a...)
 
 		currentProgressSpinner, _ = currentProgressSpinner.Start(currentProgressSpinner.Text)
 		return
 	}
 
 	_, _ = fmt.Fprint(Output, s)
-	logToSecondaryOutput(icon, a...)
+	logToSecondaryOutput(a...)
 }
 
-func logToSecondaryOutput(icon string, a ...any) {
+func logToSecondaryOutput(a ...any) {
 	if VerboseSecondaryOutput == nil {
 		// Do nothing if this is not set
 		return
 	}
 
-	s := icon + fmt.Sprint(a...)
+	s := fmt.Sprint(a...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		s += "\n"
 	}
@@ -116,7 +116,7 @@ func Warnf(format string, a ...any) {
 }
 
 func Warn(a ...any) {
-	log(pterm.Style{pterm.Bold, pterm.FgYellow}, "⚠️ ", a...)
+	log(pterm.Style{pterm.Bold, pterm.FgYellow}, "⚠️", a...)
 }
 
 // Notef highlights a message as a note
@@ -171,7 +171,7 @@ func Debug(a ...any) {
 
 	// Secondary output catches full verbose log even
 	// if it is not called in verbose mode
-	logToSecondaryOutput("🔍 ", a...)
+	logToSecondaryOutput(a...)
 }
 
 // Printf writes without any colors
