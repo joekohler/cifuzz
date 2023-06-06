@@ -14,7 +14,7 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation ("org.junit.jupiter", "junit-jupiter", "5.9.2")
     // Use Jazzer for fuzzing.
-    testImplementation ("com.code-intelligence", "jazzer-junit", "0.16.0")
+    testImplementation ("com.code-intelligence", "jazzer-junit", "0.17.1")
 }
 
 tasks.test {
