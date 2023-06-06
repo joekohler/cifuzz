@@ -86,6 +86,16 @@ func New() (*cobra.Command, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	rootCmd.PersistentFlags().String("style", "pretty", "Defines style for cifuzz")
+	if err := viper.BindPFlag("style", rootCmd.PersistentFlags().Lookup("style")); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	rootCmd.PersistentFlags().Bool("plain", false, "Run cifuzz in pure text mode without any styles")
+	if err := viper.BindPFlag("plain", rootCmd.PersistentFlags().Lookup("plain")); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	rootCmd.SetFlagErrorFunc(rootFlagErrorFunc)
 
 	cobra.EnableCommandSorting = false
@@ -121,7 +131,11 @@ func Execute() {
 		// Errors that are not ErrSilent are not expected and we want to show their full stacktrace
 		var silentErr *cmdutils.SilentError
 		if !errors.As(err, &silentErr) {
-			_, _ = fmt.Fprint(cmd.ErrOrStderr(), pterm.Style{pterm.Bold, pterm.FgRed}.Sprintf("%+v\n", err))
+			if log.PlainStyle() {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%+v\n", err)
+			} else {
+				_, _ = fmt.Fprint(cmd.ErrOrStderr(), pterm.Style{pterm.Bold, pterm.FgRed}.Sprintf("%+v\n", err))
+			}
 		}
 
 		// We only want to print the usage message if an ErrIncorrectUsage

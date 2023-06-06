@@ -10,6 +10,7 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/term"
 
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -124,6 +125,13 @@ func SetCommonASANOptions(env []string) ([]string, error) {
 		// Logs must be written to stderr for us to parse them.
 		"log_path": "stderr",
 	}
+
+	// Do this check here because the flag is not yet set at the init phase
+	// where the default options are determined
+	if log.PlainStyle() {
+		overrideOptions["color"] = "never"
+	}
+
 	return SetASANOptions(env, defaultOptions, overrideOptions)
 }
 
@@ -141,6 +149,12 @@ func SetCommonUBSANOptions(env []string) ([]string, error) {
 	overrideOptions := map[string]string{
 		// Logs must be written to stderr for us to parse them.
 		"log_path": "stderr",
+	}
+
+	// Do this check here because the flag is not yet set at the init phase
+	// where the default options are determined
+	if log.PlainStyle() {
+		overrideOptions["color"] = "never"
 	}
 
 	options := envutil.Getenv(env, "UBSAN_OPTIONS")

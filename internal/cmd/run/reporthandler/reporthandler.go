@@ -207,8 +207,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	if !print {
 		return nil
 	}
-
-	log.Printf("💥 %s", f.ShortDescriptionWithName())
+	log.Finding(f.ShortDescriptionWithName())
 
 	desktop.Notify("cifuzz finding", f.ShortDescriptionWithName())
 

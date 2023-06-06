@@ -24,22 +24,33 @@ var VerboseSecondaryOutput io.Writer
 func init() {
 	Output = os.Stderr
 	// Disable color if stderr is not a terminal. We don't use
-	// color.Disable() here because that would disable color for all
+	// the color flag here because that would disable color for all
 	// pterm and color methods, but we might want to use color in output
 	// printed to stdout (if stdout is a terminal).
 	disableColor = !term.IsTerminal(int(os.Stderr.Fd()))
 }
 
 func log(style pterm.Style, icon string, a ...any) {
-	s := icon + fmt.Sprint(a...)
+	s := fmt.Sprint(a...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		s += "\n"
 	}
 
+	// Can't do this check in init() because the flag is not yet set at that point
+	switch {
+	case PlainStyle():
+		// Disable all colors (this also influences all other pterm writers)
+		// Don't use DisableStyling() because otherwise the spinners won't work anymore
+		pterm.DisableColor()
+	case viper.GetString("style") == "color":
+		s = style.Sprint(s)
+	default:
+		s = icon + s
+		s = style.Sprint(s)
+	}
+
 	if disableColor {
 		s = pterm.RemoveColorFromString(s)
-	} else {
-		s = style.Sprint(s)
 	}
 
 	// Clear the updating printer output if any. We don't use
@@ -170,4 +181,12 @@ func Printf(format string, a ...any) {
 
 func Print(a ...any) {
 	log(pterm.Style{pterm.FgDefault}, "", a...)
+}
+
+func Finding(a ...any) {
+	log(pterm.Style{pterm.FgDefault}, "💥 ", a...)
+}
+
+func PlainStyle() bool {
+	return viper.GetString("style") == "plain" || viper.GetBool("plain")
 }

@@ -665,7 +665,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		FuzzTarget:         buildResult.Executable,
 		LibraryDirs:        libraryPaths,
 		GeneratedCorpusDir: buildResult.GeneratedCorpus,
-		KeepColor:          !c.opts.PrintJSON,
+		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
 		ProjectDir:         c.opts.ProjectDir,
 		ReadOnlyBindings:   []string{buildResult.BuildDir},
 		ReportHandler:      c.reportHandler,
