@@ -101,6 +101,16 @@ func TestIntegration_JavaErrors(t *testing.T) {
 			fuzzTest: "com.collection.SQLInjectionFuzzTest",
 			workdir:  testdataLDAPAndSQLTmp,
 		},
+		{
+			id:       "java_exception",
+			fuzzTest: "com.collection.ExceptionFuzzTest::fuzzTestException",
+			workdir:  testdataTmp,
+		},
+		{
+			id:       "java_exception",
+			fuzzTest: "com.collection.ExceptionFuzzTest::fuzzTestSecurityException",
+			workdir:  testdataTmp,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -130,7 +140,7 @@ func TestIntegration_JavaErrors(t *testing.T) {
 					break
 				}
 			}
-			assert.True(t, idFound)
+			assert.True(t, idFound, "id '%s' not found", tc.id)
 		})
 	}
 }

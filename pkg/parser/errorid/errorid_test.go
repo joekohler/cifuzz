@@ -30,6 +30,8 @@ func TestForFinding(t *testing.T) {
 		{id: "stack_buffer_overflow", f: &finding.Finding{Details: "stack-buffer-overflow on address"}},
 		{id: "timeout", f: &finding.Finding{Details: "timeout after 30 seconds"}},
 		{id: "use_of_uninitialized_value", f: &finding.Finding{Details: "use-of-uninitialized-value"}},
+		{id: "java_exception", f: &finding.Finding{Details: "java.lang.Exception"}},
+		{id: "java_exception", f: &finding.Finding{Details: "java.lang.SecurityException"}},
 
 		{f: &finding.Finding{Details: "Security Issue: FooBar"}, id: "jazzer_security_issue"},
 	}
