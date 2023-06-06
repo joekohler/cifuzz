@@ -41,7 +41,7 @@ func TestIntegration_JavaErrors(t *testing.T) {
 		workdir  string
 	}{
 		{
-			id:       "out_of_bounds",
+			id:       "java_out_of_bounds",
 			fuzzTest: "com.collection.ArrayOutOfBoundsFuzzTest",
 			workdir:  testdataTmp,
 		},
@@ -72,7 +72,12 @@ func TestIntegration_JavaErrors(t *testing.T) {
 		},
 		{
 			id:       "regex_injection",
-			fuzzTest: "com.collection.RegexInjectionFuzzTest",
+			fuzzTest: "com.collection.RegexInjectionFuzzTest::fuzzTestInsecureQuote",
+			workdir:  testdataTmp,
+		},
+		{
+			id:       "regex_injection",
+			fuzzTest: "com.collection.RegexInjectionFuzzTest::fuzzTestICanonEQ",
 			workdir:  testdataTmp,
 		},
 		{
@@ -93,7 +98,12 @@ func TestIntegration_JavaErrors(t *testing.T) {
 		},
 		{
 			id:       "ldap_injection",
-			fuzzTest: "com.collection.LDAPInjectionFuzzTest",
+			fuzzTest: "com.collection.LDAPInjectionFuzzTest::dnFuzzTest",
+			workdir:  testdataLDAPAndSQLTmp,
+		},
+		{
+			id:       "ldap_injection",
+			fuzzTest: "com.collection.LDAPInjectionFuzzTest::searchFuzzTest",
 			workdir:  testdataLDAPAndSQLTmp,
 		},
 		{

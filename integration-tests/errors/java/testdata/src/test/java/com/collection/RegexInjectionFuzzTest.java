@@ -25,7 +25,12 @@ public class RegexInjectionFuzzTest {
     }
 
     @FuzzTest
-    void fuzzTest(FuzzedDataProvider data) {
+    void fuzzTestInsecureQuote(FuzzedDataProvider data) {
         insecureQuote(data.consumeRemainingAsString());
+    }
+
+    @FuzzTest
+    void fuzzTestICanonEQ(FuzzedDataProvider data) {
+        canonEQ(data.consumeRemainingAsString());
     }
 }

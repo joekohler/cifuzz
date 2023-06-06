@@ -19,7 +19,7 @@ func TestForFinding(t *testing.T) {
 		{id: "heap_buffer_overflow", f: &finding.Finding{Details: "heap-buffer-overflow on address 0x602000000e31 at pc 0x55657aa63e9f bp 0x7ffdae3791b0 sp 0x7ffdae378970"}},
 		{id: "global_buffer_overflow", f: &finding.Finding{Details: "global-buffer-overflow on address 0x00"}},
 		{id: "java_assertion_error", f: &finding.Finding{Details: "Java Assertion Error"}},
-		{id: "out_of_bounds", f: &finding.Finding{Details: "java.lang.ArrayIndexOutOfBoundsException"}},
+		{id: "java_out_of_bounds", f: &finding.Finding{Details: "java.lang.ArrayIndexOutOfBoundsException"}},
 		{id: "out_of_bounds", f: &finding.Finding{Details: "undefined behavior: index 12 out of bounds for type 'int[4]'"}},
 		{id: "out_of_memory", f: &finding.Finding{Details: "out-of-memory"}},
 		{id: "remote_code_execution", f: &finding.Finding{Details: "Security Issue: Remote Code Execution"}},

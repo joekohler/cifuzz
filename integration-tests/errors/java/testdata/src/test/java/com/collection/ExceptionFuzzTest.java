@@ -6,7 +6,6 @@ import java.lang.SecurityException;
 import java.lang.Exception;
 
 public class ExceptionFuzzTest {
-
 		@FuzzTest
 		void fuzzTestException(FuzzedDataProvider data) throws Exception {
 				throw new Exception("Exception");
@@ -16,5 +15,4 @@ public class ExceptionFuzzTest {
 		void fuzzTestSecurityException(FuzzedDataProvider data) throws SecurityException {
 				throw new SecurityException("SecurityException");
 		}
-
 }

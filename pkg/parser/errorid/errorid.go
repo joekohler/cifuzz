@@ -37,11 +37,8 @@ var matchers = []matcher{
 	{id: "heap_use_after_free", substrings: []string{"heap-use-after-free on address"}},
 	{id: "global_buffer_overflow", substrings: []string{"global-buffer-overflow on address"}},
 	{id: "java_assertion_error", substrings: []string{"Java Assertion Error"}},
-	{
-		id:         "out_of_bounds",
-		substrings: []string{"java.lang.ArrayIndexOutOfBoundsException"},
-		regexs:     []*regexp.Regexp{regexp.MustCompile(`undefined behavior: index \d+ out of bounds`)},
-	},
+	{id: "out_of_bounds", regexs: []*regexp.Regexp{regexp.MustCompile(`undefined behavior: index \d+ out of bounds`)}},
+	{id: "java_out_of_bounds", substrings: []string{"java.lang.ArrayIndexOutOfBoundsException"}},
 	{id: "ldap_injection", substrings: []string{"Security Issue: LDAP Injection"}},
 	{id: "load_arbitrary_library", substrings: []string{"Security Issue: load arbitrary library"}},
 	{id: "memory_leak", substrings: []string{"detected memory leaks"}},
