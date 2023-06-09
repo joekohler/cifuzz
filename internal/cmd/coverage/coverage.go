@@ -369,7 +369,7 @@ func (c *coverageCmd) handleHTMLReport(reportPath string) error {
 		err := c.openReport(htmlFile)
 		if err != nil {
 			//... if this fails print the file URI
-			log.Debug(err)
+			log.Error(err)
 			err = c.printReportURI(htmlFile)
 			if err != nil {
 				return err

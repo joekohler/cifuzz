@@ -150,13 +150,13 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string) {
 	case config.BuildSystemGradle:
 		gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(dir)
 		if err != nil {
-			log.Debug(err)
+			log.Error(err)
 			return
 		}
 
 		isGradleMultiProject, err := config.IsGradleMultiProject(dir)
 		if err != nil {
-			log.Debug(err)
+			log.Error(err)
 			return
 		}
 		if isGradleMultiProject {

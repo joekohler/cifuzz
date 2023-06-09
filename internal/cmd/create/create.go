@@ -237,6 +237,6 @@ func (c *createCmd) checkDependencies() {
 		// we ignore errors here because this command has no actual
 		// dependencies and we just want to give recommendations
 		// instead of letting the command fail
-		log.Debug(err)
+		log.Error(err)
 	}
 }

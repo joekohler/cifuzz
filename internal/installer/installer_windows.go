@@ -16,7 +16,7 @@ func RegisterCMakePackage(packageDir string) error {
 	if err != nil {
 		// Best effort given that Go has no direct support for detecting Windows administrator status.
 		// Log the error and continue with the installation for the current user only.
-		log.Debug(err)
+		log.Error(err)
 	}
 	if err == nil && isAdmin {
 		key = registry.LOCAL_MACHINE
