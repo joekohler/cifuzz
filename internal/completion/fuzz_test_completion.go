@@ -28,7 +28,7 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 	// Change the directory if the `--directory` flag was set
 	err := cmdutils.Chdir()
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -39,7 +39,7 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 	}{}
 	err = config.FindAndParseProjectConfig(&conf)
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -60,7 +60,7 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 		return nil, cobra.ShellCompDirectiveDefault
 	default:
 		err := errors.Errorf("Unsupported build system \"%s\"", conf.BuildSystem)
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 }
@@ -154,7 +154,7 @@ func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 func validCMakeFuzzTests(projectDir string) ([]string, cobra.ShellCompDirective) {
 	matches, err := zglob.Glob(projectDir + "/.cifuzz-build/**/.cifuzz/fuzz_tests/*")
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 	var res []string

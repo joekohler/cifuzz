@@ -424,7 +424,7 @@ func (r *Runner) Cleanup(ctx context.Context) {
 	case <-r.started:
 		err := r.cmd.TerminateProcessGroup()
 		if err != nil {
-			log.Error(err, err.Error())
+			log.Error(err)
 		}
 	}
 }

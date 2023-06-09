@@ -16,7 +16,7 @@ func ValidCoverageOutputFormat(cmd *cobra.Command, args []string, toComplete str
 	// Change the directory if the `--directory` flag was set
 	err := cmdutils.Chdir()
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -27,7 +27,7 @@ func ValidCoverageOutputFormat(cmd *cobra.Command, args []string, toComplete str
 	}{}
 	err = config.FindAndParseProjectConfig(&conf)
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 

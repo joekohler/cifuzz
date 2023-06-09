@@ -126,7 +126,7 @@ func (cov *CoverageGenerator) runMavenCommand(args []string) error {
 		<-sigs
 		err = cmd.TerminateProcessGroup()
 		if err != nil {
-			log.Error(err, err.Error())
+			log.Error(err)
 		}
 	}()
 

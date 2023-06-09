@@ -57,7 +57,7 @@ func (opts *Opts) Validate() error {
 
 	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return cmdutils.ErrSilent
 	}
 
@@ -66,7 +66,7 @@ func (opts *Opts) Validate() error {
 		_, err := os.Stat(opts.Dictionary)
 		if err != nil {
 			err = errors.WithStack(err)
-			log.Error(err, err.Error())
+			log.Error(err)
 			return cmdutils.ErrSilent
 		}
 	}

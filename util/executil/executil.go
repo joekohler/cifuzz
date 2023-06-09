@@ -138,7 +138,7 @@ func (c *Cmd) Start() error {
 				// of calling c.Process.Kill().
 				err = c.TerminateProcessGroup()
 				if err != nil {
-					log.Error(err, err.Error())
+					log.Error(err)
 				}
 				c.terminatedAfterContextDone = true
 				c.terminatedAfterContextDoneMutex.Unlock()

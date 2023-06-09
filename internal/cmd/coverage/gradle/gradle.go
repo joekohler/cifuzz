@@ -105,7 +105,7 @@ func (cov *CoverageGenerator) runGradleCommand(args []string) error {
 		<-sigs
 		err = cmd.TerminateProcessGroup()
 		if err != nil {
-			log.Error(err, err.Error())
+			log.Error(err)
 		}
 	}()
 

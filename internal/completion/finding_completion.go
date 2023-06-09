@@ -15,20 +15,20 @@ func ValidFindings(cmd *cobra.Command, args []string, toComplete string) ([]stri
 	// Change the directory if the `--directory` flag was set
 	err := cmdutils.Chdir()
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	// Find the project directory
 	projectDir, err := config.FindConfigDir()
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	findings, err := finding.ListFindings(projectDir, nil)
 	if err != nil {
-		log.Error(err, err.Error())
+		log.Error(err)
 		return nil, cobra.ShellCompDirectiveError
 	}
 
