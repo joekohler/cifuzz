@@ -86,7 +86,7 @@ func New() (*cobra.Command, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	rootCmd.PersistentFlags().String("style", "pretty", "Defines style for cifuzz")
+	rootCmd.PersistentFlags().String("style", "pretty", "Defines style for cifuzz (pretty, color, plain)")
 	if err := viper.BindPFlag("style", rootCmd.PersistentFlags().Lookup("style")); err != nil {
 		return nil, errors.WithStack(err)
 	}
