@@ -8,6 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 // region Log
@@ -29,9 +31,38 @@ func ShouldLogBuildToFile() bool {
 	return !viper.GetBool("verbose")
 }
 
-// PrintBuildLogOnStdout reads the build log file and prints it
+func StartBuildProgressSpinner(msg string) {
+	if !ShouldLogBuildToFile() {
+		return
+	}
+
+	log.CreateCurrentProgressSpinner(nil, msg)
+}
+
+func StopBuildProgressSpinnerOnError(msg string) {
+	if !ShouldLogBuildToFile() {
+		return
+	}
+
+	log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), msg)
+	printErr := printBuildLogOnStdout()
+	if printErr != nil {
+		log.Error(printErr)
+	}
+}
+
+func StopBuildProgressSpinnerOnSuccess(msg string) {
+	if !ShouldLogBuildToFile() {
+		return
+	}
+
+	log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), msg)
+	log.Info(fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath))
+}
+
+// printBuildLogOnStdout reads the build log file and prints it
 // on stdout.
-func PrintBuildLogOnStdout() error {
+func printBuildLogOnStdout() error {
 	fmt.Println()
 
 	data, err := os.ReadFile(buildLogPath)
@@ -45,8 +76,4 @@ func PrintBuildLogOnStdout() error {
 	}
 
 	return nil
-}
-
-func GetMsgPathToBuildLog() string {
-	return fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath)
 }

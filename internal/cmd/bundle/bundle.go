@@ -176,20 +176,11 @@ on the build system. This can be overridden with a docker-image flag.
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			if logging.ShouldLogBuildToFile() {
-				log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
-			}
+			logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
 
 			err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
-				if logging.ShouldLogBuildToFile() {
-					log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
-					printErr := logging.PrintBuildLogOnStdout()
-					if printErr != nil {
-						log.Error(printErr)
-					}
-				}
-
+				logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
 				var execErr *cmdutils.ExecError
 				if errors.As(err, &execErr) {
 					// It is expected that some commands might fail due to user
@@ -202,11 +193,7 @@ on the build system. This can be overridden with a docker-image flag.
 				return err
 			}
 
-			if logging.ShouldLogBuildToFile() {
-				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
-				log.Info(logging.GetMsgPathToBuildLog())
-			}
-
+			logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg)
 			log.Successf("Successfully created bundle: %s", opts.OutputPath)
 
 			return nil

@@ -289,21 +289,12 @@ func (c *runRemoteCmd) run() error {
 		c.opts.BundlePath = bundlePath
 		c.opts.OutputPath = bundlePath
 
-		if logging.ShouldLogBuildToFile() {
-			log.CreateCurrentProgressSpinner(nil, log.BundleInProgressMsg)
-		}
+		logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
 
 		b := bundler.New(&c.opts.Opts)
 		err = b.Bundle()
 		if err != nil {
-			if logging.ShouldLogBuildToFile() {
-				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BundleInProgressErrorMsg)
-				printErr := logging.PrintBuildLogOnStdout()
-				if printErr != nil {
-					log.Error(printErr)
-				}
-			}
-
+			logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
 			var execErr *cmdutils.ExecError
 			if errors.As(err, &execErr) {
 				// It is expected that some commands might fail due to user
@@ -316,10 +307,7 @@ func (c *runRemoteCmd) run() error {
 			return err
 		}
 
-		if logging.ShouldLogBuildToFile() {
-			log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BundleInProgressSuccessMsg)
-			log.Info(logging.GetMsgPathToBuildLog())
-		}
+		logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg)
 	}
 
 	artifact, err := c.apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)

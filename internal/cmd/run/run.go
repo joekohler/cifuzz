@@ -420,21 +420,14 @@ func (c *runCmd) run() error {
 func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 	var err error
 
-	if logging.ShouldLogBuildToFile() {
-		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
-		defer func(err *error) {
-			if *err != nil {
-				log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
-				printErr := logging.PrintBuildLogOnStdout()
-				if printErr != nil {
-					log.Error(printErr)
-				}
-			} else {
-				log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
-				log.Info(logging.GetMsgPathToBuildLog())
-			}
-		}(&err)
-	}
+	logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
+	defer func(err *error) {
+		if *err != nil {
+			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
+		} else {
+			logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg)
+		}
+	}(&err)
 
 	// TODO: Do not hardcode these values.
 	sanitizers := []string{"address", "undefined"}

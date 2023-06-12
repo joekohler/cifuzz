@@ -224,10 +224,7 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
-	if logging.ShouldLogBuildToFile() {
-		log.CreateCurrentProgressSpinner(nil, log.BuildInProgressMsg)
-	}
-
+	logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
 	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
 
 	if c.opts.Preset == "vscode" {
@@ -331,14 +328,7 @@ func (c *coverageCmd) run() error {
 
 	err = gen.BuildFuzzTestForCoverage()
 	if err != nil {
-		if logging.ShouldLogBuildToFile() {
-			log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), log.BuildInProgressErrorMsg)
-			printErr := logging.PrintBuildLogOnStdout()
-			if printErr != nil {
-				log.Error(printErr)
-			}
-		}
-
+		logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
 		var execErr *cmdutils.ExecError
 		if errors.As(err, &execErr) {
 			// It is expected that some commands might fail due to user
@@ -350,11 +340,7 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
-	if logging.ShouldLogBuildToFile() {
-		log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), log.BuildInProgressSuccessMsg)
-		log.Info(logging.GetMsgPathToBuildLog())
-	}
-
+	logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg)
 	reportPath, err := gen.GenerateCoverageReport()
 	if err != nil {
 		return err
