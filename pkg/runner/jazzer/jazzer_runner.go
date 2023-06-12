@@ -16,7 +16,6 @@ import (
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/envutil"
-	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type RunnerOptions struct {
@@ -101,12 +100,6 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	// Add user-specified Jazzer/libfuzzer options
 	args = append(args, r.EngineArgs...)
-
-	// For Jazzer, we increase the default OOM limit further away from the JVM's maximum heap size of 1800 MB to
-	// prevent spurious OOMs, which abort a fuzzing run.
-	if !stringutil.ContainsStringWithPrefix(r.EngineArgs, options.LibFuzzerRSSLimit) {
-		args = append(args, options.LibFuzzerRSSLimitFlag("3000"))
-	}
 
 	// Add any additional corpus directories as further positional arguments
 	args = append(args, r.SeedCorpusDirs...)
