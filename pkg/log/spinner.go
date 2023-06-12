@@ -27,15 +27,30 @@ func GetPtermSuccessStyle() *pterm.Style {
 var currentProgressSpinner *pterm.SpinnerPrinter
 
 func CreateCurrentProgressSpinner(style *pterm.Style, msg string) {
-	// error can be ignored here since pterm doesn't return one
+	if PlainStyle() {
+		// do not show a printer when plain style is enabled
+		// and only display message
+		Info(msg)
+		return
+	}
+
 	if style != nil {
 		currentProgressSpinner.Style = style
 		currentProgressSpinner.MessageStyle = style
 	}
+
+	// error can be ignored here since pterm doesn't return one
 	currentProgressSpinner, _ = pterm.DefaultSpinner.Start(msg)
 }
 
 func StopCurrentProgressSpinner(style *pterm.Style, msg string) {
+	if currentProgressSpinner == nil || PlainStyle() {
+		// do not show a printer if it is not set or
+		// plain style is enabled and only display message
+		Info(msg)
+		return
+	}
+
 	if style != nil {
 		currentProgressSpinner.Style = style
 		currentProgressSpinner.MessageStyle = style

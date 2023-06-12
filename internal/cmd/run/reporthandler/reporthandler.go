@@ -72,7 +72,8 @@ func NewReportHandler(fuzzTest string, options *ReportHandlerOptions) (*ReportHa
 	}
 
 	// Use an updating printer if the output stream is a TTY
-	if term.IsTerminal(int(printerOutput.Fd())) {
+	// and plain style is not enabled
+	if term.IsTerminal(int(printerOutput.Fd())) && !log.PlainStyle() {
 		h.printer, err = metrics.NewUpdatingPrinter(printerOutput)
 		if err != nil {
 			return nil, err
