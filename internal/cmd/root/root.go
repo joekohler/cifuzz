@@ -17,6 +17,7 @@ import (
 	containerCmd "code-intelligence.com/cifuzz/internal/cmd/container"
 	coverageCmd "code-intelligence.com/cifuzz/internal/cmd/coverage"
 	createCmd "code-intelligence.com/cifuzz/internal/cmd/create"
+	executeCmd "code-intelligence.com/cifuzz/internal/cmd/execute"
 	findingCmd "code-intelligence.com/cifuzz/internal/cmd/finding"
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	integrateCmd "code-intelligence.com/cifuzz/internal/cmd/integrate"
@@ -111,6 +112,7 @@ func New() (*cobra.Command, error) {
 
 	// Only add containers command if envvar CIFUZZ_PRERELEASE is set
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+		rootCmd.AddCommand(executeCmd.New())
 		rootCmd.AddCommand(containerCmd.New())
 	}
 

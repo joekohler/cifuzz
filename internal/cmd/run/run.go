@@ -137,7 +137,7 @@ type runCmd struct {
 	tempDir       string
 }
 
-type runner interface {
+type Runner interface {
 	Run(context.Context) error
 	Cleanup(context.Context)
 }
@@ -668,7 +668,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		Verbose:            viper.GetBool("verbose"),
 	}
 
-	var runner runner
+	var runner Runner
 
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
@@ -683,7 +683,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		runner = jazzer.NewRunner(runnerOpts)
 	}
 
-	return executeRunner(runner)
+	return ExecuteRunner(runner)
 }
 
 func (c *runCmd) printFinalMetrics(generatedCorpus, seedCorpus string) error {
@@ -894,7 +894,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	return nil
 }
 
-func executeRunner(runner runner) error {
+func ExecuteRunner(runner Runner) error {
 	// Handle cleanup (terminating the fuzzer process) when receiving
 	// termination signals
 	signalHandlerCtx, cancelSignalHandler := context.WithCancel(context.Background())
