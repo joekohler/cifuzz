@@ -100,7 +100,7 @@ build/all: build/linux build/windows build/darwin ;
 
 .PHONY: build/linux
 build/linux: deps
-	env GOOS=linux GOARCH=amd64 go build -o $(binary_base_path)_linux cmd/cifuzz/main.go
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(binary_base_path)_linux cmd/cifuzz/main.go
 
 .PHONY: build/windows
 build/windows: deps
