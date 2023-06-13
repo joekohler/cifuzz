@@ -51,13 +51,16 @@ func StopBuildProgressSpinnerOnError(msg string) {
 	}
 }
 
-func StopBuildProgressSpinnerOnSuccess(msg string) {
+func StopBuildProgressSpinnerOnSuccess(msg string, printPath bool) {
 	if !ShouldLogBuildToFile() {
 		return
 	}
 
 	log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), msg)
-	log.Info(fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath))
+
+	if printPath {
+		log.Info(fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath))
+	}
 }
 
 // printBuildLogOnStdout reads the build log file and prints it

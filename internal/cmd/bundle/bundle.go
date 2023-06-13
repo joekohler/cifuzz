@@ -193,7 +193,7 @@ on the build system. This can be overridden with a docker-image flag.
 				return err
 			}
 
-			logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg)
+			logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg, true)
 			log.Successf("Successfully created bundle: %s", opts.OutputPath)
 
 			return nil

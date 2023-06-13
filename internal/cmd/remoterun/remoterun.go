@@ -307,7 +307,7 @@ func (c *runRemoteCmd) run() error {
 			return err
 		}
 
-		logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg)
+		logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg, true)
 	}
 
 	artifact, err := c.apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)

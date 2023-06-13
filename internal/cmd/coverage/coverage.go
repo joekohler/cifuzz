@@ -340,7 +340,7 @@ func (c *coverageCmd) run() error {
 		return err
 	}
 
-	logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg)
+	logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
 	reportPath, err := gen.GenerateCoverageReport()
 	if err != nil {
 		return err

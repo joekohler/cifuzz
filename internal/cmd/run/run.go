@@ -425,7 +425,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		if *err != nil {
 			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
 		} else {
-			logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg)
+			logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
 		}
 	}(&err)
 
