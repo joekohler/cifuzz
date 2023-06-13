@@ -1,5 +1,5 @@
 run_environment:
-    docker: openjdk:latest
+    docker: eclipse-temurin
 code_revision:
     git:
         commit: b0bcedbdd44eba63b768d1aeae66d7882fe412e8

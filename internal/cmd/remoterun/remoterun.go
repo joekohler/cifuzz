@@ -292,7 +292,7 @@ func (c *runRemoteCmd) run() error {
 		logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
 
 		b := bundler.New(&c.opts.Opts)
-		err = b.Bundle()
+		_, err = b.Bundle()
 		if err != nil {
 			logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
 			var execErr *cmdutils.ExecError

@@ -178,7 +178,7 @@ on the build system. This can be overridden with a docker-image flag.
 		RunE: func(c *cobra.Command, args []string) error {
 			logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
 
-			err := bundler.New(&opts.Opts).Bundle()
+			_, err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
 				logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
 				var execErr *cmdutils.ExecError
@@ -232,7 +232,7 @@ func SetUpBundleLogging(cmd *cobra.Command, opts *bundler.Opts) error {
 	logSuffix := logging.SuffixForLog(opts.FuzzTests)
 	opts.BundleBuildLogFile = filepath.Join(logDir, fmt.Sprintf("%s.log", logSuffix))
 
-	log.VerboseSecondaryOutput, err = os.OpenFile(opts.BundleBuildLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	log.VerboseSecondaryOutput, err = os.OpenFile(opts.BundleBuildLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}

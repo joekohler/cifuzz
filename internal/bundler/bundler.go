@@ -30,28 +30,20 @@ func New(opts *Opts) *Bundler {
 	return &Bundler{opts: opts}
 }
 
-func (b *Bundler) Bundle() error {
-	dockerImageUsedInBundle := b.opts.DockerImage
-
-	// create temp dir
+func (b *Bundler) Bundle() (string, error) {
 	var err error
+
+	// Create temp dir
 	b.opts.tempDir, err = os.MkdirTemp("", "cifuzz-bundle-")
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	defer fileutil.Cleanup(b.opts.tempDir)
 
-	if b.opts.OutputPath != "" {
-		// do nothing
-	} else if len(b.opts.FuzzTests) == 1 {
-		b.opts.OutputPath = filepath.Base(b.opts.FuzzTests[0]) + ".tar.gz"
-	} else {
-		b.opts.OutputPath = "fuzz_tests.tar.gz"
-	}
-
-	bundle, err := os.Create(b.opts.OutputPath)
+	var bundle *os.File
+	bundle, err = b.createEmptyBundle()
 	if err != nil {
-		return errors.Wrap(err, "failed to create fuzzing artifact archive")
+		return "", err
 	}
 	defer bundle.Close()
 
@@ -60,25 +52,92 @@ func (b *Bundler) Bundle() error {
 	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
 
 	var fuzzers []*archive.Fuzzer
-
 	switch b.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
 		fuzzers, err = newLibfuzzerBundler(b.opts, archiveWriter).bundle()
-		// Use default Ubuntu Docker image for CMake, Bazel, and other build systems
-		if dockerImageUsedInBundle == "" {
-			dockerImageUsedInBundle = "ubuntu:rolling"
-		}
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		fuzzers, err = newJazzerBundler(b.opts, archiveWriter).bundle()
-		// Maven and Gradle should use a Docker image with Java
-		if dockerImageUsedInBundle == "" {
-			dockerImageUsedInBundle = "openjdk:latest"
-		}
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
 
+	dockerImageUsedInBundle := b.determineDockerImageForBundle()
+	err = b.createMetadataFileInArchive(fuzzers, archiveWriter, dockerImageUsedInBundle)
+	if err != nil {
+		return "", err
+	}
+
+	err = b.createWorkDirInArchive(archiveWriter)
+	if err != nil {
+		return "", err
+	}
+
+	err = b.copyAdditionalFilesToArchive(archiveWriter)
+	if err != nil {
+		return "", err
+	}
+
+	// Container bundle does not define build.log?
+	if b.opts.BundleBuildLogFile != "" {
+		err = archiveWriter.WriteFile("build.log", b.opts.BundleBuildLogFile)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+	}
+
+	err = archiveWriter.Close()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	err = bufWriter.Flush()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	err = bundle.Close()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return bundle.Name(), nil
+}
+
+func (b *Bundler) createEmptyBundle() (*os.File, error) {
+	archiveExt := ".tar.gz"
+
+	if b.opts.OutputPath != "" {
+		// do nothing
+	} else if len(b.opts.FuzzTests) == 1 {
+		b.opts.OutputPath = filepath.Base(b.opts.FuzzTests[0]) + archiveExt
+	} else {
+		b.opts.OutputPath = "fuzz_tests" + archiveExt
+	}
+
+	bundle, err := os.Create(b.opts.OutputPath)
+	if err != nil {
+		return nil, errors.Wrap(errors.WithStack(err), "failed to create fuzzing artifact archive")
+	}
+
+	return bundle, nil
+}
+
+func (b *Bundler) determineDockerImageForBundle() string {
+	dockerImageUsedInBundle := b.opts.DockerImage
+	if dockerImageUsedInBundle == "" {
+		switch b.opts.BuildSystem {
+		case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
+			// Use default Ubuntu Docker image for CMake, Bazel, and other build systems
+			dockerImageUsedInBundle = "ubuntu:rolling"
+		case config.BuildSystemMaven, config.BuildSystemGradle:
+			// Maven and Gradle should use a Docker image with Java
+			dockerImageUsedInBundle = "eclipse-temurin:20"
+		}
+	}
+
+	return dockerImageUsedInBundle
+}
+
+func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archiveWriter *archive.ArchiveWriter, dockerImageUsedInBundle string) error {
 	// Create and add the top-level metadata file.
 	metadata := &archive.Metadata{
 		Fuzzers: fuzzers,
@@ -93,18 +152,22 @@ func (b *Bundler) Bundle() error {
 		return err
 	}
 	metadataYamlPath := filepath.Join(b.opts.tempDir, archive.MetadataFileName)
-	err = os.WriteFile(metadataYamlPath, metadataYamlContent, 0644)
+	err = os.WriteFile(metadataYamlPath, metadataYamlContent, 0o644)
 	if err != nil {
-		return errors.Wrapf(err, "failed to write %s", archive.MetadataFileName)
+		return errors.Wrapf(errors.WithStack(err), "failed to write %s", archive.MetadataFileName)
 	}
 	err = archiveWriter.WriteFile(archive.MetadataFileName, metadataYamlPath)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (b *Bundler) createWorkDirInArchive(archiveWriter *archive.ArchiveWriter) error {
 	// The fuzzing artifact archive spec requires this directory even if it is empty.
 	tempWorkDirPath := filepath.Join(b.opts.tempDir, archiveWorkDirPath)
-	err = os.Mkdir(tempWorkDirPath, 0755)
+	err := os.Mkdir(tempWorkDirPath, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -113,6 +176,10 @@ func (b *Bundler) Bundle() error {
 		return err
 	}
 
+	return nil
+}
+
+func (b *Bundler) copyAdditionalFilesToArchive(archiveWriter *archive.ArchiveWriter) error {
 	for _, arg := range b.opts.AdditionalFiles {
 		source, target, err := parseAdditionalFilesArgument(arg)
 		if err != nil {
@@ -134,24 +201,6 @@ func (b *Bundler) Bundle() error {
 				return err
 			}
 		}
-	}
-
-	err = archiveWriter.WriteFile("build.log", b.opts.BundleBuildLogFile)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	err = archiveWriter.Close()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = bufWriter.Flush()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = bundle.Close()
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	return nil

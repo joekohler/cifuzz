@@ -12,6 +12,14 @@ const (
 	BundleInProgressMsg        string = "Bundle in progress..."
 	BundleInProgressSuccessMsg string = "Bundle in progress... Done."
 	BundleInProgressErrorMsg   string = "Bundle in progress... Error."
+
+	ContainerBuildInProgressMsg        string = "Building fuzz container..."
+	ContainerBuildInProgressSuccessMsg string = "Building fuzz container... Done."
+	ContainerBuildInProgressErrorMsg   string = "Building fuzz container... Error."
+
+	ContainerRunInProgressMsg        string = "Running fuzz container..."
+	ContainerRunInProgressSuccessMsg string = "Running fuzz container... Done."
+	ContainerRunInProgressErrorMsg   string = "Running fuzz container... Error."
 )
 
 func GetPtermErrorStyle() *pterm.Style {
@@ -41,6 +49,12 @@ func CreateCurrentProgressSpinner(style *pterm.Style, msg string) {
 
 	// error can be ignored here since pterm doesn't return one
 	currentProgressSpinner, _ = pterm.DefaultSpinner.Start(msg)
+}
+
+func UpdateCurrentProgressSpinner(msg string) {
+	if msg != "" && currentProgressSpinner != nil {
+		currentProgressSpinner.UpdateText(msg)
+	}
 }
 
 func StopCurrentProgressSpinner(style *pterm.Style, msg string) {
