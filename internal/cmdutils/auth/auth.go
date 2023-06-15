@@ -1,9 +1,13 @@
 package auth
 
 import (
+	"os"
+
+	"github.com/spf13/viper"
+	"golang.org/x/term"
+
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
-	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/messaging"
@@ -23,11 +27,22 @@ func GetAuthStatus(server string) (bool, error) {
 	apiClient := api.APIClient{Server: server}
 	err := login.CheckValidToken(&apiClient, token)
 	if err != nil {
-		log.Warnf(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, tokenstorage.GetTokenFilePath())
+		log.Warn(`Failed to authenticate with the configured API access token.
+It's possible that the token has been revoked.`)
 
-		return false, err
+		if viper.GetBool("interactive") && term.IsTerminal(int(os.Stdin.Fd())) {
+			tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
+			if err != nil {
+				return false, err
+			}
+			if tryAgain {
+				_, err = login.ReadCheckAndStoreTokenInteractively(&apiClient, nil)
+				if err != nil {
+					return false, err
+				}
+				return true, nil
+			}
+		}
 	}
 
 	return true, nil

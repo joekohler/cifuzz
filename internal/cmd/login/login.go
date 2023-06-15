@@ -14,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
+	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -112,11 +113,23 @@ func (c *loginCmd) handleExistingToken(token string) error {
 		return err
 	}
 	if !tokenValid {
-		err := errors.Errorf(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked. Please try again after
-removing the token from %s.`, tokenstorage.GetTokenFilePath())
+		err := errors.New(`Failed to authenticate with the configured API access token.
+It's possible that the token has been revoked.`)
 		log.Warn(err.Error())
-		return err
+
+		if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
+			tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
+			if err != nil {
+				return err
+			}
+			if tryAgain {
+				_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
 	}
 	log.Success("You are already logged in.")
 	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
