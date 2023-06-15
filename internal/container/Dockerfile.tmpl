@@ -1,0 +1,7 @@
+FROM {{ .Base }}
+ENV CIFUZZ_PRERELEASE=1
+COPY ./internal /internal
+COPY . /cifuzz/.
+WORKDIR /cifuzz
+RUN ./ensure-cifuzz.sh
+CMD cifuzz execute

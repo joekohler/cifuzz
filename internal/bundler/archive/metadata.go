@@ -1,6 +1,8 @@
 package archive
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -70,4 +72,19 @@ func (a *Metadata) FromYaml(data []byte) error {
 	}
 
 	return nil
+}
+
+func MetadataFromPath(path string) (*Metadata, error) {
+	metadataFile, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	metadata := &Metadata{}
+	err = metadata.FromYaml(metadataFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }
