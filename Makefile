@@ -113,26 +113,39 @@ installer/darwin-arm64:
 	GOOS=darwin GOARCH=arm64 go build -tags installer -o $(installer_base_path)_macOS_arm64 cmd/installer/installer.go
 	$(RM) cmd/installer/build
 
+###
+# Building binaries for all platforms
+# With a switch for coverage instrumentation
+###
+
+# Decide between build and build-coverage
+build_target := $(word 1, $(subst /, ,$(MAKECMDGOALS)))
+build_flags :=
+build-coverage_flags := --cover
+# Used with build_target to decide flags to pass to the go build command
+define get_go_build_args
+	$($(word 1, $(subst /, ,$(1)))_flags)
+endef
+
 .PHONY: build
 build: build/$(current_os)
 
-.PHONY: build/all
-build/all: build/linux build/windows build/darwin ;
+build/all build-coverage/all: $(build_target)/linux $(build_target)/windows $(build_target)/darwin
 
-.PHONY: build/linux
-build/linux: deps
-	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(binary_base_path)_linux cmd/cifuzz/main.go
+.PHONY: build/linux build-coverage/linux
+build/linux build-coverage/linux: deps
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(call get_go_build_args, $@) -o $(binary_base_path)_linux cmd/cifuzz/main.go
 
-.PHONY: build/windows
-build/windows: deps
-	env GOOS=windows GOARCH=amd64 go build -o $(binary_base_path)_windows.exe cmd/cifuzz/main.go
+.PHONY: build/windows build-coverage/windows
+build/windows build-coverage/windows: deps
+	env GOOS=windows GOARCH=amd64 go build $(call get_go_build_args, $@) -o $(binary_base_path)_windows.exe cmd/cifuzz/main.go
 
-.PHONY: build/darwin
-build/darwin: deps
+.PHONY: build/darwin build-coverage/darwin
+build/darwin build-coverage/darwin: deps
 ifeq ($(UNAME_P), arm)
-	env GOOS=darwin GOARCH=arm64 go build -o $(binary_base_path)_macOS cmd/cifuzz/main.go
+	env GOOS=darwin GOARCH=arm64 go build $(call get_go_build_args, $@) -o $(binary_base_path)_macOS cmd/cifuzz/main.go
 else
-	env GOOS=darwin GOARCH=amd64 go build -o $(binary_base_path)_macOS cmd/cifuzz/main.go
+	env GOOS=darwin GOARCH=amd64 go build $(call get_go_build_args, $@) -o $(binary_base_path)_macOS cmd/cifuzz/main.go
 endif
 
 .PHONY: lint
@@ -197,16 +210,9 @@ test/integration: deps deps/test deps/integration-tests
 	go test -json -v -timeout=20m ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/e2e
-test/e2e: deps deps/test install
+test/e2e: deps deps/test build/linux build/windows
 test/e2e: export E2E_TESTS_MATRIX = 1
 test/e2e:
-	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
-
-# For Release E2E testing, we want to use the installed cifuzz, instead of installing from source.
-.PHONY: test/e2e-use-installed-cifuzz
-test/e2e-use-installed-cifuzz: deps/test
-test/e2e-use-installed-cifuzz: export E2E_TESTS_MATRIX = 1
-test/e2e-use-installed-cifuzz:
 	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
 
 .PHONY: test/race
@@ -230,10 +236,10 @@ coverage/merge:
 
 .PHONY: coverage/e2e
 coverage/e2e: export E2E_TESTS_MATRIX = V
-coverage/e2e: deps install/coverage
+coverage/e2e: deps build-coverage/$(current_os)
 	-$(RM) coverage/e2e
 	mkdir -p coverage/e2e
-	-go test ./e2e-tests/...
+	-go test ./e2e-tests/... -v
 	go tool covdata func -i=./coverage/e2e
 
 .PHONY: coverage/integration

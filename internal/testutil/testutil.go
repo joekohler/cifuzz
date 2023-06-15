@@ -120,12 +120,12 @@ func RepoRoot(t *testing.T) string {
 
 // SetupCoverage creates a directory for coverage data and sets the
 // needed environment variable
-func SetupCoverage(t *testing.T, env []string, subdir string) []string {
+func SetupCoverage(t *testing.T, env []string, subdir string) (string, []string) {
 	t.Helper()
 	covDir := filepath.Join(RepoRoot(t), "coverage", subdir)
 	err := os.MkdirAll(covDir, 0755)
 	require.NoError(t, err)
 	env, err = envutil.Setenv(env, "GOCOVERDIR", covDir)
 	require.NoError(t, err)
-	return env
+	return covDir, env
 }

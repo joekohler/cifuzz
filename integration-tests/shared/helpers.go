@@ -77,6 +77,20 @@ func AppendLines(t *testing.T, filePath string, linesToAdd []string) {
 	require.NoError(t, err)
 }
 
+func CopyTestDockerDirForE2E(t *testing.T, dockerfile string) string {
+	t.Helper()
+	fileutil.ForceLongPathTempDir()
+
+	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", "docker"))
+	require.NoError(t, err)
+
+	// write dockerfile to a file
+	err = os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(dockerfile), 0777)
+	require.NoError(t, err)
+
+	return dir
+}
+
 // Used for e2e tests
 // CopyTestdataDirForE2E copies a named folder from the samples directory
 // to a temporary directory called "cifuzz-<name>-testdata" and returns the path.

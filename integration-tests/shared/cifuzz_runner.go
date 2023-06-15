@@ -170,7 +170,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		args...,
 	)
 	cmd.Dir = opts.WorkDir
-	cmd.Env = testutil.SetupCoverage(t, opts.Env, "integration")
+	_, cmd.Env = testutil.SetupCoverage(t, opts.Env, "integration")
 	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
 	require.NoError(t, err)
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)

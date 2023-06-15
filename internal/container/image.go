@@ -84,7 +84,7 @@ func prepareBuildContext(bundlePath string) (string, error) {
 
 // builds an image based on an existing directory
 func buildImageFromDir(buildContextDir string) error {
-	imageTar, err := createImageTar(buildContextDir)
+	imageTar, err := CreateImageTar(buildContextDir)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func buildImageFromDir(buildContextDir string) error {
 
 // creates a tar archive that can be used for building an image
 // based on a given directory
-func createImageTar(buildContextDir string) (*os.File, error) {
+func CreateImageTar(buildContextDir string) (*os.File, error) {
 	imageTar, err := os.CreateTemp("", "*_image.tar")
 	if err != nil {
 		return nil, errors.WithStack(err)
