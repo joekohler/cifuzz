@@ -13,11 +13,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/integration-tests/shared"
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
@@ -55,7 +58,7 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	bundle, err := os.CreateTemp("", "bundle-archive-")
 	require.NoError(t, err)
 	bufWriter := bufio.NewWriter(bundle)
-	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
+	archiveWriter := archive.NewTarArchiveWriter(bufWriter, true)
 
 	b := newJazzerBundler(&Opts{
 		Env:     []string{"FOO=foo"},
@@ -160,7 +163,8 @@ public class Baz {
 `), 0o644)
 	require.NoError(t, err)
 
-	fuzzTests, err := cmdutils.ListJVMFuzzTests(tempDir)
+	testDirs := []string{filepath.Join(tempDir, "src", "test")}
+	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
 	require.NoError(t, err)
 	require.ElementsMatchf(t, []string{
 		"com.example.FuzzTest", "org.example.foo.Bar",
@@ -170,7 +174,8 @@ public class Baz {
 func TestListJVMFuzzTests_DoesNotExist(t *testing.T) {
 	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
-	fuzzTests, err := cmdutils.ListJVMFuzzTests(tempDir)
+	testDirs := []string{filepath.Join(tempDir, "src", "test")}
+	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
 	require.NoError(t, err)
 	require.Empty(t, fuzzTests)
 }
@@ -214,7 +219,7 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 	bundle, err := os.CreateTemp("", "bundle-archive-")
 	require.NoError(t, err)
 	bufWriter := bufio.NewWriter(bundle)
-	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
+	archiveWriter := archive.NewTarArchiveWriter(bufWriter, true)
 	t.Cleanup(func() {
 		archiveWriter.Close()
 		bufWriter.Flush()
@@ -235,4 +240,36 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 			assert.NotContains(t, runtimePath, "\\")
 		}
 	}
+}
+
+// Testing a gradle project with two fuzz tests in one class
+// and a custom source directory for tests
+func TestIntegration_GradleCustomSrcMultipeTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	// create temp dir for the bundler
+	tempDir, err := os.MkdirTemp("", "bundler-temp-dir*")
+	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
+
+	// copy test data project to temp dir
+	testProject := filepath.Join("testdata", "jazzer", "gradle", "multi-custom")
+	projectDir := shared.CopyCustomTestdataDir(t, testProject, "gradle")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
+
+	b := newJazzerBundler(&Opts{
+		BuildSystem: config.BuildSystemGradle,
+		ProjectDir:  projectDir,
+		tempDir:     tempDir,
+	}, &archive.NullArchiveWriter{})
+	fuzzers, err := b.bundle()
+	require.NoError(t, err)
+
+	// result should contain two fuzz tests from one class
+	assert.Len(t, fuzzers, 2)
+	// result should contain fuzz tests with fully qualified names
+	assert.Equal(t, "com.example.TestCases::myFuzzTest1", fuzzers[0].Name)
+	assert.Equal(t, "com.example.TestCases::myFuzzTest2", fuzzers[1].Name)
 }

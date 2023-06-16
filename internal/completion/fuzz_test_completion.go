@@ -167,7 +167,10 @@ func validCMakeFuzzTests(projectDir string) ([]string, cobra.ShellCompDirective)
 // validJVMFuzzTests returns a list of valid JVM fuzz test identifiers
 // (i.e. the fully qualified class name of the fuzz test)
 func validJVMFuzzTests(projectDir string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	fuzzTests, err := cmdutils.ListJVMFuzzTestsWithFilter(projectDir, toComplete)
+	testDirs := []string{
+		filepath.Join(projectDir, "src", "test"),
+	}
+	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, toComplete)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

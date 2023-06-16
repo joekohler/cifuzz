@@ -90,66 +90,62 @@ func ConstructJVMFuzzTestIdentifier(path, testDir string) (string, error) {
 	return "", nil
 }
 
-// ListJVMFuzzTests returns a list of all fuzz tests in the project.
-// The returned list contains the fully qualified class name of the fuzz test.
-func ListJVMFuzzTests(projectDir string) ([]string, error) {
-	return ListJVMFuzzTestsWithFilter(projectDir, "")
-}
-
-// ListJVMFuzzTestsWithFilter returns a list of all fuzz tests in the project.
+// ListJVMFuzzTests returns a list of all fuzz tests inside
+// the given directories.
 // The returned list contains the fully qualified class name of the fuzz test.
 // to filter files based on the fqcn you can use the prefix filter parameter
-func ListJVMFuzzTestsWithFilter(projectDir string, prefixFilter string) ([]string, error) {
-	testDir := filepath.Join(projectDir, "src", "test")
-	exists, err := fileutil.Exists(testDir)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, nil
-	}
-
-	// use zglob to support globbing in windows
-	matches, err := zglob.Glob(filepath.Join(testDir, "**", "*.{java,kt}"))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+func ListJVMFuzzTests(testDirs []string, prefixFilter string) ([]string, error) {
 	var fuzzTests []string
-	for _, match := range matches {
-		// Get the target methods from the fuzz test file
-		methods, err := GetTargetMethodsFromJVMFuzzTestFile(match)
+	for _, testDir := range testDirs {
+		exists, err := fileutil.Exists(testDir)
 		if err != nil {
 			return nil, err
 		}
-
-		// For files with a single fuzz method, identify it only by the file name
-		if len(methods) == 1 {
-			fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
-			if err != nil {
-				return nil, err
-			}
-
-			if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
-				fuzzTests = append(fuzzTests, fuzzTestIdentifier)
-			}
+		// skip non-existing directories
+		if !exists {
 			continue
 		}
 
-		// add the fuzz test identifier to the fuzzTests slice
-		for _, method := range methods {
-			fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+		// use zglob to support globbing in windows
+		matches, err := zglob.Glob(filepath.Join(testDir, "**", "*.{java,kt}"))
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		for _, match := range matches {
+			// Get the target methods from the fuzz test file
+			methods, err := GetTargetMethodsFromJVMFuzzTestFile(match)
 			if err != nil {
 				return nil, err
 			}
 
-			fuzzTestIdentifier = fuzzTestIdentifier + "::" + method
-			if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
-				// add the method name to the identifier
-				fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+			// For files with a single fuzz method, identify it only by the file name
+			if len(methods) == 1 {
+				fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+				if err != nil {
+					return nil, err
+				}
+
+				if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
+					fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+				}
+				continue
+			}
+
+			// add the fuzz test identifier to the fuzzTests slice
+			for _, method := range methods {
+				fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
+				if err != nil {
+					return nil, err
+				}
+
+				fuzzTestIdentifier = fuzzTestIdentifier + "::" + method
+				if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
+					// add the method name to the identifier
+					fuzzTests = append(fuzzTests, fuzzTestIdentifier)
+				}
 			}
 		}
 	}
-
 	return fuzzTests, nil
 }

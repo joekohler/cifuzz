@@ -192,7 +192,21 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	var err error
 
 	if len(b.opts.FuzzTests) == 0 {
-		fuzzTests, err = cmdutils.ListJVMFuzzTests(b.opts.ProjectDir)
+		// for gradle we can get the test src directory by gradle itself
+		// If we don't have this information we have to assume that
+		// the tests are located under src/test, which is a common place for
+		// java projects
+		testDirs := []string{}
+		if b.opts.BuildSystem == config.BuildSystemGradle {
+			testDirs, err = gradle.GetTestSourceSets(b.opts.ProjectDir)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			testDirs = append(testDirs, filepath.Join(b.opts.ProjectDir, "src", "test"))
+		}
+
+		fuzzTests, err = cmdutils.ListJVMFuzzTests(testDirs, "")
 		if err != nil {
 			return nil, err
 		}

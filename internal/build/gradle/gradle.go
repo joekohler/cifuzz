@@ -190,3 +190,24 @@ func GetBuildDirectory(projectDir string) (string, error) {
 
 	return buildDir, nil
 }
+
+func GetTestSourceSets(projectDir string) ([]string, error) {
+	cmd, err := buildGradleCommand(projectDir, []string{"cifuzzPrintTestSourceFolders", "-q"})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+	paths := strings.Split(
+		strings.TrimSpace(
+			strings.ReplaceAll(string(output), "cifuzz.test.source-folders=", ""),
+		),
+		string(os.PathListSeparator))
+
+	log.Debugf("found gradle test sources at: %s", paths)
+	return paths, nil
+}
