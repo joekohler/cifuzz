@@ -1,6 +1,6 @@
 /bazel-*
 *_inputs
 .*_cifuzz_corpus/
-/.cifuzz-findings/
+/.cifuzz-*/
 /.ijwb/
 /.clwb/

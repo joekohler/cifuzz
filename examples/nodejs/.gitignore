@@ -1,4 +1,4 @@
-.cifuzz-corpus/
+.cifuzz-*/
 *.log
 
 FuzzTestCase.fuzz/

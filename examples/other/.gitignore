@@ -4,7 +4,6 @@ libexplore.so
 
 my_fuzz_test
 
-.cifuzz-findings
-.cifuzz-corpus
+.cifuzz-*/
 *_inputs
 crash-*

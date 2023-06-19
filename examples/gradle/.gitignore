@@ -10,8 +10,7 @@
 .classpath
 .settings/
 
-.cifuzz-corpus/
-.cifuzz-findings/
+.cifuzz-*/
 *_inputs
 crash-*
 

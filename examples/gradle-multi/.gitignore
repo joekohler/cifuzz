@@ -9,8 +9,7 @@
 # Ignore Gradle build output directory
 build
 
-.cifuzz-corpus/
-.cifuzz-findings/
+.cifuzz-*/
 *_inputs
 crash-*
 

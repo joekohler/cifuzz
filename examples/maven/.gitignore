@@ -1,7 +1,5 @@
 /target/
-.cifuzz-corpus/
-.cifuzz-findings/
-.cifuzz-build/
+.cifuzz-*/
 *_inputs
 crash-*
 

@@ -1,7 +1,5 @@
 build/
-.cifuzz-build/
-.cifuzz-corpus/
-.cifuzz-findings/
+.cifuzz-*/
 *_inputs
 crash-*
 gotest.log
