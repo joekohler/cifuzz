@@ -12,9 +12,8 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/internal/cmdutils/login"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
-	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -86,7 +85,7 @@ func (c *loginCmd) run() error {
 			return errors.WithStack(err)
 		}
 		token = strings.TrimSpace(string(b))
-		return login.CheckAndStoreToken(c.apiClient, token)
+		return auth.CheckAndStoreToken(c.apiClient, token)
 	}
 
 	// Try the access tokens config file
@@ -97,7 +96,7 @@ func (c *loginCmd) run() error {
 
 	// Try reading it interactively
 	if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
+		_, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
 		return err
 	}
 
@@ -108,29 +107,11 @@ in interactive mode. You can generate a token here:
 }
 
 func (c *loginCmd) handleExistingToken(token string) error {
-	tokenValid, err := c.apiClient.IsTokenValid(token)
+	err := auth.EnsureValidToken(*c.apiClient, token)
 	if err != nil {
 		return err
 	}
-	if !tokenValid {
-		err := errors.New(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked.`)
-		log.Warn(err.Error())
 
-		if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-			tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
-			if err != nil {
-				return err
-			}
-			if tryAgain {
-				_, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-		}
-	}
 	log.Success("You are already logged in.")
 	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
 	return nil

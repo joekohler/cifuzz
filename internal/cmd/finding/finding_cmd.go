@@ -15,7 +15,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
-	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/finding"
@@ -327,7 +326,7 @@ func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
 	var errorDetails []finding.ErrorDetails
 	var err error
 
-	token := login.GetToken(cmd.opts.Server)
+	token := auth.GetToken(cmd.opts.Server)
 	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
 	apiClient := api.NewClient(cmd.opts.Server, cmd.Command.Root().Version)

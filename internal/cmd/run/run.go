@@ -30,7 +30,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
-	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -804,7 +803,7 @@ Your results will not be synced.`)
 }
 
 func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
-	token := login.GetToken(c.opts.Server)
+	token := auth.GetToken(c.opts.Server)
 	if token == "" {
 		return nil, errors.New("No access token found")
 	}
@@ -825,7 +824,7 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) error {
-	token := login.GetToken(c.opts.Server)
+	token := auth.GetToken(c.opts.Server)
 	if token == "" {
 		return errors.New("No access token found")
 	}

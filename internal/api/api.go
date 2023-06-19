@@ -289,6 +289,7 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 	return resp, nil
 }
 
+// IsTokenValid checks if the token is valid by querying the API server.
 func (client *APIClient) IsTokenValid(token string) (bool, error) {
 	// TOOD: Change this to use another check without querying projects
 	_, err := client.ListProjects(token)
@@ -296,6 +297,7 @@ func (client *APIClient) IsTokenValid(token string) (bool, error) {
 		var apiErr *APIError
 		if errors.As(err, &apiErr) {
 			if apiErr.StatusCode == 401 {
+				log.Warnf("Invalid token: Received 401 Unauthorized from server %s", client.Server)
 				return false, nil
 			}
 		}

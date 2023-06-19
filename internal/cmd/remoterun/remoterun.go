@@ -16,8 +16,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmd/bundle"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
-	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -210,7 +210,7 @@ variable or by running 'cifuzz login' first.
 func (c *runRemoteCmd) run() error {
 	var err error
 
-	token := login.GetToken(c.opts.Server)
+	token := auth.GetToken(c.opts.Server)
 	if token == "" {
 		log.Print("You need to authenticate to CI Sense to use this command.")
 
@@ -227,12 +227,12 @@ func (c *runRemoteCmd) run() error {
 			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
 			return cmdutils.ErrSilent
 		}
-		token, err = login.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
+		token, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
 		if err != nil {
 			return err
 		}
 	} else {
-		err = login.CheckValidToken(c.apiClient, token)
+		err = auth.EnsureValidToken(*c.apiClient, token)
 		if err != nil {
 			return err
 		}
