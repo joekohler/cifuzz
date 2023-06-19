@@ -1,6 +1,7 @@
 package cmdutils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -72,38 +73,58 @@ func TestGetTargetMethodsFromJVMFuzzTestFileSingleMethod(t *testing.T) {
 	defer fileutil.Cleanup(tempDir)
 	require.NoError(t, err)
 
-	path := filepath.Join(tempDir, "FuzzTest1.java")
-	err = os.WriteFile(path, []byte(`
+	type target struct {
+		targetName string
+		code       []byte
+	}
+
+	testCases := []target{
+		{
+			targetName: "fuzzWithoutParameter",
+			code: []byte(`
 package com.example;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
 
 class FuzzTest {
     @FuzzTest
-    public static void fuzz(byte[] data) {}
-}
-`), 0o644)
-	require.NoError(t, err)
+    public static void fuzzWithoutParameter(byte[] data) {}
+}`),
+		},
+		{
+			targetName: "fuzzWithParameter",
+			code: []byte(`
+package com.example;
 
-	result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"fuzz"}, result)
+import com.code_intelligence.jazzer.junit.FuzzTest;
 
-	path = filepath.Join(tempDir, "FuzzTest2.java")
-	err = os.WriteFile(path, []byte(`
+class FuzzTest {
+    @FuzzTest(maxDuration = "1m")
+    public static void fuzzWithParameter(byte[] data) {}
+}`),
+		},
+		{
+			targetName: "fuzzerTestOneInput",
+			code: []byte(`
 package com.example;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
 
 class FuzzTest {
     public static void fuzzerTestOneInput(byte[] data) {}
-}
-`), 0o644)
-	require.NoError(t, err)
+}`)}}
 
-	result, err = GetTargetMethodsFromJVMFuzzTestFile(path)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"fuzzerTestOneInput"}, result)
+	for _, tc := range testCases {
+		t.Run(tc.targetName, func(t *testing.T) {
+			path := filepath.Join(tempDir, fmt.Sprintf("FuzzTest%s.java", tc.targetName))
+			err = os.WriteFile(path, tc.code, 0o644)
+			require.NoError(t, err)
+
+			result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
+			require.NoError(t, err)
+			assert.Equal(t, []string{tc.targetName}, result)
+		})
+	}
 }
 
 func TestGetTargetMethodsFromJVMFuzzTestFileMultipleMethods(t *testing.T) {
@@ -124,11 +145,16 @@ class FuzzTest {
 
 	@FuzzTest
 	public static void fuzz2(byte[] data) {}
+	
+	@FuzzTest(maxDuration = "1m")
+	public static void fuzz3(byte[] data) {}
+
+	public static void fuzzerTestOneInput(byte[] data) {}
 }
 `), 0o644)
 	require.NoError(t, err)
 
 	result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"fuzz", "fuzz2"}, result)
+	assert.Equal(t, []string{"fuzz", "fuzz2", "fuzz3", "fuzzerTestOneInput"}, result)
 }

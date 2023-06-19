@@ -37,26 +37,21 @@ func GetTargetMethodsFromJVMFuzzTestFile(path string) ([]string, error) {
 
 	var targetMethods []string
 
-	// Define a regular expression pattern to match @FuzzTest annotations
-	// it will return the name of the fuzz test method in the line following
-	// the @FuzzTest annotation
-	fuzzTestRegex := regexp.MustCompile(`@FuzzTest\s+(?P<prefix>\w*\s)*(?P<functionName>\w+)\s*\(`)
-
-	// Find all matches of the regular expression in the input string
-	// matches := fuzzTestRegex.FindAllStringSubmatch(string(bytes), -1)
+	// Regular expression pattern to match @FuzzTest and @FuzzTest() annotations
+	fuzzTestRegex := regexp.MustCompile(`@FuzzTest(\((?P<parameter>.[^\)]*)\))*\s+(?P<prefix>\w*\s)*(?P<targetName>\w+)\s*\(`)
 	matches, _ := regexutil.FindAllNamedGroupsMatches(fuzzTestRegex, string(bytes))
+
+	// Extract the function targetName from each match and append it to the
+	// targetMethods slice
+	for _, match := range matches {
+		targetMethods = append(targetMethods, match["targetName"])
+	}
 
 	// Check if the file contains a fuzzerTestOneInput method
 	// and append it to the targetMethods slice if it does
 	fuzzerTestOneInputRegex := regexp.MustCompile(`\sfuzzerTestOneInput\s*\(`)
 	if len(fuzzerTestOneInputRegex.FindAllStringSubmatch(string(bytes), -1)) > 0 {
 		targetMethods = append(targetMethods, "fuzzerTestOneInput")
-	}
-
-	// Extract the function name from each match and append it to the
-	// targetMethods slice
-	for _, match := range matches {
-		targetMethods = append(targetMethods, match["functionName"])
 	}
 
 	return targetMethods, nil
