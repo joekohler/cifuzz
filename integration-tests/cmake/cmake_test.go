@@ -339,8 +339,6 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 		}
 		if runtime.GOOS == "windows" {
-			expectedStackTrace[1].Line = 11
-			expectedStackTrace[1].Function = "LLVMFuzzerTestOneInput"
 			// On Windows, the column is not printed
 			for i := range expectedStackTrace {
 				expectedStackTrace[i].Column = 0
@@ -374,8 +372,6 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			},
 		}
 		if runtime.GOOS == "windows" {
-			expectedStackTrace[1].Line = 11
-			expectedStackTrace[1].Function = "LLVMFuzzerTestOneInput"
 			// On Windows, the column is not printed
 			for i := range expectedStackTrace {
 				expectedStackTrace[i].Column = 0
