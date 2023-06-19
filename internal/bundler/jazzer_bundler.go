@@ -196,6 +196,14 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// If no fuzz test was found, fail the command
+		if len(fuzzTests) == 0 {
+			log.Error(errors.New("No fuzz test(s) could be found in the project directory."))
+			// Returning a silent error here because we do not need a stacktrace
+			return nil, cmdutils.ErrSilent
+		}
+
 	} else {
 		fuzzTests = b.opts.FuzzTests
 	}
