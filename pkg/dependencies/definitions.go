@@ -123,15 +123,19 @@ var deps = Dependencies{
 		Key:        GenHTML,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency) (*semver.Version, error) {
-			return semver.NewVersion("0.0.0")
-		},
-		Installed: func(dep *Dependency, projectDir string) bool {
 			path, err := dep.finder.GenHTMLPath()
 			if err != nil {
-				return false
+				return nil, err
 			}
-			log.Debugf("Found genhtml in PATH: %s", path)
-			return true
+			version, err := genHTMLVersion(path, dep)
+			if err != nil {
+				return nil, err
+			}
+			log.Debugf("Found genHTML version %s in PATH: %s", version, path)
+			return version, nil
+		},
+		Installed: func(dep *Dependency, projectDir string) bool {
+			return dep.checkFinder(dep.finder.GenHTMLPath)
 		},
 	},
 	Perl: {

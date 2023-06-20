@@ -21,11 +21,12 @@ Note: we made the "patch" part of the semver (when parsing the output with regex
 be more lenient when a command returns something like 1.2 instead of 1.2.0
 */
 var (
-	clangRegex = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
-	cmakeRegex = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
-	llvmRegex  = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
-	javaRegex  = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
-	bazelRegex = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
+	clangRegex   = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
+	cmakeRegex   = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
+	llvmRegex    = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
+	javaRegex    = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
+	bazelRegex   = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
+	genHTMLRegex = regexp.MustCompile(`.*LCOV version (?P<version>\d+\.\d+(\.\d+)?)`)
 )
 
 type execCheck func(string, Key) (*semver.Version, error)
@@ -126,6 +127,14 @@ Other llvm tools like llvm-cov are selected based on the smaller version.`)
 // for example llvm-cov, llvm-symbolizer
 func llvmVersion(path string, dep *Dependency) (*semver.Version, error) {
 	version, err := getVersionFromCommand(path, []string{"--version"}, llvmRegex, dep.Key)
+	if err != nil {
+		return nil, err
+	}
+	return version, nil
+}
+
+func genHTMLVersion(path string, dep *Dependency) (*semver.Version, error) {
+	version, err := getVersionFromCommand(path, []string{"--version"}, genHTMLRegex, dep.Key)
 	if err != nil {
 		return nil, err
 	}
