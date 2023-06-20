@@ -147,17 +147,26 @@ func (cmd *findingCmd) run(args []string) error {
 
 		for _, f := range findings {
 			if authenticated {
-				colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
-				data = append(data, []string{
-					colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
-					f.Name,
-					// FIXME: replace f.ShortDescriptionColumns()[0] with
-					// f.MoreDetails.Name once we cover all bugs with our
-					// error-details.json
-					f.ShortDescriptionColumns()[0],
-					// showing the fuzz test name is a SaaS only feature...
-					f.FuzzTest,
-				})
+				if f.MoreDetails.Severity != nil {
+					colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
+					data = append(data, []string{
+						colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
+						f.Name,
+						// FIXME: replace f.ShortDescriptionColumns()[0] with
+						// f.MoreDetails.Name once we cover all bugs with our
+						// error-details.json
+						f.ShortDescriptionColumns()[0],
+						// showing the fuzz test name is a SaaS only feature...
+						f.FuzzTest,
+					})
+				} else {
+					data = append(data, []string{
+						"n/a",
+						f.Name,
+						f.ShortDescriptionColumns()[0],
+						f.FuzzTest,
+					})
+				}
 			} else {
 				data = append(data, []string{
 					"n/a",
