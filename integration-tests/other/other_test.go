@@ -219,7 +219,7 @@ func createHTMLCoverageReport(t *testing.T, cifuzz string, dir string, cifuzzEnv
 	require.NoError(t, err)
 
 	// Check that the coverage report was created
-	reportPath := filepath.Join(dir, fuzzTest+"-coverage", "src", "explore", "index.html")
+	reportPath := filepath.Join(dir, fuzzTest+"-coverage", "explore", "index.html")
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for the api.cpp

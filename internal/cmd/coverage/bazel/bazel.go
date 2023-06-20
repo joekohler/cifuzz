@@ -166,7 +166,7 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	args := []string{"--prefix", cov.ProjectDir, "--output", cov.OutputPath, reportPath}
+	args := []string{"--output", cov.OutputPath, reportPath}
 
 	cmd = exec.Command(genHTML, args...)
 	cmd.Dir = cov.ProjectDir

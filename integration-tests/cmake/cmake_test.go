@@ -468,11 +468,7 @@ func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 	err := cmd.Run()
 	require.NoError(t, err)
 
-	reportPath := filepath.Join(dir, "coverage-report", "src", "parser", "index.html")
-	if runtime.GOOS == "windows" {
-		// On Windows the prefix flag is not working, which results in a slightly different reportPath
-		reportPath = filepath.Join(dir, "coverage-report", "parser", "index.html")
-	}
+	reportPath := filepath.Join(dir, "coverage-report", "parser", "index.html")
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for the

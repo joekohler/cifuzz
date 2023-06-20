@@ -429,10 +429,6 @@ func (cov *CoverageGenerator) generateHTMLReport() (string, error) {
 		}
 		cmd = exec.Command(perl, args...)
 	} else {
-		// The prefix flag is currently not working on Windows.
-		// Check if this is still true once lcov > 1.15
-		// is shipped by chocolatey.
-		args := append([]string{"--prefix", cov.ProjectDir}, args...)
 		cmd = exec.Command(genHTML, args...)
 	}
 

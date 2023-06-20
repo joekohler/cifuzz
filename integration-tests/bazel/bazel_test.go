@@ -336,7 +336,7 @@ func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	require.NoError(t, err)
 
 	// Check that the coverage report was created
-	reportPath := filepath.Join(testdata, "coverage-report", "src", "parser", "index.html")
+	reportPath := filepath.Join(testdata, "coverage-report", "parser", "index.html")
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for the
