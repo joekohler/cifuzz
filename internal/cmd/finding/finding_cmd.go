@@ -146,37 +146,36 @@ func (cmd *findingCmd) run(args []string) error {
 		}
 
 		for _, f := range findings {
-			if authenticated {
-				if f.MoreDetails.Severity != nil {
-					colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
-					data = append(data, []string{
-						colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score)),
-						f.Name,
-						// FIXME: replace f.ShortDescriptionColumns()[0] with
-						// f.MoreDetails.Name once we cover all bugs with our
-						// error-details.json
-						f.ShortDescriptionColumns()[0],
-						// showing the fuzz test name is a SaaS only feature...
-						f.FuzzTest,
-					})
-				} else {
-					data = append(data, []string{
-						"n/a",
-						f.Name,
-						f.ShortDescriptionColumns()[0],
-						f.FuzzTest,
-					})
-				}
-			} else {
-				data = append(data, []string{
-					"n/a",
-					f.Name,
-					f.ShortDescriptionColumns()[0],
-				})
-			}
+			score := "n/a"
+			locationInfo := "n/a"
 			// add location (file, function, line) if available
 			if len(f.ShortDescriptionColumns()) > 1 {
-				data = append(data, []string{f.ShortDescriptionColumns()[1]})
+				locationInfo = f.ShortDescriptionColumns()[1]
+			}
+			if authenticated {
+				// check if we have a severity and if we have a severity score
+				if f.MoreDetails.Severity != nil {
+					colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
+					score = colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score))
+				}
+				data = append(data, []string{
+					score,
+					f.Name,
+					// FIXME: replace f.ShortDescriptionColumns()[0] with
+					// f.MoreDetails.Name once we cover all bugs with our
+					// error-details.json
+					f.ShortDescriptionColumns()[0],
+					// showing the fuzz test name is a SaaS only feature...
+					f.FuzzTest,
+					locationInfo,
+				})
+			} else {
+				data = append(data, []string{
+					score,
+					f.Name,
+					f.ShortDescriptionColumns()[0],
+					locationInfo,
+				})
 			}
 		}
 		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
