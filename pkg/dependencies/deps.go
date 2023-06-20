@@ -80,6 +80,16 @@ func Check(keys []Key, projectDir string) error {
 	return check(keys, deps, runfiles.Finder, projectDir)
 }
 
+func Version(key Key) (*semver.Version, error) {
+	dep, found := deps[key]
+	if !found {
+		panic(fmt.Sprintf("Undefined dependency %s", key))
+	}
+
+	dep.finder = runfiles.Finder
+	return dep.GetVersion(dep)
+}
+
 func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder, projectDir string) error {
 	allFine := true
 	for _, key := range keys {

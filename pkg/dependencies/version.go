@@ -45,11 +45,6 @@ func bazelVersion(dep *Dependency) (*semver.Version, error) {
 	return version, nil
 }
 
-// ClangVersion returns the version of the clang/clang++ executable at the given path.
-func ClangVersion(path string) (*semver.Version, error) {
-	return clangCheck(path, Clang)
-}
-
 // small helper to reuse clang version check
 func clangCheck(path string, key Key) (*semver.Version, error) {
 	version, err := getVersionFromCommand(path, []string{"--version"}, clangRegex, key)
