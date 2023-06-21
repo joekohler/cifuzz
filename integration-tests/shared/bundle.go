@@ -16,6 +16,7 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -29,15 +30,13 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 	// able to test it on all platforms
 	t.Setenv(config.AllowUnsupportedPlatformsEnv, "1")
 
-	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 	t.Logf("creating test bundle in %s", tempDir)
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
+	err := os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -189,15 +188,13 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 }
 
 func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
-	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 	t.Logf("creating test bundle in %s", tempDir)
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
+	err := os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -284,15 +281,13 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 }
 
 func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args ...string) {
-	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
 	t.Logf("creating test bundle in %s", tempDir)
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
+	err := os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed
@@ -405,9 +400,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	require.FileExists(t, bundlePath)
 	assert.Contains(t, string(out), "Successfully created bundle: "+bundlePath)
 	// Extract the archive into a new temporary directory.
-	archiveDir, err := os.MkdirTemp("", "cifuzz-extracted-archive-*")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(archiveDir) })
+	archiveDir := testutil.MkdirTemp(t, "", "cifuzz-extracted-archive-*")
 	err = archive.Extract(bundlePath, archiveDir)
 	require.NoError(t, err)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -32,13 +33,11 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	// start the server
 	server.Start(t)
 
-	tempDir, err := os.MkdirTemp("", "cifuzz-archive-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
-	err = os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
+	err := os.WriteFile(dictPath, []byte("test-dictionary-content"), 0o600)
 	require.NoError(t, err)
 
 	// Create a seed corpus directory with an empty seed

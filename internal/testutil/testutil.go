@@ -98,3 +98,12 @@ func CheckOutput(t *testing.T, r io.Reader, s ...string) {
 		require.Contains(t, string(output), str)
 	}
 }
+
+// MkdirTemp wraps os.MkdirTemp and makes sure that errors are checked and
+// directories will be deleted
+func MkdirTemp(t *testing.T, dir, pattern string) string {
+	tempDir, err := os.MkdirTemp(dir, pattern)
+	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
+	return tempDir
+}

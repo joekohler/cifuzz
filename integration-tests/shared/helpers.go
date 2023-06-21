@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -86,9 +87,7 @@ func CopyTestdataDirForE2E(t *testing.T, name string) string {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
+	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", name))
 
 	// Get the path to the testdata dir
 	testDataDir := filepath.Join(cwd, "..", "samples", name)
@@ -108,9 +107,7 @@ func CopyTestdataDir(t *testing.T, name string) string {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
+	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", name))
 
 	dir, err = filepath.EvalSymlinks(dir)
 	require.NoError(t, err)
@@ -134,9 +131,7 @@ func CopyCustomTestdataDir(t *testing.T, dir, name string) string {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	tempDir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
+	tempDir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", name))
 
 	tempDir, err = filepath.EvalSymlinks(tempDir)
 	require.NoError(t, err)

@@ -17,7 +17,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 var testOut io.ReadWriter
@@ -36,9 +35,7 @@ func TestMain(m *testing.M) {
 
 func TestReloadCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 	// Create an empty directory
-	projectDir, err := os.MkdirTemp("", "test-reload-cmd-fails-")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(projectDir)
+	projectDir := testutil.MkdirTemp(t, "", "test-reload-cmd-fails-")
 
 	opts := &options{
 		ProjectDir: projectDir,
@@ -47,7 +44,7 @@ func TestReloadCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 
 	// Check that the command produces the expected error when not
 	// called below a cifuzz project directory.
-	_, err = cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 	testutil.CheckOutput(t, testOut, "Failed to parse cifuzz.yaml")
 }

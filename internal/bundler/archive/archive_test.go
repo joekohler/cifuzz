@@ -16,6 +16,7 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -23,10 +24,8 @@ import (
 func TestWriteArchive(t *testing.T) {
 	testdataDir := filepath.Join("testdata", "archive_test")
 	require.DirExists(t, testdataDir)
-	dir, err := os.MkdirTemp("", "write-archive-test-*")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
-	err = copy.Copy(testdataDir, dir)
+	dir := testutil.MkdirTemp(t, "", "write-archive-test-*")
+	err := copy.Copy(testdataDir, dir)
 	require.NoError(t, err)
 
 	// Create an empty directory to test that WriteArchive handles it - it can't be kept in testdata since Git doesn't
@@ -53,8 +52,7 @@ func TestWriteArchive(t *testing.T) {
 	require.NoError(t, err)
 
 	// Unpack archive contents with tar.
-	out, err := os.MkdirTemp("", "archive-test-*")
-	require.NoError(t, err)
+	out := testutil.MkdirTemp(t, "", "archive-test-*")
 	cmd := exec.Command("tar", "-xvf", archive.Name(), "-C", out)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

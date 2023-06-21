@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/vcs"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -75,8 +76,7 @@ func TestGitIsDirty(t *testing.T) {
 func createGitRepoWithCommits(t *testing.T) string {
 	t.Helper()
 
-	repo, err := os.MkdirTemp("", "git-test-*")
-	require.NoError(t, err)
+	repo := testutil.MkdirTemp(t, "", "git-test-*")
 
 	runGit(t, repo, "init")
 	runGit(t, repo, "config", "user.email", "you@example.com")
@@ -85,7 +85,7 @@ func createGitRepoWithCommits(t *testing.T) string {
 	// Ensure that the main branch is called "main" even with older Git versions.
 	runGit(t, repo, "branch", "-M", "main")
 
-	err = fileutil.Touch(filepath.Join(repo, "empty_file"))
+	err := fileutil.Touch(filepath.Join(repo, "empty_file"))
 	require.NoError(t, err)
 	runGit(t, repo, "add", "empty_file")
 	runGit(t, repo, "commit", "-m", "Initial commit")

@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -276,14 +277,12 @@ func echoCommand(args ...string) *Cmd {
 }
 
 func buildYes(t *testing.T) string {
-	tmpDir, err := os.MkdirTemp("", "cifuzz-yes-")
-	t.Cleanup(func() { fileutil.Cleanup(tmpDir) })
-	require.NoError(t, err)
+	tmpDir := testutil.MkdirTemp(t, "", "cifuzz-yes-")
 	path := filepath.Join(tmpDir, "yes")
 	if runtime.GOOS == "windows" {
 		path += ".exe"
 	}
-	err = exec.Command("go", "build", "-o", path, "./testdata").Run()
+	err := exec.Command("go", "build", "-o", path, "./testdata").Run()
 	require.NoError(t, err)
 	return path
 }

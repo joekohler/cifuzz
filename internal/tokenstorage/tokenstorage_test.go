@@ -1,19 +1,16 @@
 package tokenstorage
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/internal/testutil"
 )
 
 func TestGetAndSet(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "access-tokens-test-")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "access-tokens-test-")
 	accessTokensFilePath = filepath.Join(tempDir, "access_tokens.json")
 	accessTokens = map[string]string{}
 

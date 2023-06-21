@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -28,12 +29,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreate(t *testing.T) {
-	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
-	require.NoError(t, err)
+	projectDir := testutil.MkdirTemp(t, baseTempDir, "project-")
 
 	// Test .cpp files
 	stubFile := filepath.Join(projectDir, "fuzz_test.cpp")
-	err = Create(stubFile, config.CPP)
+	err := Create(stubFile, config.CPP)
 	assert.NoError(t, err)
 
 	exists, err := fileutil.Exists(stubFile)
@@ -51,12 +51,11 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreate_Exists(t *testing.T) {
-	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
-	require.NoError(t, err)
+	projectDir := testutil.MkdirTemp(t, baseTempDir, "project-")
 
 	// Test .cpp files
 	stubFile := filepath.Join(projectDir, "fuzz_test.cpp")
-	err = os.WriteFile(stubFile, []byte("TEST"), 0644)
+	err := os.WriteFile(stubFile, []byte("TEST"), 0644)
 	assert.NoError(t, err)
 
 	err = Create(stubFile, config.CPP)
@@ -75,9 +74,8 @@ func TestCreate_Exists(t *testing.T) {
 
 func TestCreate_NoPerm(t *testing.T) {
 	// create read only project dir
-	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
-	require.NoError(t, err)
-	err = acl.Chmod(projectDir, 0555)
+	projectDir := testutil.MkdirTemp(t, baseTempDir, "project-")
+	err := acl.Chmod(projectDir, 0555)
 	require.NoError(t, err)
 
 	// Test .cpp files
@@ -94,9 +92,8 @@ func TestCreate_NoPerm(t *testing.T) {
 }
 
 func TestSuggestFilename(t *testing.T) {
-	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
-	require.NoError(t, err)
-	err = os.Chdir(projectDir)
+	projectDir := testutil.MkdirTemp(t, baseTempDir, "project-")
+	err := os.Chdir(projectDir)
 	require.NoError(t, err)
 
 	// Test .cpp files
@@ -125,9 +122,8 @@ func TestSuggestFilename(t *testing.T) {
 }
 
 func TestCreateJavaFileAndClassName(t *testing.T) {
-	projectDir, err := os.MkdirTemp(baseTempDir, "project-")
-	require.NoError(t, err)
-	err = os.Chdir(projectDir)
+	projectDir := testutil.MkdirTemp(t, baseTempDir, "project-")
+	err := os.Chdir(projectDir)
 	require.NoError(t, err)
 
 	// Test .java files

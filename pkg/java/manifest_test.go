@@ -12,15 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/archiveutil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestCreateManifestJar(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "manifest-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "manifest-*")
 
 	entries := map[string]string{
 		"Hello": "World",

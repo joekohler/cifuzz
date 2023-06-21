@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -37,11 +36,10 @@ func BootstrapExampleProjectForTest(prefix, exampleName string) (tempDir string,
 
 func BootstrapEmptyProject(t *testing.T, prefix string) string {
 	// Create an empty directory
-	projectDir, err := os.MkdirTemp("", prefix)
-	require.NoError(t, err)
+	projectDir := MkdirTemp(t, "", prefix)
 
 	// Create an empty config file
-	_, err = config.CreateProjectConfig(projectDir, "", "")
+	_, err := config.CreateProjectConfig(projectDir, "", "")
 	require.NoError(t, err)
 
 	return projectDir

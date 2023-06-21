@@ -14,7 +14,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -29,9 +28,7 @@ func TestMain(m *testing.M) {
 
 func TestFindingCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 	// Create an empty directory
-	projectDir, err := os.MkdirTemp("", "test-findings-cmd-fails-")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(projectDir)
+	projectDir := testutil.MkdirTemp(t, "", "test-findings-cmd-fails-")
 
 	opts := &options{
 		ProjectDir: projectDir,
@@ -40,7 +37,7 @@ func TestFindingCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 
 	// Check that the command produces the expected error when not
 	// called below a cifuzz project directory.
-	_, err = cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 	testutil.CheckOutput(t, logOutput, "Failed to parse cifuzz.yaml")
 }

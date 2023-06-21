@@ -13,8 +13,8 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 // A library in a system library directory that is not certain to exist in the Docker image.
@@ -30,9 +30,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 	externalDep, err := filepath.Abs(filepath.Join("testdata", "libfuzzer", "lib", "libexternal.so"))
 	require.NoError(t, err)
 
-	tempDir, err := os.MkdirTemp("", "bundle-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	fuzzTest := "some_fuzz_test"
 	buildDir := filepath.Join(projectDir, "build")

@@ -16,15 +16,12 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "bundle-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	projectDir := filepath.Join("testdata", "jazzer", "project")
 
@@ -97,8 +94,8 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	require.Equal(t, *expectedFuzzer, *fuzzers[0])
 
 	// Unpack archive contents with tar.
-	out, err := os.MkdirTemp("", "bundler-test-*")
-	require.NoError(t, err)
+
+	out := testutil.MkdirTemp(t, "", "bundler-test-*")
 	cmd := exec.Command("tar", "-xvf", bundle.Name(), "-C", out)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -115,13 +112,10 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 }
 
 func TestListFuzzTests(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "bundle-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	testRoot := filepath.Join(tempDir, "src", "test", "java")
-	err = os.MkdirAll(testRoot, 0o755)
+	err := os.MkdirAll(testRoot, 0o755)
 	require.NoError(t, err)
 	firstPackage := filepath.Join(testRoot, "com", "example")
 	err = os.MkdirAll(firstPackage, 0o755)
@@ -174,10 +168,7 @@ public class Baz {
 }
 
 func TestListJVMFuzzTests_DoesNotExist(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "bundle-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	fuzzTests, err := cmdutils.ListJVMFuzzTests(tempDir)
 	require.NoError(t, err)
@@ -230,9 +221,7 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 		bundle.Close()
 	})
 
-	tempDir, err := os.MkdirTemp("", "bundle-*")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	b := newJazzerBundler(&Opts{
 		tempDir: tempDir,

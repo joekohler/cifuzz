@@ -10,20 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/stubs"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestListJVMFuzzTests(t *testing.T) {
-	projectDir, err := os.MkdirTemp("", "list-jvm-files")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(projectDir)
-
+	projectDir := testutil.MkdirTemp(t, "", "list-jvm-files")
 	testDir := filepath.Join(projectDir, "src", "test")
 
 	// create some java files including one valid fuzz test
 	javaDir := filepath.Join(testDir, "java", "com", "example")
-	err = os.MkdirAll(javaDir, 0o755)
+	err := os.MkdirAll(javaDir, 0o755)
 	require.NoError(t, err)
 	err = stubs.Create(filepath.Join(javaDir, "FuzzTestCase1.java"), config.Java)
 	require.NoError(t, err)
@@ -68,10 +65,7 @@ func TestListJVMFuzzTests(t *testing.T) {
 }
 
 func TestGetTargetMethodsFromJVMFuzzTestFileSingleMethod(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "jazzer-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "jazzer-*")
 
 	type target struct {
 		targetName string
@@ -117,7 +111,7 @@ class FuzzTest {
 	for _, tc := range testCases {
 		t.Run(tc.targetName, func(t *testing.T) {
 			path := filepath.Join(tempDir, fmt.Sprintf("FuzzTest%s.java", tc.targetName))
-			err = os.WriteFile(path, tc.code, 0o644)
+			err := os.WriteFile(path, tc.code, 0o644)
 			require.NoError(t, err)
 
 			result, err := GetTargetMethodsFromJVMFuzzTestFile(path)
@@ -128,13 +122,10 @@ class FuzzTest {
 }
 
 func TestGetTargetMethodsFromJVMFuzzTestFileMultipleMethods(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "jazzer-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(tempDir)
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "jazzer-*")
 
 	path := filepath.Join(tempDir, "FuzzTest.java")
-	err = os.WriteFile(path, []byte(`
+	err := os.WriteFile(path, []byte(`
 package com.example;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
@@ -145,7 +136,7 @@ class FuzzTest {
 
 	@FuzzTest
 	public static void fuzz2(byte[] data) {}
-	
+
 	@FuzzTest(maxDuration = "1m")
 	public static void fuzz3(byte[] data) {}
 

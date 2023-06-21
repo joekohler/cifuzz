@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -71,17 +71,11 @@ func NewLibfuzzerTest(t *testing.T, buildDir, fuzzTarget string, disableMinijail
 
 // Start selects the needed runner and execute it with the given options
 func (test *RunnerTest) Start(t *testing.T, reportCh chan *report.Report) error {
-	var err error
-
 	if test.GeneratedCorpusDir == "" {
-		test.GeneratedCorpusDir, err = os.MkdirTemp("", "corpus")
-		require.NoError(t, err)
-		t.Cleanup(func() { fileutil.Cleanup(test.GeneratedCorpusDir) })
+		test.GeneratedCorpusDir = testutil.MkdirTemp(t, "", "corpus")
 	}
 
-	seedCorpusDir, err := os.MkdirTemp("", "seeds")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(seedCorpusDir) })
+	seedCorpusDir := testutil.MkdirTemp(t, "", "seeds")
 
 	if test.RunsLimit != -1 {
 		// Limit the number of runs

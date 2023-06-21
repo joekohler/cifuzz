@@ -25,7 +25,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_CMake(t *testing.T) {
@@ -222,9 +221,7 @@ func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
 
 	// extract bundle archive and check for expected files
 	bundlePath := filepath.Join(dir, "parser_fuzz_test.tar.gz")
-	archiveDir, err := os.MkdirTemp("", "cmake-bundle-extracted-archive-*")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(archiveDir)
+	archiveDir := testutil.MkdirTemp(t, "", "cmake-bundle-extracted-archive-*")
 
 	err = archive.Extract(bundlePath, archiveDir)
 	require.NoError(t, err)
