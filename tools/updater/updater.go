@@ -15,6 +15,7 @@ func main() {
 	updateGradlePluginVersion("examples/gradle-multi/testsuite/build.gradle.kts")
 	updateGradlePluginVersion("pkg/messaging/instructions/gradle")
 	updateGradlePluginVersion("pkg/messaging/instructions/gradlekotlin")
+	updateGradlePluginVersion("internal/bundler/testdata/jazzer/gradle/multi-custom/testsuite/build.gradle.kts")
 }
 
 func updateGradlePluginVersion(path string) {
