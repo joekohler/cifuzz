@@ -151,13 +151,17 @@ func findAllCMakeLists(projectDir string) ([]string, error) {
 	return cmakeLists, errors.WithStack(err)
 }
 
-func FuzzTestArgument(resolveSourceFile bool, args []string, buildSystem, projectDir string) ([]string, error) {
+func FuzzTestArguments(resolveSourceFile bool, args []string, buildSystem, projectDir string) ([]string, error) {
 	if resolveSourceFile {
-		fuzzTest, err := resolve(args[0], buildSystem, projectDir)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Failed to resolve source file %s", args[0]))
+		var fuzzTests []string
+		for _, arg := range args {
+			fuzzTest, err := resolve(arg, buildSystem, projectDir)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("Failed to resolve source file %s", arg))
+			}
+			fuzzTests = append(fuzzTests, fuzzTest)
 		}
-		return []string{fuzzTest}, nil
+		return fuzzTests, nil
 	}
 
 	return args, nil

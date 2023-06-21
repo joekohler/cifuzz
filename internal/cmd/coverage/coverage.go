@@ -163,7 +163,7 @@ or a lcov trace file.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			fuzzTest, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			fuzzTest, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)

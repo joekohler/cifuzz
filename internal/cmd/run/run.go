@@ -262,7 +262,7 @@ depends on the build system configured for the project.
 				args[0], opts.targetMethod = split[0], split[1]
 			}
 
-			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)

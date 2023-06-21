@@ -70,7 +70,7 @@ container is built and run locally instead of being pushed to a CI Sense server.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			fuzzTests, err := resolve.FuzzTestArgument(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Print(err.Error())
 				return cmdutils.WrapSilentError(err)
