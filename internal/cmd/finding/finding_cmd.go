@@ -233,7 +233,7 @@ func PrintMoreDetails(f *finding.Finding) {
 	}
 
 	log.Info("\ncifuzz found more extensive information about this finding:")
-
+	log.Debugf("Error ID: %s", f.MoreDetails.ID)
 	data := [][]string{
 		{"Name", f.MoreDetails.Name},
 	}
