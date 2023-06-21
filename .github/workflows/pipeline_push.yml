@@ -28,19 +28,13 @@ jobs:
         run: make tidy/check
 
       - name: Restore golangci-lint files from cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache@v3
         with:
           key: ${{ runner.os }}-golangci-lint
           path: /home/runner/.cache/golangci-lint
 
       - name: Run linting check
         run: make lint
-
-      - name: Save golangci-lint files to cache
-        uses: actions/cache/save@v3
-        with:
-          key: ${{ runner.os }}-golangci-lint
-          path: /home/runner/.cache/golangci-lint
 
       - name: Run unit tests
         run: make test/unit
