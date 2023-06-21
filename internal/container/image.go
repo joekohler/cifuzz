@@ -139,7 +139,7 @@ func createImageTar(buildContextDir string) (*os.File, error) {
 	}
 	defer imageTar.Close()
 
-	writer := archive.NewArchiveWriter(imageTar, false)
+	writer := archive.NewTarArchiveWriter(imageTar, false)
 	defer writer.Close()
 	err = writer.WriteDir("", buildContextDir)
 	if err != nil {

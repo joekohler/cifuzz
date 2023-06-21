@@ -26,10 +26,10 @@ const runtimeDepsPath = "runtime_deps"
 
 type jazzerBundler struct {
 	opts          *Opts
-	archiveWriter *archive.ArchiveWriter
+	archiveWriter archive.ArchiveWriter
 }
 
-func newJazzerBundler(opts *Opts, archiveWriter *archive.ArchiveWriter) *jazzerBundler {
+func newJazzerBundler(opts *Opts, archiveWriter archive.ArchiveWriter) *jazzerBundler {
 	return &jazzerBundler{opts, archiveWriter}
 }
 

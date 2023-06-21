@@ -49,7 +49,7 @@ func (b *Bundler) Bundle() (string, error) {
 
 	// Create archive writer
 	bufWriter := bufio.NewWriter(bundle)
-	archiveWriter := archive.NewArchiveWriter(bufWriter, true)
+	archiveWriter := archive.NewTarArchiveWriter(bufWriter, true)
 
 	var fuzzers []*archive.Fuzzer
 	switch b.opts.BuildSystem {
@@ -137,7 +137,7 @@ func (b *Bundler) determineDockerImageForBundle() string {
 	return dockerImageUsedInBundle
 }
 
-func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archiveWriter *archive.ArchiveWriter, dockerImageUsedInBundle string) error {
+func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archiveWriter archive.ArchiveWriter, dockerImageUsedInBundle string) error {
 	// Create and add the top-level metadata file.
 	metadata := &archive.Metadata{
 		Fuzzers: fuzzers,
@@ -164,7 +164,7 @@ func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archive
 	return nil
 }
 
-func (b *Bundler) createWorkDirInArchive(archiveWriter *archive.ArchiveWriter) error {
+func (b *Bundler) createWorkDirInArchive(archiveWriter archive.ArchiveWriter) error {
 	// The fuzzing artifact archive spec requires this directory even if it is empty.
 	tempWorkDirPath := filepath.Join(b.opts.tempDir, archiveWorkDirPath)
 	err := os.Mkdir(tempWorkDirPath, 0o755)
@@ -179,7 +179,7 @@ func (b *Bundler) createWorkDirInArchive(archiveWriter *archive.ArchiveWriter) e
 	return nil
 }
 
-func (b *Bundler) copyAdditionalFilesToArchive(archiveWriter *archive.ArchiveWriter) error {
+func (b *Bundler) copyAdditionalFilesToArchive(archiveWriter archive.ArchiveWriter) error {
 	for _, arg := range b.opts.AdditionalFiles {
 		source, target, err := parseAdditionalFilesArgument(arg)
 		if err != nil {
@@ -250,7 +250,7 @@ func (b *Bundler) getCodeRevision() *archive.CodeRevision {
 	}
 }
 
-func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, archiveWriter *archive.ArchiveWriter) error {
+func prepareSeeds(seedCorpusDirs []string, archiveSeedsDir string, archiveWriter archive.ArchiveWriter) error {
 	var targetDirs []string
 	for _, sourceDir := range seedCorpusDirs {
 		// Put the seeds into subdirectories of the "seeds" directory

@@ -38,7 +38,7 @@ func TestWriteArchive(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { fileutil.Cleanup(archive.Name()) })
 	writer := bufio.NewWriter(archive)
-	archiveWriter := NewArchiveWriter(writer, true)
+	archiveWriter := NewTarArchiveWriter(writer, true)
 	err = archiveWriter.WriteDir("", dir)
 	require.NoError(t, err)
 	err = archiveWriter.WriteHardLink(filepath.Join("dir1", "dir2", "test.sh"), filepath.Join("dir1", "hardlink"))
@@ -216,7 +216,7 @@ func createArchive(t *testing.T, files []fileEntry) *os.File {
 	t.Cleanup(func() { fileutil.Cleanup(archiveFile.Name()) })
 
 	writer := bufio.NewWriter(archiveFile)
-	archiveWriter := NewArchiveWriter(writer, true)
+	archiveWriter := NewTarArchiveWriter(writer, true)
 
 	for _, fileEntry := range files {
 		err = archiveWriter.WriteFile(fileEntry.archivePath, fileEntry.sourcePath)

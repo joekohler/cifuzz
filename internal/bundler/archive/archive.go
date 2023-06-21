@@ -15,14 +15,44 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-// ArchiveWriter provides functions to create a gzip-compressed tar archive.
-type ArchiveWriter struct {
+type ArchiveWriter interface {
+	Close() error
+	WriteFile(string, string) error
+	WriteDir(string, string) error
+	WriteHardLink(string, string) error
+	GetSourcePath(string) string
+	HasFileEntry(string) bool
+}
+
+type NullArchiveWriter struct{}
+
+func (w *NullArchiveWriter) Close() error {
+	return nil
+}
+func (w *NullArchiveWriter) WriteFile(string, string) error {
+	return nil
+}
+func (w *NullArchiveWriter) WriteDir(string, string) error {
+	return nil
+}
+func (w *NullArchiveWriter) WriteHardLink(string, string) error {
+	return nil
+}
+func (w *NullArchiveWriter) GetSourcePath(string) string {
+	return ""
+}
+func (w *NullArchiveWriter) HasFileEntry(string) bool {
+	return true
+}
+
+// TarArchiveWriter provides functions to create a gzip-compressed tar archive.
+type TarArchiveWriter struct {
 	*tar.Writer
 	manifest   map[string]string
 	gzipWriter *gzip.Writer
 }
 
-func NewArchiveWriter(w io.Writer, compress bool) *ArchiveWriter {
+func NewTarArchiveWriter(w io.Writer, compress bool) *TarArchiveWriter {
 	var gzipWriter *gzip.Writer
 	var writer *tar.Writer
 
@@ -33,7 +63,7 @@ func NewArchiveWriter(w io.Writer, compress bool) *ArchiveWriter {
 		writer = tar.NewWriter(w)
 	}
 
-	return &ArchiveWriter{
+	return &TarArchiveWriter{
 		Writer:     writer,
 		manifest:   make(map[string]string),
 		gzipWriter: gzipWriter,
@@ -42,7 +72,7 @@ func NewArchiveWriter(w io.Writer, compress bool) *ArchiveWriter {
 
 // Close closes the tar writer and the gzip writer. It does not close
 // the underlying io.Writer.
-func (w *ArchiveWriter) Close() error {
+func (w *TarArchiveWriter) Close() error {
 	var err error
 	err = w.Writer.Close()
 	if err != nil {
@@ -63,7 +93,7 @@ func (w *ArchiveWriter) Close() error {
 // filename archivePath (so when the archive is extracted, the file will
 // be created at archivePath). Symlinks will be followed.
 // WriteFile only handles regular files and symlinks.
-func (w *ArchiveWriter) WriteFile(archivePath string, sourcePath string) error {
+func (w *TarArchiveWriter) WriteFile(archivePath string, sourcePath string) error {
 	if fileutil.IsDir(sourcePath) {
 		return errors.Errorf("file is a directory: %s", sourcePath)
 	}
@@ -73,7 +103,7 @@ func (w *ArchiveWriter) WriteFile(archivePath string, sourcePath string) error {
 // writeFileOrEmptyDir does the same as WriteFile but doesn't return an
 // error when passed a directory. If passed a directory, it creates an
 // empty directory at archivePath.
-func (w *ArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath string) error {
+func (w *TarArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath string) error {
 	// To match the tar specification, which requires forward slashes as path separators,
 	// we convert potential windows path separators to forward slashes.
 	// Otherwise tars created on Windows will not work correctly on other platforms.
@@ -130,7 +160,7 @@ func (w *ArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath strin
 // WriteHardLink adds a hard link header to the archive. When the
 // archive is extracted, a hard link to target with the name linkname is
 // created.
-func (w *ArchiveWriter) WriteHardLink(target string, linkname string) error {
+func (w *TarArchiveWriter) WriteHardLink(target string, linkname string) error {
 	existingAbsPath, conflict := w.manifest[linkname]
 	if conflict {
 		return errors.Errorf("conflict for archive path %q: %q and %q", target, existingAbsPath, linkname)
@@ -151,7 +181,7 @@ func (w *ArchiveWriter) WriteHardLink(target string, linkname string) error {
 
 // WriteDir traverses sourceDir recursively and writes all regular files
 // and symlinks to the archive.
-func (w *ArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) error {
+func (w *TarArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) error {
 	return filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -173,11 +203,11 @@ func (w *ArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) error
 	})
 }
 
-func (w *ArchiveWriter) GetSourcePath(archivePath string) string {
+func (w *TarArchiveWriter) GetSourcePath(archivePath string) string {
 	return w.manifest[archivePath]
 }
 
-func (w *ArchiveWriter) HasFileEntry(archivePath string) bool {
+func (w *TarArchiveWriter) HasFileEntry(archivePath string) bool {
 	_, exists := w.manifest[archivePath]
 	return exists
 }

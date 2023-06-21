@@ -53,10 +53,10 @@ func versionedLibraryRegexp(unversionedBasename string) *regexp.Regexp {
 
 type libfuzzerBundler struct {
 	opts          *Opts
-	archiveWriter *archive.ArchiveWriter
+	archiveWriter archive.ArchiveWriter
 }
 
-func newLibfuzzerBundler(opts *Opts, archiveWriter *archive.ArchiveWriter) *libfuzzerBundler {
+func newLibfuzzerBundler(opts *Opts, archiveWriter archive.ArchiveWriter) *libfuzzerBundler {
 	return &libfuzzerBundler{opts, archiveWriter}
 }
 
