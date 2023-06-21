@@ -1,5 +1,9 @@
-code-intelligence.com/cifuzz/integration-tests/java-maven
-code-intelligence.com/cifuzz/integration-tests/kotlin-gradle
-code-intelligence.com/cifuzz/integration-tests/cmake
-code-intelligence.com/cifuzz/integration-tests/other
-code-intelligence.com/cifuzz/tools/replayer
+code-intelligence.com/cifuzz/integration-tests/bazel
+code-intelligence.com/cifuzz/integration-tests/java-gradle
+code-intelligence.com/cifuzz/integration-tests/java-maven-spring
+code-intelligence.com/cifuzz/integration-tests/shared/mockserver
+code-intelligence.com/cifuzz/pkg/finding
+code-intelligence.com/cifuzz/pkg/parser/sanitizer
+code-intelligence.com/cifuzz/pkg/dialog
+code-intelligence.com/cifuzz/util/fileutil
+code-intelligence.com/cifuzz/e2e-tests/container
