@@ -282,8 +282,12 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 
 // create a manifest.jar to configure jazzer
 func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
+	// as targetClass can contain "::" it can cause problems on windows
+	// therefore we replace it for the path in the tempDir.
+	// This does not affect the bundle itself
+	path := strings.ReplaceAll(targetClass, "::", "_")
 	// create directory for fuzzer specific files
-	fuzzerPath := filepath.Join(b.opts.tempDir, targetClass)
+	fuzzerPath := filepath.Join(b.opts.tempDir, path)
 	err := os.MkdirAll(fuzzerPath, 0o755)
 	if err != nil {
 		return "", errors.WithStack(err)
