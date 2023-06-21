@@ -89,9 +89,13 @@ func (r *Runner) Run(ctx context.Context) error {
 	// -------------------------
 	// --- libfuzzer options ---
 	// -------------------------
-	// Tell libfuzzer to exit after the timeout
-	timeoutSeconds := strconv.FormatInt(int64(r.Timeout.Seconds()), 10)
-	args = append(args, options.LibFuzzerMaxTotalTimeFlag(timeoutSeconds))
+	// Tell libfuzzer to exit after the timeout but only add the argument if the timeout is not 0 otherwise it will
+	// override jazzer's default timeout and never stop
+	timeoutSeconds := int64(r.Timeout.Seconds())
+	if timeoutSeconds > 0 {
+		timeoutStr := strconv.FormatInt(timeoutSeconds, 10)
+		args = append(args, options.LibFuzzerMaxTotalTimeFlag(timeoutStr))
+	}
 
 	// Tell libfuzzer which dictionary it should use
 	if r.Dictionary != "" {
