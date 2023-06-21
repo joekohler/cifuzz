@@ -26,7 +26,7 @@ Enter
 Sleep 1s
 
 Type "20jo"
-Type@20ms "testImplementation 'com.code-intelligence:jazzer-junit:0.17.1'"
+Type@20ms "testImplementation 'com.code-intelligence:jazzer-junit:0.19.0'"
 Escape
 Sleep 3
 Type ":wq"
