@@ -4,6 +4,9 @@ on:
       version:
         required: true
         type: string
+      compatibility_check:
+        required: true
+        type: string
 
 jobs:
   installer:
@@ -31,6 +34,7 @@ jobs:
         run: make version=${{ inputs.version }} installer/darwin-arm64
 
       - name: Check Compatibility
+        if: ${{ inputs.compatibility_check == 'true' }}
         uses: ./.github/actions/compatibility_check
         with:
           os: ${{ matrix.os }}
