@@ -23,7 +23,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_Bazel(t *testing.T) {
@@ -42,7 +41,6 @@ func TestIntegration_Bazel(t *testing.T) {
 	// Copy testdata
 	testdata := shared.CopyTestdataDir(t, "bazel")
 	t.Logf("executing bazel integration test in %s", testdata)
-	t.Cleanup(func() { fileutil.Cleanup(testdata) })
 
 	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,

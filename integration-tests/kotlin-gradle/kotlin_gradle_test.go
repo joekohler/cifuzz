@@ -20,7 +20,6 @@ import (
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_GradleKotlin(t *testing.T) {
@@ -33,7 +32,6 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "gradlekotlin")
-	defer fileutil.Cleanup(projectDir)
 
 	cifuzzRunner := shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,

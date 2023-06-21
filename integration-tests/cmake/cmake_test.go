@@ -42,7 +42,6 @@ func TestIntegration_CMake(t *testing.T) {
 
 	// Copy testdata
 	dir := shared.CopyTestdataDir(t, "cmake")
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing cmake integration test in %s", dir)
 
 	cifuzzRunner := &shared.CIFuzzRunner{

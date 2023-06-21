@@ -10,7 +10,6 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_MavenSpring(t *testing.T) {
@@ -24,7 +23,6 @@ func TestIntegration_MavenSpring(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "spring-maven")
-	defer fileutil.Cleanup(projectDir)
 
 	cifuzzRunner := shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,

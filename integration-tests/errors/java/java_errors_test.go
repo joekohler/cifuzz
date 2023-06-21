@@ -20,12 +20,10 @@ func TestIntegration_JavaErrors(t *testing.T) {
 	}
 
 	testdataTmp := shared.CopyTestdataDir(t, "java_cpp")
-	t.Cleanup(func() { fileutil.Cleanup(testdataTmp) })
 
 	// This testdata is in a separate project due to external dependencies that
 	// need to be downloaded for compilation and slow down every testcase.
 	testdataLDAPAndSQLTmp := shared.CopyCustomTestdataDir(t, "testdata-sql-ldap", "java_cpp_sql_ldap")
-	t.Cleanup(func() { fileutil.Cleanup(testdataLDAPAndSQLTmp) })
 
 	installDir := shared.InstallCIFuzzInTemp(t)
 	t.Cleanup(func() { fileutil.Cleanup(installDir) })

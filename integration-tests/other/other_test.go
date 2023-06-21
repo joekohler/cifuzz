@@ -44,7 +44,6 @@ func TestIntegration_Other_RunCoverage(t *testing.T) {
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system integration test in %s", dir)
 
 	cifuzzRunner := shared.CIFuzzRunner{
@@ -172,7 +171,6 @@ func TestIntegration_Other_DetailedCoverage(t *testing.T) {
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system coverage test in %s", dir)
 
 	createAndVerifyLcovCoverageReport(t, cifuzz, dir, "crashing_fuzz_test")
@@ -192,7 +190,6 @@ func TestIntegration_Other_Bundle(t *testing.T) {
 
 	// Setup testdata
 	dir := shared.CopyTestdataDir(t, "other")
-	t.Cleanup(func() { fileutil.Cleanup(dir) })
 	t.Logf("executing other build system integration test in %s", dir)
 
 	// Use a different Makefile on macOS, because shared objects need

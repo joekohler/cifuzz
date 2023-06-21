@@ -88,6 +88,7 @@ func CopyTestdataDirForE2E(t *testing.T, name string) string {
 
 	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
 	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(dir) })
 
 	// Get the path to the testdata dir
 	testDataDir := filepath.Join(cwd, "..", "samples", name)
@@ -109,6 +110,7 @@ func CopyTestdataDir(t *testing.T, name string) string {
 
 	dir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
 	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(dir) })
 
 	dir, err = filepath.EvalSymlinks(dir)
 	require.NoError(t, err)
@@ -134,6 +136,7 @@ func CopyCustomTestdataDir(t *testing.T, dir, name string) string {
 
 	tempDir, err := os.MkdirTemp("", fmt.Sprintf("cifuzz-%s-testdata-", name))
 	require.NoError(t, err)
+	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
 
 	tempDir, err = filepath.EvalSymlinks(tempDir)
 	require.NoError(t, err)

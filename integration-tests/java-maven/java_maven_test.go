@@ -20,7 +20,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_Maven(t *testing.T) {
@@ -34,7 +33,6 @@ func TestIntegration_Maven(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "maven")
-	defer fileutil.Cleanup(projectDir)
 
 	cifuzzRunner := shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,

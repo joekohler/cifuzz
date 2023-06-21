@@ -16,7 +16,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils/login"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/cicheck"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 const (
@@ -177,7 +176,6 @@ func runTest(t *testing.T, testCase *TestCase) {
 			fmt.Println(" ")
 
 			contextFolder := shared.CopyTestdataDirForE2E(t, testCaseRun.sampleFolder)
-			defer fileutil.Cleanup(contextFolder)
 
 			// exec.Cmd can't handle empty args
 			var cmd *exec.Cmd

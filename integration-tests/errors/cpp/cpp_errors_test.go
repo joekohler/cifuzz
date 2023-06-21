@@ -15,7 +15,6 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_CPPErrors(t *testing.T) {
@@ -36,7 +35,6 @@ func TestIntegration_CPPErrors(t *testing.T) {
 
 	// Copy testdata to tmp dir to avoid creating cifuzz folders in repo while testing
 	testdataTmp := shared.CopyTestdataDir(t, "errors_cpp")
-	t.Cleanup(func() { fileutil.Cleanup(testdataTmp) })
 
 	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:     cifuzz,
