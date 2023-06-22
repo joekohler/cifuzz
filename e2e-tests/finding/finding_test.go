@@ -51,15 +51,19 @@ var findingTests = &[]e2e.TestCase{
 		},
 	},
 	{
-		Description:  "finding command ran by an user with invalid token in a project with findings fails and won't print findings table",
+		Description:  "finding command ran by a user with invalid token in a project with findings prints error saying it failed to authenticate and prints n/a as score",
 		Command:      "finding",
 		SampleFolder: []string{"project-with-findings"},
+		Args:         []string{"--interactive=false"},
 		CIUser:       e2e.InvalidTokenCIUser,
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
-			assert.EqualValues(t, 1, output.ExitCode)
+			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stderr, "Failed to authenticate with the configured API access token.")
-			assert.NotContains(t, output.Stdout, "my_fuzz_test")
-			assert.NotContains(t, output.Stdout, "heap buffer overflow")
+			assert.Contains(t, output.Stderr, "⚠️Invalid token: Received 401 Unauthorized from server ")
+			assert.Contains(t, output.Stderr, "⚠️Not authorized to get error details. Please log in to enable this feature.")
+			// it should not print the actual score
+			assert.Contains(t, output.Stdout, "n/a")
+			assert.NotContains(t, output.Stdout, "9.0")
 		},
 	},
 	{
