@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/alessio/shellescape"
@@ -41,6 +42,7 @@ func New() (*cobra.Command, error) {
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			log.Infof("cifuzz version %s", version.Version)
+			log.Debugf("Running on %s/%s", runtime.GOOS, runtime.GOARCH)
 
 			err := cmdutils.Chdir()
 			if err != nil {
@@ -96,6 +98,7 @@ func New() (*cobra.Command, error) {
 	}
 
 	rootCmd.SetFlagErrorFunc(rootFlagErrorFunc)
+	rootCmd.SetVersionTemplate(fmt.Sprintf("cifuzz version %s\nRunning on %s/%s\n", version.Version, runtime.GOOS, runtime.GOARCH))
 
 	cobra.EnableCommandSorting = false
 	rootCmd.AddCommand(loginCmd.New())
