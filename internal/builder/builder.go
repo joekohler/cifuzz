@@ -301,7 +301,7 @@ func (i *CIFuzzBuilder) BuildCIFuzz() error {
 
 	// Build cifuzz
 	ldFlags := fmt.Sprintf("-ldflags=-X code-intelligence.com/cifuzz/internal/cmd/root.version=%s", i.Version)
-	cifuzz := filepath.Join(i.projectDir, "cmd", "cifuzz", "main.go")
+	cifuzz := filepath.Join("cmd", "cifuzz", "main.go")
 	cmd := exec.Command("go", "build", "-o", CIFuzzExecutablePath(i.binDir()), ldFlags, cifuzz)
 	cmd.Dir = i.projectDir
 	cmd.Env = buildEnv
