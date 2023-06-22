@@ -214,6 +214,9 @@ site/update:
 	git -C site commit -m "update docs" || true
 	git -C site push
 
+container-image: build/linux
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f docker/cifuzz-base/Dockerfile -t cifuzz-cli-dev .
+
 .PHONY: installer-via-docker
 installer-via-docker:
 	@echo "Building a cifuzz Linux installer"
