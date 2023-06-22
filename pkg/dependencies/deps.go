@@ -47,13 +47,13 @@ type Dependency struct {
 	// these fields are used to implement custom logic to
 	// retrieve version or installation information for the
 	// specific dependency
-	GetVersion func(*Dependency) (*semver.Version, error)
+	GetVersion func(*Dependency, string) (*semver.Version, error)
 	Installed  func(*Dependency, string) bool
 }
 
 // Compares MinVersion against GetVersion
-func (dep *Dependency) checkVersion() bool {
-	currentVersion, err := dep.GetVersion(dep)
+func (dep *Dependency) checkVersion(projectDir string) bool {
+	currentVersion, err := dep.GetVersion(dep, projectDir)
 	if err != nil {
 		log.Warnf("Unable to get current version for %s, message: %v", dep.Key, err)
 		// we want to be lenient if we were not able to extract the version
@@ -80,14 +80,14 @@ func Check(keys []Key, projectDir string) error {
 	return check(keys, deps, runfiles.Finder, projectDir)
 }
 
-func Version(key Key) (*semver.Version, error) {
+func Version(key Key, projectDir string) (*semver.Version, error) {
 	dep, found := deps[key]
 	if !found {
 		panic(fmt.Sprintf("Undefined dependency %s", key))
 	}
 
 	dep.finder = runfiles.Finder
-	return dep.GetVersion(dep)
+	return dep.GetVersion(dep, projectDir)
 }
 
 func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder, projectDir string) error {
@@ -112,7 +112,7 @@ func check(keys []Key, deps Dependencies, finder runfiles.RunfilesFinder, projec
 			log.Debugf("Checking dependency: %s version >= %s", dep.Key, dep.MinVersion.String())
 		}
 
-		if !dep.checkVersion() {
+		if !dep.checkVersion(projectDir) {
 			allFine = false
 		}
 

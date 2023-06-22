@@ -266,7 +266,7 @@ func (b *Builder) setCoverageEnv() error {
 	// spaces, because the environment variables are space separated.
 	//
 	// Note: Keep in sync with share/cmake/cifuzz-functions.cmake
-	clangVersion, err := dependencies.Version(dependencies.Clang)
+	clangVersion, err := dependencies.Version(dependencies.Clang, b.ProjectDir)
 	if err != nil {
 		log.Warnf("Failed to determine version of clang: %v", err)
 	}

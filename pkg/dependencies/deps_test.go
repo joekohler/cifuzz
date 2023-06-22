@@ -16,7 +16,7 @@ func TestCheck(t *testing.T) {
 	deps := getDeps(keys)
 
 	dep := deps[CMake]
-	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
+	dep.GetVersion = func(d *Dependency, _ string) (*semver.Version, error) {
 		return &d.MinVersion, nil
 	}
 
@@ -44,7 +44,7 @@ func TestCheck_WrongVersion(t *testing.T) {
 
 	// overwrite GetVersion for clang
 	dep := deps[CMake]
-	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
+	dep.GetVersion = func(d *Dependency, _ string) (*semver.Version, error) {
 		return semver.MustParse("1.0.0"), nil
 	}
 
@@ -61,7 +61,7 @@ func TestCheck_ShortVersion(t *testing.T) {
 
 	// overwrite GetVersion for clang
 	dep := deps[CMake]
-	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
+	dep.GetVersion = func(d *Dependency, _ string) (*semver.Version, error) {
 		return semver.MustParse("3.16"), nil
 	}
 
@@ -78,7 +78,7 @@ func TestCheck_UnableToGetVersion(t *testing.T) {
 
 	// overwrite GetVersion for clang
 	dep := deps[CMake]
-	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
+	dep.GetVersion = func(d *Dependency, _ string) (*semver.Version, error) {
 		return nil, errors.New("version-error")
 	}
 

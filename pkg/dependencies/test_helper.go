@@ -29,7 +29,7 @@ func TestMockAllDeps(t *testing.T) {
 	t.Helper()
 
 	// mock functions
-	versionFunc := func(dep *Dependency) (*semver.Version, error) {
+	versionFunc := func(dep *Dependency, _ string) (*semver.Version, error) {
 		return &dep.MinVersion, nil
 	}
 	installedFunc := func(dep *Dependency, _ string) bool {
@@ -48,7 +48,7 @@ func TestMockAllDeps(t *testing.T) {
 // in version 0.0.0
 func OverwriteGetVersionWith0(dep *Dependency) *semver.Version {
 	version := semver.MustParse("0.0.0")
-	dep.GetVersion = func(d *Dependency) (*semver.Version, error) {
+	dep.GetVersion = func(d *Dependency, _ string) (*semver.Version, error) {
 		return version, nil
 	}
 	return version

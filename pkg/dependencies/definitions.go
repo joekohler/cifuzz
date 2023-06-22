@@ -30,7 +30,7 @@ var deps = Dependencies{
 	Clang: {
 		Key:        Clang,
 		MinVersion: *semver.MustParse("11.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			return clangVersion(dep, clangCheck)
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
@@ -68,7 +68,7 @@ var deps = Dependencies{
 	LLVMCov: {
 		Key:        LLVMCov,
 		MinVersion: *semver.MustParse("11.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			path, err := dep.finder.LLVMCovPath()
 			if err != nil {
 				return nil, err
@@ -88,7 +88,7 @@ var deps = Dependencies{
 		Key: LLVMProfData,
 		// llvm-profdata provides no version information
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
@@ -103,7 +103,7 @@ var deps = Dependencies{
 	LLVMSymbolizer: {
 		Key:        LLVMSymbolizer,
 		MinVersion: *semver.MustParse("11.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			path, err := dep.finder.LLVMSymbolizerPath()
 			if err != nil {
 				return nil, err
@@ -122,7 +122,7 @@ var deps = Dependencies{
 	GenHTML: {
 		Key:        GenHTML,
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			path, err := dep.finder.GenHTMLPath()
 			if err != nil {
 				return nil, err
@@ -141,7 +141,7 @@ var deps = Dependencies{
 	Perl: {
 		Key:        Perl,
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
@@ -159,7 +159,7 @@ var deps = Dependencies{
 	Maven: {
 		Key:        Maven,
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			return semver.NewVersion("0.0.0")
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
@@ -169,9 +169,7 @@ var deps = Dependencies{
 	Gradle: {
 		Key:        Gradle,
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
-			return semver.NewVersion("0.0.0")
-		},
+		GetVersion: gradleVersion,
 		Installed: func(dep *Dependency, projectDir string) bool {
 			if projectDir != "" {
 				// Using the gradlew in the project dir is the preferred way
@@ -191,7 +189,7 @@ var deps = Dependencies{
 	VisualStudio: {
 		Key:        VisualStudio,
 		MinVersion: *semver.MustParse("17.0"),
-		GetVersion: func(dep *Dependency) (*semver.Version, error) {
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			return visualStudioVersion()
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {

@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/internal/build/gradle"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -21,17 +22,19 @@ Note: we made the "patch" part of the semver (when parsing the output with regex
 be more lenient when a command returns something like 1.2 instead of 1.2.0
 */
 var (
-	clangRegex   = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
-	cmakeRegex   = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
-	llvmRegex    = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
-	javaRegex    = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
+	clangRegex  = regexp.MustCompile(`(?m)clang version (?P<version>\d+\.\d+(\.\d+)?)`)
+	cmakeRegex  = regexp.MustCompile(`(?m)cmake version (?P<version>\d+\.\d+(\.\d+)?)`)
+	llvmRegex   = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
+	javaRegex   = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
+	gradleRegex = regexp.MustCompile(`(?m)Gradle (?P<version>\d+(\.\d+\.\d+)?)`)
+
 	bazelRegex   = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 	genHTMLRegex = regexp.MustCompile(`.*LCOV version (?P<version>\d+\.\d+(\.\d+)?)`)
 )
 
 type execCheck func(string, Key) (*semver.Version, error)
 
-func bazelVersion(dep *Dependency) (*semver.Version, error) {
+func bazelVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 	path, err := exec.LookPath("bazel")
 	if err != nil {
 		return nil, err
@@ -136,7 +139,7 @@ func genHTMLVersion(path string, dep *Dependency) (*semver.Version, error) {
 	return version, nil
 }
 
-func cmakeVersion(dep *Dependency) (*semver.Version, error) {
+func cmakeVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 	path, err := exec.LookPath("cmake")
 	if err != nil {
 		return nil, err
@@ -150,7 +153,7 @@ func cmakeVersion(dep *Dependency) (*semver.Version, error) {
 	return version, nil
 }
 
-func javaVersion(dep *Dependency) (*semver.Version, error) {
+func javaVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 	javaHome, err := runfiles.Finder.JavaHomePath()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -162,6 +165,20 @@ func javaVersion(dep *Dependency) (*semver.Version, error) {
 		return nil, err
 	}
 	log.Debugf("Found Java version %s in PATH: %s", version, javaHome)
+	return version, nil
+}
+
+func gradleVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
+	path, err := gradle.GetGradleCommand(projectDir)
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := getVersionFromCommand(path, []string{"-version"}, gradleRegex, dep.Key)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Found Gradle version %s: %s", version, path)
 	return version, nil
 }
 
