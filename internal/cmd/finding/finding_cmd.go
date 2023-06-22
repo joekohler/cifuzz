@@ -153,10 +153,13 @@ func (cmd *findingCmd) run(args []string) error {
 				locationInfo = f.ShortDescriptionColumns()[1]
 			}
 			if authenticated {
-				// check if we have a severity and if we have a severity score
-				if f.MoreDetails.Severity != nil {
-					colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
-					score = colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score))
+				// check if MoreDetails exists to avoid nil pointer errors
+				if f.MoreDetails != nil {
+					// check if we have a severity and if we have a severity score
+					if f.MoreDetails.Severity != nil {
+						colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
+						score = colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score))
+					}
 				}
 				data = append(data, []string{
 					score,
