@@ -397,6 +397,14 @@ func installZshCompletionScript(installDir string) error {
 	// Try to create a symlink in the first fpath directory
 	completionScript := completionScriptPath(installDir, "zsh")
 	symlinkPath := filepath.Join(fpath, "_cifuzz")
+	// Don't create a symlink if the source and target are the same (that
+	// can be the case if symlink creation failed in a previous install
+	// attempt and the user followed the instructions to add the completion
+	// script to their fpath).
+	if completionScript == symlinkPath {
+		return nil
+	}
+
 	err = fileutil.ForceSymlink(completionScript, symlinkPath)
 	if err != nil {
 		// Creating a symlink in the first fpath directory failed, so we
