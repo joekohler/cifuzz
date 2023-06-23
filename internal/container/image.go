@@ -18,9 +18,12 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/version"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
+
+const cifuzzImageBase = "ghcr.io/codeintelligencetesting/cifuzz"
 
 //go:embed ensure-cifuzz.sh
 var ensureCifuzzScript string
@@ -29,7 +32,8 @@ var ensureCifuzzScript string
 var dockerfileTemplate string
 
 type dockerfileConfig struct {
-	Base string
+	CIFuzzImage string
+	Base        string
 }
 
 // BuildImageFromBundle creates an image based on an existing bundle
@@ -151,8 +155,11 @@ func createImageTar(buildContextDir string) (*os.File, error) {
 }
 
 func createDockerfile(path string, baseImage string) error {
+	cifuzzImage := cifuzzImageBase + ":" + version.Version
+
 	dockerConfig := dockerfileConfig{
-		Base: baseImage,
+		CIFuzzImage: cifuzzImage,
+		Base:        baseImage,
 	}
 	tmpl, err := template.New("Dockerfile").Parse(dockerfileTemplate)
 	if err != nil {

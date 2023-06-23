@@ -1,4 +1,4 @@
-FROM cifuzz-cli-dev AS cifuzz-cli
+FROM {{ .CIFuzzImage }} AS cifuzz-cli
 
 FROM {{ .Base }}
 

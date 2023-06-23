@@ -37,6 +37,19 @@ project := "code-intelligence.com/cifuzz"
 # make version=1.0.0-dev [target]
 version = dev
 
+# Set IMAGE_ID to ghcr.io/codeintelligencetesting/cifuzz if it's not set
+image_id ?= ghcr.io/codeintelligencetesting/cifuzz
+
+# Set IMAGE_TAG to IMAGE_ID:version
+image_tag ?= $(image_id):$(version)
+
+# Export environment variables from the .env file if it exists
+ifneq ("$(wildcard .env)","")
+	include .env
+	export
+endif
+
+
 default:
 	@echo cifuzz
 
@@ -214,8 +227,17 @@ site/update:
 	git -C site commit -m "update docs" || true
 	git -C site push
 
-container-image: build/linux
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f docker/cifuzz-base/Dockerfile -t cifuzz-cli-dev .
+build-container-image: build/linux
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f docker/cifuzz-base/Dockerfile -t $(image_tag) .
+
+push-container-image: build-container-image
+	# Exit if GITHUB_TOKEN or GITHUB_USER are not set
+	if [ -z "${GITHUB_TOKEN}" ] || [ -z "${GITHUB_USER}" ]; then \
+		echo "GITHUB_TOKEN or GITHUB_USER not set"; \
+		exit 1; \
+	fi
+	echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+	docker push "$(image_tag)"
 
 .PHONY: installer-via-docker
 installer-via-docker:

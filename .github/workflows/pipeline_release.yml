@@ -53,3 +53,10 @@ jobs:
           draft: true
           files: cifuzz_installer_*
           fail_on_unmatched_files: true
+
+  tag_container_image:
+    name: Tag container image
+    needs: [version]
+    uses: ./.github/workflows/workflow_container_image.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
