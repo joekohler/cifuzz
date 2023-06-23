@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -165,12 +166,24 @@ on the build system. This can be overridden with a docker-image flag.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			// Check if the fuzz tests contain a method of a class
+			// And remove methods from fuzz test arguments
+			for _, arg := range args {
+				if strings.Contains(arg, "::") {
+					split := strings.Split(arg, "::")
+					opts.FuzzTests = append(opts.FuzzTests, split[0])
+					opts.TargetMethods = append(opts.TargetMethods, split[1])
+				} else {
+					opts.FuzzTests = append(opts.FuzzTests, arg)
+					opts.TargetMethods = append(opts.TargetMethods, "")
+				}
+			}
+
+			opts.FuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, opts.FuzzTests, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)
 			}
-			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
 			return opts.Validate()

@@ -36,6 +36,7 @@ type Opts struct {
 	// and CIFUZZ_* environment variables), by setting
 	// mapstructure:"-"
 	FuzzTests       []string  `mapstructure:"-"`
+	TargetMethods   []string  `mapstructure:"-"`
 	OutputPath      string    `mapstructure:"-"`
 	BuildSystemArgs []string  `mapstructure:"-"`
 	Stdout          io.Writer `mapstructure:"-"`

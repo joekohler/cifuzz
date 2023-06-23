@@ -61,6 +61,11 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 
 	// Iterate over build results to fill archive and create fuzzers
 	for _, buildResult := range buildResults {
+		fuzzTestName := buildResult.Name
+		if buildResult.TargetMethod != "" {
+			fuzzTestName = fuzzTestName + "::" + buildResult.TargetMethod
+		}
+
 		log.Debugf("build dir: %s\n", buildResult.BuildDir)
 		// copy seeds for every fuzz test
 		archiveSeedsDir, err := b.copySeeds()
@@ -70,11 +75,14 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 
 		// creating a manifest.jar for every fuzz test to configure
 		// jazzer via MANIFEST.MF
-		manifestJar, err := b.createManifestJar(buildResult.Name)
+		manifestJar, err := b.createManifestJar(buildResult.Name, buildResult.TargetMethod)
 		if err != nil {
 			return nil, err
 		}
-		archiveManifestPath := filepath.Join(buildResult.Name, "manifest.jar")
+		archiveManifestPath := filepath.Join(fuzzTestName, "manifest.jar")
+		// to avoid path conflicts with the java class path, we replace
+		// `::` with `_`
+		archiveManifestPath = strings.ReplaceAll(archiveManifestPath, "::", "_")
 		err = b.archiveWriter.WriteFile(archiveManifestPath, manifestJar)
 		if err != nil {
 			return nil, err
@@ -137,7 +145,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 		}
 
 		fuzzer := &archive.Fuzzer{
-			Name:         buildResult.Name,
+			Name:         fuzzTestName,
 			Engine:       "JAVA_LIBFUZZER",
 			ProjectDir:   buildResult.ProjectDir,
 			Dictionary:   archiveDict,
@@ -189,6 +197,7 @@ func (b *jazzerBundler) checkDependencies() error {
 
 func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	var fuzzTests []string
+	var targetMethods []string
 	var err error
 
 	if len(b.opts.FuzzTests) == 0 {
@@ -218,8 +227,18 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 			return nil, cmdutils.ErrSilent
 		}
 
+		for i, fuzzTest := range fuzzTests {
+			if strings.Contains(fuzzTest, "::") {
+				split := strings.Split(fuzzTest, "::")
+				fuzzTests[i] = split[0]
+				targetMethods = append(targetMethods, split[1])
+			} else {
+				targetMethods = append(targetMethods, "")
+			}
+		}
 	} else {
 		fuzzTests = b.opts.FuzzTests
+		targetMethods = b.opts.TargetMethods
 	}
 
 	var buildResults []*build.Result
@@ -243,8 +262,8 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 			return nil, err
 		}
 
-		for _, test := range fuzzTests {
-			buildResult, err := builder.Build(test)
+		for i := range fuzzTests {
+			buildResult, err := builder.Build(fuzzTests[i], targetMethods[i])
 			if err != nil {
 				return nil, err
 			}
@@ -268,8 +287,8 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, test := range fuzzTests {
-			buildResult, err := builder.Build(test)
+		for i := range fuzzTests {
+			buildResult, err := builder.Build(fuzzTests[i], targetMethods[i])
 			if err != nil {
 				return nil, err
 			}
@@ -281,13 +300,12 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 }
 
 // create a manifest.jar to configure jazzer
-func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
-	// as targetClass can contain "::" it can cause problems on windows
-	// therefore we replace it for the path in the tempDir.
-	// This does not affect the bundle itself
-	path := strings.ReplaceAll(targetClass, "::", "_")
+func (b *jazzerBundler) createManifestJar(targetClass string, targetMethod string) (string, error) {
 	// create directory for fuzzer specific files
-	fuzzerPath := filepath.Join(b.opts.tempDir, path)
+	fuzzerPath := filepath.Join(b.opts.tempDir, targetClass)
+	if targetMethod != "" {
+		fuzzerPath = filepath.Join(fuzzerPath, targetMethod)
+	}
 	err := os.MkdirAll(fuzzerPath, 0o755)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -295,7 +313,11 @@ func (b *jazzerBundler) createManifestJar(targetClass string) (string, error) {
 
 	// entries for the MANIFEST.MF
 	entries := map[string]string{
-		options.JazzerTargetClassManifest: targetClass,
+		options.JazzerTargetClassManifest:       targetClass,
+		options.JazzerTargetClassManifestLegacy: targetClass,
+	}
+	if targetMethod != "" {
+		entries[options.JazzerTargetMethodManifest] = targetMethod
 	}
 
 	jarPath, err := java.CreateManifestJar(entries, fuzzerPath)

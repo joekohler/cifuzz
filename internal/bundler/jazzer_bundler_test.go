@@ -20,6 +20,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/options"
+	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -272,4 +274,50 @@ func TestIntegration_GradleCustomSrcMultipeTests(t *testing.T) {
 	// result should contain fuzz tests with fully qualified names
 	assert.Equal(t, "com.example.TestCases::myFuzzTest1", fuzzers[0].Name)
 	assert.Equal(t, "com.example.TestCases::myFuzzTest2", fuzzers[1].Name)
+}
+
+func TestCreateManifestJar_TargetMethod(t *testing.T) {
+	tempDir := testutil.MkdirTemp(t, "", "bundle-temp-dir-")
+	jazzerBundler := jazzerBundler{
+		opts: &Opts{
+			tempDir: tempDir,
+		},
+	}
+	targetClass := "com.example.FuzzTestCase"
+	targetMethod := "myFuzzTest"
+	jarPath, err := jazzerBundler.createManifestJar(targetClass, targetMethod)
+	require.NoError(t, err)
+
+	err = archiveutil.Unzip(jarPath, tempDir)
+	require.NoError(t, err)
+	manifestPath := filepath.Join(tempDir, "META-INF", "MANIFEST.MF")
+	require.FileExists(t, manifestPath)
+	content, err := os.ReadFile(manifestPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), fmt.Sprintf("%s: %s", options.JazzerTargetClassManifest, targetClass))
+	assert.Contains(t, string(content), fmt.Sprintf("%s: %s", options.JazzerTargetClassManifestLegacy, targetClass))
+	assert.Contains(t, string(content), fmt.Sprintf("%s: %s", options.JazzerTargetMethodManifest, targetMethod))
+}
+
+func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
+	buildResults := []*build.Result{
+		{
+			Name:         "com.example.FuzzTest",
+			TargetMethod: "myFuzzTest",
+		},
+	}
+
+	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
+
+	b := newJazzerBundler(&Opts{
+		tempDir: tempDir,
+	}, &archive.NullArchiveWriter{})
+
+	fuzzers, err := b.assembleArtifacts(buildResults)
+	require.NoError(t, err)
+
+	require.Len(t, fuzzers, 1)
+	require.Len(t, fuzzers[0].RuntimePaths, 1)
+	assert.Contains(t, fuzzers[0].RuntimePaths[0], "com.example.FuzzTest_myFuzzTest")
+	assert.Equal(t, fuzzers[0].Name, "com.example.FuzzTest::myFuzzTest")
 }
