@@ -20,3 +20,5 @@ coverage.out
 /cifuzz.yaml
 
 gotest.log
+
+/node_modules/

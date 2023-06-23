@@ -24,10 +24,14 @@ For more information, see [how to create and publish a new release](./docs/RELEA
 * [Gradle](https://gradle.org/install/) >= 6.1 
 
 
+
+#### Dev Tooling
+- [Node.js/npm](https://nodejs.org/)
+
 ### Ubuntu / Debian
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo apt install git make cmake clang llvm golang-go libcap-dev default-jdk maven gradle
+sudo apt install git make cmake clang llvm golang-go libcap-dev default-jdk maven gradle nodejs
 
 # install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
@@ -37,7 +41,7 @@ sudo chmod +x /usr/local/bin/bazel
 ### Arch
 <!-- when changing this, please make sure it is in sync with the E2E pipeline -->
 ```bash
-sudo pacman -S git make cmake clang llvm go jdk-openjdk maven gradle
+sudo pacman -S git make cmake clang llvm go jdk-openjdk maven gradle nodejs npm
 
 # install bazelisk
 sudo curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -o /usr/local/bin/bazel
@@ -58,7 +62,7 @@ make install
 ### macOS
 <!-- when changing this, please make sure it`is in sync with the E2E pipeline -->
 ```bash
-brew install git cmake llvm lcov go openjdk maven gradle bazelisk
+brew install git cmake llvm lcov go openjdk maven gradle bazelisk node
 ```
 
 Finally, add the following to your `~/.zshrc` or `~/.bashrc` to use the correct version of

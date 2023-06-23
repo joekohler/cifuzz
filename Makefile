@@ -81,6 +81,8 @@ deps/integration-tests:
 deps/dev: deps
 	go install github.com/incu6us/goimports-reviser/v2@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+	yarn install --silent
+
 
 .PHONY: deps/test
 # TODO: use a version of gotestfmt ^2.4.2 when it's released
@@ -133,12 +135,11 @@ lint: deps/dev
 
 .PHONY: fmt
 fmt: deps/dev
-	command -v goimports-reviser || go install github.com/incu6us/goimports-reviser/v2@latest
 	find . -type f -name "*.go" -not -path "./.git/*" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -file-path
+	npx prettier --loglevel=warn --write .
 
 .PHONY: fmt/check
 fmt/check: deps/dev
-	command -v goimports-reviser || go install github.com/incu6us/goimports-reviser/v2@latest
 	@DIFF=$$(find . -type f -name "*.go" -not -path "./.git/*" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -list-diff -file-path); \
 	# Exit if the find command failed \
 	if [ "$$?" -ne 0 ]; then \
@@ -146,9 +147,10 @@ fmt/check: deps/dev
 	fi; \
 	# Exit after printing unformatted files (if any) \
 	if [ -n "$${DIFF}" ]; then \
-		echo >&2 "Unformatted files:\n$${DIFF}"; \
+		echo -e >&2 "Unformatted files:\n$${DIFF}"; \
 		exit 1; \
 	fi;
+	npx prettier --loglevel=warn --check .
 
 .PHONY: tidy
 tidy:
