@@ -300,7 +300,7 @@ func (i *CIFuzzBuilder) BuildCIFuzz() error {
 	buildEnv = append(buildEnv, []string{"GOOS=" + i.GOOS, "GOARCH=" + i.GOARCH}...)
 
 	// Build cifuzz
-	ldFlags := fmt.Sprintf("-ldflags=-X code-intelligence.com/cifuzz/internal/cmd/root.version=%s", i.Version)
+	ldFlags := fmt.Sprintf("-ldflags=-X code-intelligence.com/cifuzz/internal/version/version.Version=%s", i.Version)
 	cifuzz := filepath.Join("cmd", "cifuzz", "main.go")
 	cmd := exec.Command("go", "build", "-o", CIFuzzExecutablePath(i.binDir()), ldFlags, cifuzz)
 	cmd.Dir = i.projectDir

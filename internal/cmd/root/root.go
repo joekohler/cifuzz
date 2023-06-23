@@ -27,21 +27,20 @@ import (
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/version"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
-
-var version string
 
 func New() (*cobra.Command, error) {
 	rootCmd := &cobra.Command{
 		Use:     "cifuzz",
-		Version: version,
+		Version: version.Version,
 		// We are using our custom ErrSilent instead to support a more specific
 		// error handling
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			log.Infof("cifuzz version %s", version)
+			log.Infof("cifuzz version %s", version.Version)
 
 			err := cmdutils.Chdir()
 			if err != nil {
