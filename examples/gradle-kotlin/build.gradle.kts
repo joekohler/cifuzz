@@ -4,7 +4,7 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
     // Include cifuzz
-    id("com.code-intelligence.cifuzz") version "1.2.0"
+    id("com.code-intelligence.cifuzz") version "1.3.0"
 }
 
 repositories {
