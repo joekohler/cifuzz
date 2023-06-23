@@ -1,0 +1,39 @@
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      compatibility_check:
+        required: true
+        type: string
+
+jobs:
+  container_image:
+    name: Build and push container image
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          VERSION=${{ inputs.version }}
+          # Strip "v" prefix from tag name
+          IMAGE_TAG="${IMAGE_ID}:${VERSION#v}"
+
+          # Print the following command for debugging
+          echo make version="$VERSION" image_tag="$IMAGE_TAG" push-container-image
+
+          make version="$VERSION" image_tag="$IMAGE_TAG" push-container-image
