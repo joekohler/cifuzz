@@ -73,7 +73,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	return b, err
 }
 
-func (b *Builder) Build(targetClass string) (*build.Result, error) {
+func (b *Builder) Build(targetClass string, targetMethod string) (*build.Result, error) {
 	gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(b.ProjectDir)
 	if err != nil {
 		return nil, err
@@ -100,6 +100,7 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 	}
 	result := &build.Result{
 		Name:            targetClass,
+		TargetMethod:    targetMethod,
 		BuildDir:        buildDir,
 		ProjectDir:      b.ProjectDir,
 		GeneratedCorpus: generatedCorpus,

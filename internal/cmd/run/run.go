@@ -520,7 +520,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 
 		var buildResult *build.Result
-		buildResult, err = builder.Build(c.opts.fuzzTest)
+		buildResult, err = builder.Build(c.opts.fuzzTest, c.opts.targetMethod)
 		if err != nil {
 			return nil, err
 		}
@@ -547,7 +547,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		}
 
 		var buildResult *build.Result
-		buildResult, err = builder.Build(c.opts.fuzzTest)
+		buildResult, err = builder.Build(c.opts.fuzzTest, c.opts.targetMethod)
 		if err != nil {
 			return nil, err
 		}
