@@ -7,7 +7,12 @@ const (
 	JazzerTargetMethod string = "--target_method"
 	JazzerAutoFuzz     string = "--autofuzz"
 
-	JazzerTargetClassManifest string = "Jazzer-Fuzz-Target-Class"
+	// we keep that for compatibility reasons,
+	// can be removed when we are sure that there
+	// are no more jazzer versions < 0.19.0 around
+	JazzerTargetClassManifestLegacy string = "Jazzer-Fuzz-Target-Class"
+	JazzerTargetClassManifest       string = "Jazzer-Target-Class"
+	JazzerTargetMethodManifest      string = "Jazzer-Target-Method"
 )
 
 func JazzerTargetClassFlag(value string) string {
