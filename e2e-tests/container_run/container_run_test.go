@@ -32,7 +32,7 @@ var containerRunTests = &[]e2e.TestCase{
 		ToolsRequired: []string{"docker", "java", "maven"},
 		SkipOnOS:      "windows",
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
-			output.Success().OutputContains("Remote Code Execution in exploreMe")
+			output.Success().ErrorContains("Remote Code Execution in exploreMe")
 		},
 	},
 }

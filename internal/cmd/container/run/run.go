@@ -161,8 +161,8 @@ func (c *containerRunCmd) run() error {
 
 	// TODO: make output pretty
 	//  Remove 'cifuzz version' from output
-	fmt.Println(containerStdOut.String())
-	fmt.Println(containerStdErr.String())
+	_, _ = fmt.Fprintln(os.Stdout, containerStdOut.String())
+	_, _ = fmt.Fprintln(os.Stderr, containerStdErr.String())
 
 	return nil
 }
