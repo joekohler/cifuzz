@@ -14,7 +14,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 type loginOpts struct {
@@ -91,7 +90,7 @@ func (c *loginCmd) run() error {
 	// Try the access tokens config file
 	token = tokenstorage.Get(c.opts.Server)
 	if token != "" {
-		return c.handleExistingToken(token)
+		return auth.EnsureValidToken(*c.apiClient, token)
 	}
 
 	// Try reading it interactively
@@ -104,15 +103,4 @@ func (c *loginCmd) run() error {
 in interactive mode. You can generate a token here:
 %s/dashboard/settings/account/tokens?create&origin=cli.`+"\n", c.opts.Server)
 	return cmdutils.WrapIncorrectUsageError(err)
-}
-
-func (c *loginCmd) handleExistingToken(token string) error {
-	err := auth.EnsureValidToken(*c.apiClient, token)
-	if err != nil {
-		return err
-	}
-
-	log.Success("You are already logged in.")
-	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
-	return nil
 }

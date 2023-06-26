@@ -138,6 +138,8 @@ It's possible that the token has been revoked.`)
 				}
 			}
 		}
+	} else {
+		log.Success("You are logged in.")
 	}
 	return nil
 }
