@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -140,7 +139,7 @@ func (c *containerRunCmd) run() error {
 		logging.StopBuildProgressSpinnerOnError("Received interrupt, stopping container and cifuzz...")
 		err := container.Stop(containerID)
 		if err != nil {
-			log.Error(errors.Wrap(err, "container could not be stopped"))
+			log.Errorf(err, "Failed to stop container: %v", err.Error())
 		}
 	}()
 

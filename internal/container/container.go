@@ -86,5 +86,6 @@ func Stop(id string) error {
 	}
 
 	ctx := context.Background()
-	return cli.ContainerStop(ctx, id, container.StopOptions{})
+	err = cli.ContainerStop(ctx, id, container.StopOptions{})
+	return errors.WithStack(err)
 }
