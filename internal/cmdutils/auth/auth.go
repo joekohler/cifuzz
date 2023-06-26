@@ -169,6 +169,10 @@ func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	if err != nil {
 		return err
 	}
+	err = tokenstorage.Set(apiClient.Server, token)
+	if err != nil {
+		return err
+	}
 	log.Successf("Successfully authenticated with %s", apiClient.Server)
 	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
 	return nil
