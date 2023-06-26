@@ -152,7 +152,7 @@ variable or by running 'cifuzz login' first.
 				}
 			}
 
-			opts.FuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			opts.FuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, opts.FuzzTests, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Error(err)
 				return cmdutils.WrapSilentError(err)
