@@ -2,10 +2,11 @@ package container
 
 import (
 	"context"
-	"io"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/pkg/stdcopy"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -49,34 +50,55 @@ func Create(fuzzTest string) (string, error) {
 	return cont.ID, nil
 }
 
-func Start(id string) (io.ReadCloser, error) {
+func Start(id string) error {
 	cli, err := getDockerClient()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ctx := context.Background()
 	err = cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	log.Debugf("started container %s", id)
+
+	// Continuously print the container's stdout and stderr to the host's
+	// stdout and stderr.
+	go func() {
+		out, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+			Follow:     true,
+		})
+		if err != nil {
+			log.Errorf(err, "error getting container logs: %s", err.Error())
+			return
+		}
+		defer func() {
+			err := out.Close()
+			if err != nil {
+				log.Errorf(err, "error closing container logs: %s", err.Error())
+			}
+		}()
+
+		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+		if err != nil {
+			log.Errorf(err, "error copying container logs: %s", err.Error())
+			return
+		}
+	}()
 
 	statusCh, errCh := cli.ContainerWait(ctx, id, container.WaitConditionNotRunning)
 	select {
 	case err = <-errCh:
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 	case <-statusCh:
 	}
 
-	out, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return out, err
+	return err
 }
 
 func Stop(id string) error {

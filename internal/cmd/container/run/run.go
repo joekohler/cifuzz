@@ -1,14 +1,10 @@
 package run
 
 import (
-	"bytes"
-	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -143,26 +139,12 @@ func (c *containerRunCmd) run() error {
 		}
 	}()
 
-	out, err := container.Start(containerID)
+	err = container.Start(containerID)
 	if err != nil {
 		logging.StopBuildProgressSpinnerOnError(log.ContainerRunInProgressErrorMsg)
 		return err
 	}
 	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerRunInProgressSuccessMsg, false)
-
-	// Copy the logs to two different vars, so that we can pass them around
-	// independently.
-	containerStdOut := new(bytes.Buffer)
-	containerStdErr := new(bytes.Buffer)
-	_, err = stdcopy.StdCopy(containerStdOut, containerStdErr, out)
-	if err != nil && err != io.EOF {
-		return err
-	}
-
-	// TODO: make output pretty
-	//  Remove 'cifuzz version' from output
-	_, _ = fmt.Fprintln(os.Stdout, containerStdOut.String())
-	_, _ = fmt.Fprintln(os.Stderr, containerStdErr.String())
 
 	return nil
 }
