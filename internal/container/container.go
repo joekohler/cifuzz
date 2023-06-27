@@ -50,7 +50,7 @@ func Create(fuzzTest string) (string, error) {
 	return cont.ID, nil
 }
 
-func Start(id string) error {
+func Run(id string) error {
 	cli, err := getDockerClient()
 	if err != nil {
 		return err
