@@ -321,3 +321,73 @@ func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 	assert.Contains(t, fuzzers[0].RuntimePaths[0], "com.example.FuzzTest_myFuzzTest")
 	assert.Equal(t, fuzzers[0].Name, "com.example.FuzzTest::myFuzzTest")
 }
+
+func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
+	opts := &Opts{
+		BuildSystem: config.BuildSystemMaven,
+		ProjectDir:  filepath.Join("testdata", "jazzer", "example"),
+		FuzzTests:   nil,
+	}
+	bundler := newJazzerBundler(opts, nil)
+
+	testCases := []struct {
+		fuzzTestInBundler     []string
+		expectedFuzzTests     []string
+		expectedTargetMethods []string
+	}{
+		{ // No fuzz tests specified
+			fuzzTestInBundler: []string{""},
+			expectedFuzzTests: []string{
+				"com.example.FuzzTestCase1",
+				"com.example.FuzzTestCase2",
+				"com.example.FuzzTestCase2",
+			},
+			expectedTargetMethods: []string{
+				"",
+				"oneFuzzTest",
+				"anotherFuzzTest",
+			},
+		},
+		{ // One class specified that only has one method
+			fuzzTestInBundler:     []string{"com.example.FuzzTestCase1"},
+			expectedFuzzTests:     []string{"com.example.FuzzTestCase1"},
+			expectedTargetMethods: []string{""},
+		},
+		{ // One class specified that has two methods
+			fuzzTestInBundler: []string{"com.example.FuzzTestCase2"},
+			expectedFuzzTests: []string{
+				"com.example.FuzzTestCase2",
+				"com.example.FuzzTestCase2"},
+			expectedTargetMethods: []string{
+				"oneFuzzTest",
+				"anotherFuzzTest"},
+		},
+		{ // One class with target method specified
+			fuzzTestInBundler:     []string{"com.example.FuzzTestCase2::anotherFuzzTest"},
+			expectedFuzzTests:     []string{"com.example.FuzzTestCase2"},
+			expectedTargetMethods: []string{"anotherFuzzTest"},
+		},
+
+		{ // Two classes specified, one with target method one without
+			fuzzTestInBundler: []string{"" +
+				"com.example.FuzzTestCase1",
+				"com.example.FuzzTestCase2::anotherFuzzTest"},
+			expectedFuzzTests: []string{
+				"com.example.FuzzTestCase1",
+				"com.example.FuzzTestCase2"},
+			expectedTargetMethods: []string{
+				"",
+				"anotherFuzzTest"},
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("testCase %d", i), func(t *testing.T) {
+			bundler.opts.FuzzTests = tc.fuzzTestInBundler
+			fuzzTests, targetMethods, err := bundler.fuzzTestIdentifier()
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tc.expectedFuzzTests, fuzzTests)
+			assert.ElementsMatch(t, tc.expectedTargetMethods, targetMethods)
+		})
+	}
+}
