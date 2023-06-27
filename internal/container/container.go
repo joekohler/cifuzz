@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -28,6 +29,14 @@ func Create(fuzzTest string) (string, error) {
 
 	if viper.GetBool("verbose") {
 		containerConfig.Cmd = append(containerConfig.Cmd, "-v")
+	}
+
+	// Make the container sleep forever if the environment variable is set.
+	// This is useful for debugging, as it allows to exec into the container,
+	// run the command manually and debug things in the container.
+	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
+		containerConfig.Env = append(containerConfig.Env, "CMD="+strings.Join(containerConfig.Cmd, " "))
+		containerConfig.Cmd = []string{"sleep", "infinity"}
 	}
 
 	ctx := context.Background()
@@ -62,6 +71,12 @@ func Run(id string) error {
 		return errors.WithStack(err)
 	}
 	log.Debugf("started container %s", id)
+	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
+		log.Infof("Container %s is running.", id)
+		log.Infof("Attach to it with: docker exec -it %s /bin/bash", id)
+		log.Infof("Run the original command in the container with: eval $CMD")
+		log.Infof("Press Ctrl+C to stop the container.")
+	}
 
 	// Continuously print the container's stdout and stderr to the host's
 	// stdout and stderr.
