@@ -19,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/java"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 // The directory inside the fuzzing artifact used to store runtime dependencies
@@ -200,45 +201,9 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 	var targetMethods []string
 	var err error
 
-	if len(b.opts.FuzzTests) == 0 {
-		// for gradle we can get the test src directory by gradle itself
-		// If we don't have this information we have to assume that
-		// the tests are located under src/test, which is a common place for
-		// java projects
-		testDirs := []string{}
-		if b.opts.BuildSystem == config.BuildSystemGradle {
-			testDirs, err = gradle.GetTestSourceSets(b.opts.ProjectDir)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			testDirs = append(testDirs, filepath.Join(b.opts.ProjectDir, "src", "test"))
-		}
-
-		fuzzTests, err = cmdutils.ListJVMFuzzTests(testDirs, "")
-		if err != nil {
-			return nil, err
-		}
-
-		// If no fuzz test was found, fail the command
-		if len(fuzzTests) == 0 {
-			log.Error(errors.New("No fuzz test(s) could be found in the project directory."))
-			// Returning a silent error here because we do not need a stacktrace
-			return nil, cmdutils.ErrSilent
-		}
-
-		for i, fuzzTest := range fuzzTests {
-			if strings.Contains(fuzzTest, "::") {
-				split := strings.Split(fuzzTest, "::")
-				fuzzTests[i] = split[0]
-				targetMethods = append(targetMethods, split[1])
-			} else {
-				targetMethods = append(targetMethods, "")
-			}
-		}
-	} else {
-		fuzzTests = b.opts.FuzzTests
-		targetMethods = b.opts.TargetMethods
+	fuzzTests, targetMethods, err = b.fuzzTestIdentifier()
+	if err != nil {
+		return nil, err
 	}
 
 	var buildResults []*build.Result
@@ -326,4 +291,89 @@ func (b *jazzerBundler) createManifestJar(targetClass string, targetMethod strin
 	}
 
 	return jarPath, nil
+}
+
+// fuzzTestIdentifier extracts all fuzz tests and their target
+// methods from the fuzz tests given to the bundler.
+func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
+	var err error
+
+	testDirs, err := b.getTestDirs()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	allValidFuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(allValidFuzzTests) == 0 {
+		log.Error(errors.Errorf("No fuzz test(s) could be found in the project directory '%s'.", b.opts.ProjectDir))
+		return nil, nil, err
+	}
+
+	var fuzzTests []string
+	var targetMethods []string
+
+	if len(b.opts.FuzzTests) == 0 {
+		// If bundle is called without any arguments,
+		// we want to bundle every fuzz test
+		for _, fuzzTest := range allValidFuzzTests {
+			class, targetMethod := cmdutils.SeparateTargetClassAndMethod(fuzzTest)
+			fuzzTests = append(fuzzTests, class)
+			targetMethods = append(targetMethods, targetMethod)
+		}
+	} else {
+		for _, fuzzTest := range b.opts.FuzzTests {
+			// Catch already specified target methods early
+			if strings.Contains(fuzzTest, "::") {
+				// Check first that the fuzz test actually exists
+				class, targetMethod := cmdutils.SeparateTargetClassAndMethod(fuzzTest)
+				if !sliceutil.Contains(allValidFuzzTests, fuzzTest) {
+					log.Error(errors.Errorf("Fuzz test '%s' in class '%s' could not be found in the project directory '%s'", targetMethod, class, b.opts.ProjectDir))
+					return nil, nil, cmdutils.ErrSilent
+				}
+
+				fuzzTests = append(fuzzTests, class)
+				targetMethods = append(targetMethods, targetMethod)
+			} else {
+				// Find all valid fuzz tests for the given class
+				fuzzTestsInClass, err := cmdutils.ListJVMFuzzTests(testDirs, fuzzTest)
+				if err != nil {
+					return nil, nil, err
+				}
+				if len(fuzzTestsInClass) == 0 {
+					log.Error(errors.Errorf("No fuzz test(s) could be found for the given class: %s", fuzzTest))
+					return nil, nil, cmdutils.ErrSilent
+				}
+
+				for _, test := range fuzzTestsInClass {
+					class, targetMethod := cmdutils.SeparateTargetClassAndMethod(test)
+					fuzzTests = append(fuzzTests, class)
+					targetMethods = append(targetMethods, targetMethod)
+				}
+			}
+		}
+	}
+
+	return fuzzTests, targetMethods, nil
+}
+
+func (b *jazzerBundler) getTestDirs() ([]string, error) {
+	// For gradle we can get the test src directory by gradle itself
+	// If we don't have this information we have to assume that
+	// the tests are located under src/test, which is a common place for
+	// java projects
+	var testDirs []string
+	var err error
+	if b.opts.BuildSystem == config.BuildSystemGradle {
+		testDirs, err = gradle.GetTestSourceSets(b.opts.ProjectDir)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		testDirs = append(testDirs, filepath.Join(b.opts.ProjectDir, "src", "test"))
+	}
+
+	return testDirs, nil
 }

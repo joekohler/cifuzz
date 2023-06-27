@@ -139,24 +139,8 @@ variable or by running 'cifuzz login' first.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			// Check if the fuzz tests contain a method of a class
-			// And remove methods from fuzz test arguments
-			for _, arg := range args {
-				if strings.Contains(arg, "::") {
-					split := strings.Split(arg, "::")
-					opts.FuzzTests = append(opts.FuzzTests, split[0])
-					opts.TargetMethods = append(opts.TargetMethods, split[1])
-				} else {
-					opts.FuzzTests = append(opts.FuzzTests, arg)
-					opts.TargetMethods = append(opts.TargetMethods, "")
-				}
-			}
-
-			opts.FuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, opts.FuzzTests, opts.BuildSystem, opts.ProjectDir)
-			if err != nil {
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
-			}
+			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
 			if opts.ProjectName != "" && !strings.HasPrefix(opts.ProjectName, "projects/") {

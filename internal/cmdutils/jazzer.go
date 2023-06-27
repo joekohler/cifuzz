@@ -149,3 +149,15 @@ func ListJVMFuzzTests(testDirs []string, prefixFilter string) ([]string, error) 
 	}
 	return fuzzTests, nil
 }
+
+// SeparateTargetClassAndMethod splits up the given fuzz test into target class
+// and method if it follows the pattern <class>::<method>. If it doesn't follow
+// the pattern, it will return the given string and an empty string.
+func SeparateTargetClassAndMethod(fuzzTest string) (string, string) {
+	if !strings.Contains(fuzzTest, "::") {
+		return fuzzTest, ""
+	}
+
+	split := strings.Split(fuzzTest, "::")
+	return split[0], split[1]
+}
