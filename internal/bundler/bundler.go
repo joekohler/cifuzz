@@ -108,7 +108,8 @@ func (b *Bundler) createEmptyBundle() (*os.File, error) {
 	if b.opts.OutputPath != "" {
 		// do nothing
 	} else if len(b.opts.FuzzTests) == 1 {
-		b.opts.OutputPath = filepath.Base(b.opts.FuzzTests[0]) + archiveExt
+		fuzzTestName := strings.ReplaceAll(b.opts.FuzzTests[0], "::", "_")
+		b.opts.OutputPath = filepath.Base(fuzzTestName) + archiveExt
 	} else {
 		b.opts.OutputPath = "fuzz_tests" + archiveExt
 	}
