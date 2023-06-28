@@ -368,6 +368,11 @@ func (c *runCmd) run() error {
 		return nil
 	}
 
+	err = c.prepareCorpusDirs(buildResult)
+	if err != nil {
+		return err
+	}
+
 	// Initialize the report handler. Only do this right before we start
 	// the fuzz test, because this is storing a timestamp which is used
 	// to figure out how long the fuzzing run is running.
@@ -598,41 +603,12 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		log.Debugf("Executable: %s", buildResult.Executable)
 	}
 
-	err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
-
-	// Use user-specified seed corpus dirs (if any) and the default seed
-	// corpus (if it exists)
-	exists, err := fileutil.Exists(buildResult.SeedCorpus)
-	if err != nil {
-		return err
-	}
-	if exists {
-		c.opts.SeedCorpusDirs = append(c.opts.SeedCorpusDirs, buildResult.SeedCorpus)
-	}
-
-	// Ensure that symlinks are resolved to be able to add minijail
-	// bindings for the corpus dirs.
-	buildResult.GeneratedCorpus, err = filepath.EvalSymlinks(buildResult.GeneratedCorpus)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	for i, dir := range c.opts.SeedCorpusDirs {
-		c.opts.SeedCorpusDirs[i], err = filepath.EvalSymlinks(dir)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
 	if c.opts.BuildSystem == config.BuildSystemBazel {
 		// The install base directory contains e.g. the script generated
 		// by bazel via --script_path and must therefore be accessible
 		// inside the sandbox.
 		cmd := exec.Command("bazel", "info", "install_base")
-		err = cmd.Run()
+		err := cmd.Run()
 		if err != nil {
 			// It's expected that bazel might fail due to user configuration,
 			// so we print the error without the stack trace.
@@ -644,10 +620,21 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 
 	var libraryPaths []string
 	if runtime.GOOS != "windows" && buildResult.Executable != "" {
+		var err error
 		libraryPaths, err = ldd.LibraryPaths(buildResult.Executable)
 		if err != nil {
 			return errors.WithStack(err)
 		}
+	}
+
+	// Use user-specified seed corpus dirs (if any) and the default seed
+	// corpus (if it exists).
+	exists, err := fileutil.Exists(buildResult.SeedCorpus)
+	if err != nil {
+		return err
+	}
+	if exists {
+		c.opts.SeedCorpusDirs = append(c.opts.SeedCorpusDirs, buildResult.SeedCorpus)
 	}
 
 	runnerOpts := &libfuzzer.RunnerOptions{
@@ -1020,4 +1007,51 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 	}
 
 	return projectName, nil
+}
+
+func (c *runCmd) prepareCorpusDirs(buildResult *build.Result) error {
+	switch c.opts.BuildSystem {
+	case config.BuildSystemMaven, config.BuildSystemGradle:
+		// The seed corpus dir has to be created before starting the fuzzing run.
+		// Otherwise jazzer will store the findings in the project dir.
+		// It is not necessary to create the corpus dir. Jazzer will do that for us.
+		err := os.MkdirAll(cmdutils.JazzerSeedCorpus(c.opts.fuzzTest, c.opts.ProjectDir), 0o755)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	default:
+		// The generated corpus dir has to be created before starting the fuzzing run.
+		err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
+
+		// Ensure that symlinks are resolved to be able to add minijail
+		// bindings for the corpus dirs.
+		exists, err := fileutil.Exists(buildResult.SeedCorpus)
+		if err != nil {
+			return err
+		}
+		if exists {
+			buildResult.SeedCorpus, err = filepath.EvalSymlinks(buildResult.SeedCorpus)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
+
+		buildResult.GeneratedCorpus, err = filepath.EvalSymlinks(buildResult.GeneratedCorpus)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		for i, dir := range c.opts.SeedCorpusDirs {
+			c.opts.SeedCorpusDirs[i], err = filepath.EvalSymlinks(dir)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	}
+
+	return nil
 }
