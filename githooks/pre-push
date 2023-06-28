@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 set -u
 
@@ -10,28 +9,14 @@ set -u
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    echo >&2 "Error: The working tree has uncommitted changes."
-    exit 1
-fi
-
 echo >&2 "pre-push: Running \`make fmt\`"
-make -C "${GIT_ROOT}" --quiet fmt
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    echo >&2 "pre-push: Error: Files were modified by \"make fmt\""
-    exit 1
-fi
+make -C "${GIT_ROOT}" --quiet fmt/check
 
 echo >&2 "pre-push: Running \`go mod tidy\` "
-go mod tidy
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    echo >&2 "pre-push: Error: Files were modified by go mod tidy"
-    exit 1
-fi
+make -C "${GIT_ROOT}" --quiet tidy/check
 
 echo >&2 "pre-push: Running \`make lint\`"
 make -C "${GIT_ROOT}" --quiet lint
-
 
 # Check if the string "DO-NOT-PUSH" is present anywhere in this
 # repository (except for this file itself)
