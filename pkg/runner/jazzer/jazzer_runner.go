@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/options"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
@@ -123,41 +122,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	env, err := r.FuzzerEnvironment()
 	if err != nil {
 		return err
-	}
-
-	if r.UseMinijail {
-		jazzerArgs := args
-
-		bindings := []*minijail.Binding{
-			// The first corpus directory must be writable, because
-			// libfuzzer writes new test inputs to it
-			{Source: r.GeneratedCorpusDir, Writable: minijail.ReadWrite},
-		}
-
-		for _, dir := range r.SeedCorpusDirs {
-			bindings = append(bindings, &minijail.Binding{Source: dir})
-		}
-
-		// Add bindings for the Java dependencies
-		for _, p := range r.ClassPaths {
-			bindings = append(bindings, &minijail.Binding{Source: p})
-		}
-
-		// Add binding for the system JDK and pass it to minijail.
-		bindings = append(bindings, &minijail.Binding{Source: javaHome})
-
-		// Set up Minijail
-		mj, err := minijail.NewMinijail(&minijail.Options{
-			Args:     jazzerArgs,
-			Bindings: bindings,
-		})
-		if err != nil {
-			return err
-		}
-		defer mj.Cleanup()
-
-		// Use the command which runs Jazzer via minijail
-		args = mj.Args
 	}
 
 	return r.RunLibfuzzerAndReport(ctx, args, env)

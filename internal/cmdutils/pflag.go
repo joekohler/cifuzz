@@ -241,7 +241,7 @@ func AddUseSandboxFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Bool("use-sandbox", false,
 		"By default, fuzz tests are executed in a sandbox to prevent accidental damage to the system.\n"+
 			"Use --use-sandbox=false to run the fuzz test unsandboxed.\n"+
-			"Only supported on Linux.")
+			"Only supported for c/c++ projects on Linux.")
 	viper.SetDefault("use-sandbox", runtime.GOOS == "linux")
 	return func() {
 		ViperMustBindPFlag("use-sandbox", cmd.Flags().Lookup("use-sandbox"))
