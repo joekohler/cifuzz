@@ -25,6 +25,9 @@ var kotlinStub []byte
 //go:embed test.fuzz.js.tmpl
 var javaScriptStub []byte
 
+//go:embed test.fuzz.ts.tmpl
+var typeScriptStub []byte
+
 // Create creates a stub based for the given test type
 func Create(path string, testType config.FuzzTestType) error {
 	exists, err := fileutil.Exists(path)
@@ -70,6 +73,8 @@ func Create(path string, testType config.FuzzTestType) error {
 		}
 	case config.JavaScript:
 		content = javaScriptStub
+	case config.TypeScript:
+		content = typeScriptStub
 	}
 
 	// write stub
@@ -103,6 +108,10 @@ func FuzzTestFilename(testType config.FuzzTestType) (string, error) {
 	case config.JavaScript:
 		basename = "myTest"
 		ext = "fuzz.js"
+		filePattern = "%s%d.%s"
+	case config.TypeScript:
+		basename = "myTest"
+		ext = "fuzz.ts"
 		filePattern = "%s%d.%s"
 	default:
 		return "", errors.New("unable to suggest filename: unknown test type")

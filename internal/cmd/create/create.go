@@ -40,10 +40,7 @@ func (opts *createOpts) Validate() error {
 	}
 
 	if !opts.Interactive && opts.testType == "" {
-		err := errors.New("Missing argument [cpp|java|kotlin]")
-		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-			err = errors.New("Missing argument [cpp|java|kotlin|js]")
-		}
+		err := errors.New(fmt.Sprintf("Missing argument [%s]", strings.Join(maps.Values(config.SupportedTestTypes()), "|")))
 		return cmdutils.WrapIncorrectUsageError(err)
 	}
 
@@ -70,6 +67,7 @@ func New() *cobra.Command {
 func newWithOptions(opts *createOpts) *cobra.Command {
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
 		supportedTestTypes["JavaScript"] = string(config.JavaScript)
+		supportedTestTypes["TypeScript"] = string(config.TypeScript)
 	}
 
 	var bindFlags func()
