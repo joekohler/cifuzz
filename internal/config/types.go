@@ -7,6 +7,7 @@ const (
 	Java       FuzzTestType = "java"
 	Kotlin     FuzzTestType = "kotlin"
 	JavaScript FuzzTestType = "js"
+	TypeScript FuzzTestType = "ts"
 )
 
 type GradleBuildLanguage string

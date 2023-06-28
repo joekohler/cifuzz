@@ -3,15 +3,19 @@ package init
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/maps"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -24,24 +28,37 @@ const (
 type options struct {
 	Dir         string
 	BuildSystem string
+	Interactive bool   `mapstructure:"interactive"`
 	Server      string `mapstructure:"server"`
 	Project     string `mapstructure:"project"`
+	testLang    config.FuzzTestType
+}
+
+// for node, we support both js and ts so we need a map of supported test langs
+// -> label:value
+var supportedProjectLangs = map[string]string{
+	"C/C++":      string(config.CPP),
+	"Java":       string(config.Java),
+	"Kotlin":     string(config.Kotlin),
+	"JavaScript": string(config.JavaScript),
+	"TypeScript": string(config.TypeScript),
 }
 
 func New() *cobra.Command {
 	var bindFlags func()
 	opts := &options{}
 	cmd := &cobra.Command{
-		Use:   "init",
+		Use:   fmt.Sprintf("init [%s]", strings.Join(maps.Values(supportedProjectLangs), "|")),
 		Short: "Set up a project for use with cifuzz",
 		Long: `This command sets up a project for use with cifuzz, creating a
 'cifuzz.yaml' config file.`,
-		Args: cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Bind viper keys to flags. We can't do this in the New
 			// function, because that would re-bind viper keys which
 			// were bound to the flags of other commands before.
 			bindFlags()
+			opts.Interactive = viper.GetBool("interactive")
+
 			var err error
 			if opts.Dir == "" {
 				opts.Dir, err = os.Getwd()
@@ -62,6 +79,17 @@ func New() *cobra.Command {
 				return cmdutils.WrapSilentError(err)
 			}
 
+			if opts.Interactive {
+				opts.Interactive = term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+			}
+
+			if len(args) == 1 {
+				opts.testLang = config.FuzzTestType(args[0])
+			}
+			if !opts.Interactive && opts.BuildSystem == config.BuildSystemNodeJS && opts.testLang == "" {
+				err := errors.New("cifuzz init requires a test language for Node.js projects [js|ts]")
+				return cmdutils.WrapIncorrectUsageError(err)
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -75,6 +103,8 @@ func New() *cobra.Command {
 			}
 			return run(opts)
 		},
+		Args:      cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
+		ValidArgs: maps.Values(supportedProjectLangs),
 	}
 
 	cmdutils.DisableConfigCheck(cmd)
@@ -83,6 +113,7 @@ func New() *cobra.Command {
 	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
 	//       it to viper in the PreRun function.
 	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddProjectFlag,
 		cmdutils.AddServerFlag,
 	)
@@ -91,8 +122,7 @@ func New() *cobra.Command {
 }
 
 func run(opts *options) error {
-	setUpAndMentionBuildSystemIntegrations(opts.Dir, opts.BuildSystem)
-
+	setUpAndMentionBuildSystemIntegrations(opts.Dir, opts.BuildSystem, opts.testLang)
 	log.Debugf("Creating config file in directory: %s", opts.Dir)
 
 	configpath, err := config.CreateProjectConfig(opts.Dir, opts.Server, opts.Project)
@@ -105,6 +135,7 @@ func run(opts *options) error {
 		log.Error(err, "Failed to create config")
 		return err
 	}
+
 	log.Successf("Configuration saved in %s", fileutil.PrettifyPath(configpath))
 
 	log.Print(`
@@ -112,7 +143,7 @@ Use 'cifuzz create' to create your first fuzz test.`)
 	return nil
 }
 
-func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string) {
+func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, testLang config.FuzzTestType) {
 	switch buildSystem {
 	case config.BuildSystemBazel:
 		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
@@ -140,9 +171,21 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string) {
 		log.Print(messaging.Instructions(buildSystem))
 	case config.BuildSystemNodeJS:
 		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-			log.Print(messaging.Instructions(buildSystem))
+			if testLang == "" {
+				lang, err := getNodeProjectLang()
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				testLang = lang
+			}
+			if testLang == "ts" {
+				log.Print(messaging.Instructions("nodets"))
+			} else {
+				log.Print(messaging.Instructions(buildSystem))
+			}
 		} else {
-			log.Print("cifuzz does not support NodeJS projects yet.")
+			log.Print("cifuzz does not support Node.js projects yet.")
 			os.Exit(1)
 		}
 	case config.BuildSystemMaven:
@@ -165,4 +208,17 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string) {
 
 		log.Print(messaging.Instructions(string(gradleBuildLanguage)))
 	}
+}
+
+func getNodeProjectLang() (config.FuzzTestType, error) {
+	langOptions := map[string]string{
+		"JavaScript": string(config.JavaScript),
+		"TypeScript": string(config.TypeScript),
+	}
+
+	userSelectedLang, err := dialog.Select("Initialize cifuzz for JavaScript or TypeScript?", langOptions, true)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return config.FuzzTestType(userSelectedLang), nil
 }

@@ -24,6 +24,9 @@ var gradleKotlinSetup string
 //go:embed instructions/nodejs
 var nodejsSetup string
 
+//go:embed instructions/nodets
+var nodetsSetup string
+
 func Instructions(buildSystem string) string {
 	switch buildSystem {
 	case config.BuildSystemBazel:
@@ -32,6 +35,8 @@ func Instructions(buildSystem string) string {
 		return cmakeSetup
 	case config.BuildSystemNodeJS:
 		return nodejsSetup
+	case "nodets":
+		return nodetsSetup
 	case config.BuildSystemMaven:
 		return mavenSetup
 	case string(config.GradleGroovy):

@@ -302,6 +302,8 @@ func NotSupportedErrorMessage(tool string, platform string) string {
 			return "CMake"
 		case "nodejs":
 			return "NodeJS"
+		case "nodets":
+			return "NodeTS"
 		case "darwin":
 			return "macOS"
 		case "bundle", "coverage", "remote run", "run":

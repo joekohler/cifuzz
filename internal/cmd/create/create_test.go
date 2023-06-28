@@ -81,7 +81,7 @@ func TestOkJavaScript(t *testing.T) {
 		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
 	}
 
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemNodeJS)
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemNode)
 	defer cleanup()
 
 	outputFile := filepath.Join(testDir, "myTest.fuzz.js")
