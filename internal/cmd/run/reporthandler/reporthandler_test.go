@@ -91,7 +91,7 @@ func TestReportHandler_Metrics(t *testing.T) {
 }
 
 func TestReportHandler_Finding(t *testing.T) {
-	h, err := NewReportHandler("", &ReportHandlerOptions{ProjectDir: testDir, SeedCorpusDir: "seed_corpus"})
+	h, err := NewReportHandler("", &ReportHandlerOptions{ProjectDir: testDir, ManagedSeedCorpusDir: "seed_corpus"})
 	require.NoError(t, err)
 
 	// create an input file

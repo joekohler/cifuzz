@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -27,9 +28,12 @@ import (
 )
 
 type ReportHandlerOptions struct {
-	ProjectDir    string
-	SeedCorpusDir string
-	PrintJSON     bool
+	ProjectDir           string
+	GeneratedCorpusDir   string
+	ManagedSeedCorpusDir string
+	UserSeedCorpusDirs   []string
+	BuildSystem          string
+	PrintJSON            bool
 }
 
 type ReportHandler struct {
@@ -88,6 +92,14 @@ func NewReportHandler(fuzzTest string, options *ReportHandlerOptions) (*ReportHa
 
 func (h *ReportHandler) Handle(r *report.Report) error {
 	var err error
+
+	if r.SeedCorpus != "" {
+		h.ManagedSeedCorpusDir = r.SeedCorpus
+	}
+
+	if r.GeneratedCorpus != "" {
+		h.GeneratedCorpusDir = r.GeneratedCorpus
+	}
 
 	if r.Status == report.RunStatusInitializing && !h.initStarted {
 		h.initStarted = true
@@ -191,7 +203,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	f.Name = names.GetDeterministicName(nameSeed)
 
 	if f.InputFile != "" {
-		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.SeedCorpusDir)
+		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.ManagedSeedCorpusDir, h.BuildSystem)
 		if err != nil {
 			return err
 		}
@@ -248,7 +260,7 @@ regression tests. For more information on regression tests, see:
 `, strings.Join(crashingInputs, "\n    "))
 }
 
-func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
+func (h *ReportHandler) PrintFinalMetrics() error {
 	// We don't want to print colors to stderr unless it's a TTY
 	if !term.IsTerminal(int(os.Stderr.Fd())) {
 		color.Disable()
@@ -267,6 +279,11 @@ func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
 		// better), so in case we did not use an updating printer,
 		// print an empty line anyway.
 		log.Print("\n")
+	}
+
+	numCorpusEntries, err := h.countCorpusEntries()
+	if err != nil {
+		return err
 	}
 
 	duration := time.Since(h.startedAt)
@@ -321,10 +338,45 @@ func (h *ReportHandler) PrintFinalMetrics(numCorpusEntries uint) error {
 			return errors.WithStack(err)
 		}
 	}
-	err := w.Flush()
+	err = w.Flush()
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	return nil
+}
+
+func (h *ReportHandler) countCorpusEntries() (uint, error) {
+	var numSeeds uint
+	seedCorpusDirs := append(h.UserSeedCorpusDirs, h.ManagedSeedCorpusDir, h.GeneratedCorpusDir)
+
+	for _, dir := range seedCorpusDirs {
+		var seedsInDir uint
+		err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			// Don't count empty files, same as libFuzzer
+			if info.Size() != 0 {
+				seedsInDir += 1
+			}
+			return nil
+		})
+		// Don't fail if the seed corpus dir doesn't exist
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		if err != nil {
+			return 0, errors.WithStack(err)
+		}
+		numSeeds += seedsInDir
+	}
+	return numSeeds, nil
 }

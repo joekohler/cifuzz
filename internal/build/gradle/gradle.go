@@ -91,21 +91,17 @@ func (b *Builder) Build(targetClass string, targetMethod string) (*build.Result,
 	if err != nil {
 		return nil, err
 	}
-	seedCorpus := cmdutils.JazzerSeedCorpus(targetClass, b.ProjectDir)
-	generatedCorpus := cmdutils.JazzerGeneratedCorpus(targetClass, b.ProjectDir)
 
 	buildDir, err := GetBuildDirectory(b.ProjectDir)
 	if err != nil {
 		return nil, err
 	}
 	result := &build.Result{
-		Name:            targetClass,
-		TargetMethod:    targetMethod,
-		BuildDir:        buildDir,
-		ProjectDir:      b.ProjectDir,
-		GeneratedCorpus: generatedCorpus,
-		SeedCorpus:      seedCorpus,
-		RuntimeDeps:     deps,
+		Name:         targetClass,
+		TargetMethod: targetMethod,
+		BuildDir:     buildDir,
+		ProjectDir:   b.ProjectDir,
+		RuntimeDeps:  deps,
 	}
 
 	return result, nil

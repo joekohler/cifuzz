@@ -160,9 +160,9 @@ func buildRunner(fuzzer *archive.Fuzzer) (runCmd.Runner, error) {
 	reportHandler, err := reporthandler.NewReportHandler(
 		getFuzzerName(fuzzer),
 		&reporthandler.ReportHandlerOptions{
-			ProjectDir:    fuzzer.ProjectDir,
-			PrintJSON:     false,
-			SeedCorpusDir: seedDirName,
+			ProjectDir:           fuzzer.ProjectDir,
+			PrintJSON:            false,
+			ManagedSeedCorpusDir: seedDirName,
 		})
 	if err != nil {
 		return nil, err

@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -68,7 +69,7 @@ func TestFinding_MoveInputFile(t *testing.T) {
 	finding.Logs = append(finding.Logs, fmt.Sprintf("some surrounding text, %s more text", testfile))
 	findingDir := filepath.Join(projectDir, nameFindingsDir, finding.Name)
 
-	err = finding.CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir)
+	err = finding.CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, config.BuildSystemCMake)
 	require.NoError(t, err)
 
 	// Check that the input file in the finding dir was created

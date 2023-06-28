@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,6 +44,7 @@ var (
 		`== Java Exception:\s*(?P<error_type>.*)`)
 	javaAssertionErrorPattern = regexp.MustCompile(
 		`== Java Assertion Error`)
+	jazzerInputPathPatter = regexp.MustCompile(`INFO: using inputs from: (?P<input_path>.*)$`)
 
 	// Examples for matching strings:
 	// #2	INITED cov: 10 ft: 11 corp: 1/1b exec/s: 0 rss: 30Mb
@@ -140,6 +142,23 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	if !p.initStarted && !p.initFinished {
+		if p.SupportJazzer {
+			// Try to parse jazzer input path messages in order to
+			// set generated and seed corpus paths for the report
+			// handler.
+			inputPath, found := parseAsInputPathMessage(line)
+			if found {
+				if strings.Contains(inputPath, filepath.Join(p.ProjectDir, ".cifuzz-corpus")) {
+					return p.sendReport(ctx, &report.Report{
+						GeneratedCorpus: inputPath,
+					})
+				} else if strings.Contains(inputPath, p.ProjectDir) {
+					return p.sendReport(ctx, &report.Report{
+						SeedCorpus: inputPath,
+					})
+				}
+			}
+		}
 		// Try to parse the line as the libFuzzer message which tells us
 		// how many seeds the corpus contains.
 		// Note: We used to stop parsing lines until we saw the first
@@ -469,6 +488,14 @@ func parseAsSlowInput(log string) *finding.Finding {
 		}
 	}
 	return nil
+}
+
+func parseAsInputPathMessage(line string) (string, bool) {
+	result, found := regexutil.FindNamedGroupsMatch(jazzerInputPathPatter, line)
+	if !found {
+		return "", false
+	}
+	return result["input_path"], true
 }
 
 func parseAsSeedCorpusMessage(line string) (numSeeds uint, err error) { //nolint:nonamedreturns

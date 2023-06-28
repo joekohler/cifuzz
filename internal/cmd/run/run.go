@@ -379,9 +379,12 @@ func (c *runCmd) run() error {
 	c.reportHandler, err = reporthandler.NewReportHandler(
 		c.opts.fuzzTest,
 		&reporthandler.ReportHandlerOptions{
-			ProjectDir:    c.opts.ProjectDir,
-			SeedCorpusDir: buildResult.SeedCorpus,
-			PrintJSON:     c.opts.PrintJSON,
+			ProjectDir:           c.opts.ProjectDir,
+			BuildSystem:          c.opts.BuildSystem,
+			GeneratedCorpusDir:   buildResult.GeneratedCorpus,
+			ManagedSeedCorpusDir: buildResult.SeedCorpus,
+			UserSeedCorpusDirs:   c.opts.SeedCorpusDirs,
+			PrintJSON:            c.opts.PrintJSON,
 		})
 	if err != nil {
 		return err
@@ -398,8 +401,7 @@ func (c *runCmd) run() error {
 	}
 
 	c.reportHandler.PrintCrashingInputNote()
-
-	err = c.printFinalMetrics(buildResult.GeneratedCorpus, buildResult.SeedCorpus)
+	err = c.reportHandler.PrintFinalMetrics()
 	if err != nil {
 		return err
 	}
@@ -672,15 +674,6 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 	return ExecuteRunner(runner)
 }
 
-func (c *runCmd) printFinalMetrics(generatedCorpus, seedCorpus string) error {
-	numCorpusEntries, err := countCorpusEntries(append(c.opts.SeedCorpusDirs, generatedCorpus, seedCorpus))
-	if err != nil {
-		return err
-	}
-
-	return c.reportHandler.PrintFinalMetrics(numCorpusEntries)
-}
-
 func (c *runCmd) checkDependencies() error {
 	var deps []dependencies.Key
 	switch c.opts.BuildSystem {
@@ -926,39 +919,6 @@ func ExecuteRunner(runner Runner) error {
 	}
 
 	return err
-}
-
-func countCorpusEntries(seedCorpusDirs []string) (uint, error) {
-	var numSeeds uint
-	for _, dir := range seedCorpusDirs {
-		var seedsInDir uint
-		err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() {
-				return nil
-			}
-			info, err := d.Info()
-			if err != nil {
-				return err
-			}
-			// Don't count empty files, same as libFuzzer
-			if info.Size() != 0 {
-				seedsInDir += 1
-			}
-			return nil
-		})
-		// Don't fail if the seed corpus dir doesn't exist
-		if os.IsNotExist(err) {
-			return 0, nil
-		}
-		if err != nil {
-			return 0, errors.WithStack(err)
-		}
-		numSeeds += seedsInDir
-	}
-	return numSeeds, nil
 }
 
 func (c *runCmd) selectProject(projects []*api.Project) (string, error) {

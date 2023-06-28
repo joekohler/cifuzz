@@ -13,6 +13,7 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -149,7 +150,7 @@ func (f *Finding) saveJSON(jsonPath string) error {
 
 // CopyInputFileAndUpdateFinding copies the input file to the finding directory and
 // the seed corpus directory and adjusts the finding logs accordingly.
-func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string) error {
+func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, buildSystem string) error {
 	// Acquire a file lock to avoid races with other cifuzz processes
 	// running in parallel
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
@@ -168,7 +169,7 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string
 	}
 
 	// Actually copy the input file
-	err = f.copyInputFile(projectDir, seedCorpusDir)
+	err = f.copyInputFile(projectDir, seedCorpusDir, buildSystem)
 
 	// Release the file lock
 	unlockErr := mutex.Unlock()
@@ -181,7 +182,7 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string
 	return err
 }
 
-func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
+func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) error {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
 	path := filepath.Join(findingDir, nameCrashingInput)
 
@@ -193,15 +194,19 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 		return errors.WithStack(err)
 	}
 
-	// Copy the input file to the seed corpus dir
-	err = os.MkdirAll(seedCorpusDir, 0o755)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	f.seedPath = filepath.Join(seedCorpusDir, f.Name)
-	err = copy.Copy(f.InputFile, f.seedPath)
-	if err != nil {
-		return errors.WithStack(err)
+	if buildSystem != config.BuildSystemMaven &&
+		buildSystem != config.BuildSystemGradle {
+		// Copy the input file to the seed corpus dir.
+		// This is only necessary for c/c++ projects.
+		err = os.MkdirAll(seedCorpusDir, 0o755)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		f.seedPath = filepath.Join(seedCorpusDir, f.Name)
+		err = copy.Copy(f.InputFile, f.seedPath)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	// Replace the old filename in the finding logs. Replace it with the

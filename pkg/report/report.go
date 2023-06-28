@@ -11,10 +11,12 @@ type Handler interface {
 }
 
 type Report struct {
-	Status   RunStatus        `json:"status,omitempty"`
-	Metric   *FuzzingMetric   `json:"metric,omitempty"`
-	Finding  *finding.Finding `json:"finding,omitempty"`
-	NumSeeds uint             `json:"num_seeds,omitempty"`
+	Status          RunStatus        `json:"status,omitempty"`
+	Metric          *FuzzingMetric   `json:"metric,omitempty"`
+	Finding         *finding.Finding `json:"finding,omitempty"`
+	NumSeeds        uint             `json:"num_seeds,omitempty"`
+	SeedCorpus      string           `json:"seed_corpus,omitempty"`
+	GeneratedCorpus string           `json:"generated_corpus,omitempty"`
 }
 
 func (x *Report) GetFinding() *finding.Finding {
