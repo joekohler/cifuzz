@@ -23,10 +23,6 @@ func JazzerSeedCorpus(targetClass string, projectDir string) string {
 	return filepath.Join(projectDir, filepath.Join(path...))
 }
 
-func JazzerGeneratedCorpus(targetClass string, projectDir string) string {
-	return filepath.Join(projectDir, ".cifuzz-corpus", targetClass)
-}
-
 // GetTargetMethodsFromJVMFuzzTestFile returns a list of target methods from
 // a given fuzz test file.
 func GetTargetMethodsFromJVMFuzzTestFile(path string) ([]string, error) {
