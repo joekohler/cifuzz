@@ -31,12 +31,15 @@ require (
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
 replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
 
+// TODO: Revert when https://github.com/u-root/u-root/pull/2710 is merged
+replace github.com/u-root/u-root v0.11.1-0.20230225005747-5b46c23c3414 => github.com/jochil/u-root v0.0.0-20230628153403-957ded8d2c60
+
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
 	atomicgo.dev/schedule v0.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/containerd/console v1.0.3 // indirect
+	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
