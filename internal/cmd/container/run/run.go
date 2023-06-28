@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/docker/docker/pkg/stdcopy"
@@ -65,30 +64,18 @@ container is built and run locally instead of being pushed to a CI Sense server.
 				args = args[:cmd.ArgsLenAtDash()]
 			}
 
-			// check if the fuzz tests contain a method of a class
-			// And remove methods from fuzz test arguments
-			for _, arg := range args {
-				if strings.Contains(arg, "::") {
-					split := strings.Split(arg, "::")
-					opts.FuzzTests = append(opts.FuzzTests, split[0])
-					opts.TargetMethods = append(opts.TargetMethods, split[1])
-				} else {
-					opts.FuzzTests = append(opts.FuzzTests, arg)
-					opts.TargetMethods = append(opts.TargetMethods, "")
-				}
-			}
-
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
 				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
 				return cmdutils.WrapSilentError(err)
 			}
 
-			opts.FuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, opts.FuzzTests, opts.BuildSystem, opts.ProjectDir)
+			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Print(err.Error())
 				return cmdutils.WrapSilentError(err)
 			}
+			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
 			return opts.Validate()
@@ -184,10 +171,5 @@ func (c *containerRunCmd) buildContainerFromImage() (string, error) {
 		return "", err
 	}
 
-	selectedFuzzer := c.opts.FuzzTests[0]
-	if c.opts.TargetMethods[0] != "" {
-		selectedFuzzer = fmt.Sprintf("%s::%s", selectedFuzzer, c.opts.TargetMethods[0])
-	}
-
-	return container.Create(selectedFuzzer)
+	return container.Create(c.opts.FuzzTests[0])
 }
