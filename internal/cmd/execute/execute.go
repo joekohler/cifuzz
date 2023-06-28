@@ -3,6 +3,7 @@ package execute
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -58,7 +59,7 @@ I is currently only intended for use with the 'cifuzz container' subcommand.`,
 				for _, fuzzer := range metadata.Fuzzers {
 					fuzzerName := fuzzer.Name
 					if fuzzerName == "" {
-						fuzzerName = fuzzer.Target
+						fuzzerName = fuzzer.Name
 					}
 					fmt.Printf("  %s\n", fuzzerName)
 					fmt.Printf("    using: %s\n", fuzzer.Engine)
@@ -181,8 +182,17 @@ func buildRunner(fuzzer *archive.Fuzzer) (runCmd.Runner, error) {
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
+
+		name := fuzzer.Name
+		method := ""
+		if strings.Contains(fuzzer.Name, "::") {
+			split := strings.Split(fuzzer.Name, "::")
+			name = split[0]
+			method = split[1]
+		}
 		runnerOpts := &jazzer.RunnerOptions{
-			TargetClass:      fuzzer.Name,
+			TargetClass:      name,
+			TargetMethod:     method,
 			ClassPaths:       fuzzer.RuntimePaths,
 			LibfuzzerOptions: runnerOpts,
 		}
