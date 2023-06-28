@@ -17,6 +17,9 @@ var framePattern = regexp.MustCompile(
 // Special pattern for Java stack traces
 var framePatternJava = regexp.MustCompile(`\sat\s(?P<source_file>\S+)[.](?P<function>\S+[^<>])[(]\S+:(?P<line>\d+)`)
 
+// Special pattern for Node stack traces
+var framePatternNode = regexp.MustCompile(`\s*at\s((?P<function>\S+)\s+(\[.*\])?\s*\()?(?P<source_file>\S+?):(?P<line>\d+):?(?P<column>\d*)\)?`)
+
 // This matches diagnostic messages printed by UBSan when it reports an
 // error. UBSan doesn't always print a stack trace, so we extract the
 // source file from this line.
@@ -34,8 +37,9 @@ type StackFrame struct {
 }
 
 type ParserOptions struct {
-	ProjectDir    string
-	SupportJazzer bool
+	ProjectDir      string
+	SupportJazzer   bool
+	SupportJazzerJS bool
 }
 
 type parser struct {
@@ -118,6 +122,12 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 	matches, found := regexutil.FindNamedGroupsMatch(framePattern, line)
 	if !found && p.SupportJazzer {
 		matches, found = regexutil.FindNamedGroupsMatch(framePatternJava, line)
+		if !found {
+			return nil, nil
+		}
+	}
+	if !found && p.SupportJazzerJS {
+		matches, found = regexutil.FindNamedGroupsMatch(framePatternNode, line)
 		if !found {
 			return nil, nil
 		}

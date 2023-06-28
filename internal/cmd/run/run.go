@@ -43,8 +43,10 @@ import (
 	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
+	"code-intelligence.com/cifuzz/pkg/runner/jazzerjs"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -65,10 +67,11 @@ type runOptions struct {
 	BuildOnly             bool          `mapstructure:"build-only"`
 	ResolveSourceFilePath bool
 
-	ProjectDir   string
-	fuzzTest     string
-	targetMethod string
-	argsToPass   []string
+	ProjectDir      string
+	fuzzTest        string
+	targetMethod    string
+	testNamePattern string
+	argsToPass      []string
 
 	buildStdout io.Writer
 	buildStderr io.Writer
@@ -98,12 +101,6 @@ func (opts *runOptions) validate() error {
 		if err != nil {
 			return err
 		}
-	}
-
-	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
-		err = errors.Errorf(config.NotSupportedErrorMessage("run", opts.BuildSystem))
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
 	}
 
 	err = config.ValidateBuildSystem(opts.BuildSystem)
@@ -255,11 +252,24 @@ depends on the build system configured for the project.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			// Check if the fuzz test is a method of a class
-			// And remove method from fuzz test argument
-			if strings.Contains(args[0], "::") {
-				split := strings.Split(args[0], "::")
-				args[0], opts.targetMethod = split[0], split[1]
+			if sliceutil.Contains(
+				[]string{config.BuildSystemMaven, config.BuildSystemGradle},
+				opts.BuildSystem,
+			) {
+				// Check if the fuzz test is a method of a class
+				// And remove method from fuzz test argument
+				if strings.Contains(args[0], "::") {
+					split := strings.Split(args[0], "::")
+					args[0], opts.targetMethod = split[0], split[1]
+				}
+			}
+
+			if opts.BuildSystem == config.BuildSystemNodeJS {
+				// Check if the fuzz test contains a filter for the test name
+				if strings.Contains(args[0], ":") {
+					split := strings.Split(args[0], ":")
+					args[0], opts.testNamePattern = split[0], strings.ReplaceAll(split[1], "\"", "")
+				}
 			}
 
 			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
@@ -351,7 +361,8 @@ func (c *runCmd) run() error {
 	}
 	defer fileutil.Cleanup(c.tempDir)
 
-	buildResult, err := c.buildFuzzTest()
+	var buildResult *build.Result
+	buildResult, err = c.buildFuzzTest()
 	if err != nil {
 		var execErr *cmdutils.ExecError
 		if errors.As(err, &execErr) {
@@ -559,6 +570,12 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 		return buildResult, err
+	case config.BuildSystemNodeJS:
+		// Node.js doesn't require a build step, so we just return an empty result.
+		// We return an empty result to proceed with the fuzzing step (which
+		// requires a build result).
+		// *Possible* TODO: refactor runFuzzTest to not require a build result?
+		return &build.Result{}, nil
 	case config.BuildSystemOther:
 		if len(c.opts.argsToPass) > 0 {
 			log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
@@ -594,11 +611,17 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 	return nil, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 }
 
+// runFuzzTest runs the fuzz test with the given build result.
 func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
+	var err error
+
+	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
 	if c.opts.targetMethod != "" {
-		log.Infof("Running %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprintf(c.opts.fuzzTest+"::"+c.opts.targetMethod))
+		log.Infof("Running %s", style.Sprintf(c.opts.fuzzTest+"::"+c.opts.targetMethod))
+	} else if c.opts.testNamePattern != "" {
+		log.Infof("Running %s", style.Sprintf(c.opts.fuzzTest+":"+c.opts.testNamePattern))
 	} else {
-		log.Infof("Running %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprintf(c.opts.fuzzTest))
+		log.Infof("Running %s", style.Sprintf(c.opts.fuzzTest))
 	}
 
 	if buildResult.Executable != "" {
@@ -669,6 +692,14 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 			LibfuzzerOptions: runnerOpts,
 		}
 		runner = jazzer.NewRunner(runnerOpts)
+	case config.BuildSystemNodeJS:
+		runnerOpts := &jazzerjs.RunnerOptions{
+			TestPathPattern:  c.opts.fuzzTest,
+			TestNamePattern:  c.opts.testNamePattern,
+			LibfuzzerOptions: runnerOpts,
+			PackageManager:   "npm",
+		}
+		runner = jazzerjs.NewRunner(runnerOpts)
 	}
 
 	return ExecuteRunner(runner)
@@ -697,6 +728,10 @@ func (c *runCmd) checkDependencies() error {
 		deps = []dependencies.Key{
 			dependencies.Java,
 			dependencies.Gradle,
+		}
+	case config.BuildSystemNodeJS:
+		deps = []dependencies.Key{
+			dependencies.Node,
 		}
 	case config.BuildSystemOther:
 		switch runtime.GOOS {
@@ -971,15 +1006,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 
 func (c *runCmd) prepareCorpusDirs(buildResult *build.Result) error {
 	switch c.opts.BuildSystem {
-	case config.BuildSystemMaven, config.BuildSystemGradle:
-		// The seed corpus dir has to be created before starting the fuzzing run.
-		// Otherwise jazzer will store the findings in the project dir.
-		// It is not necessary to create the corpus dir. Jazzer will do that for us.
-		err := os.MkdirAll(cmdutils.JazzerSeedCorpus(c.opts.fuzzTest, c.opts.ProjectDir), 0o755)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	default:
+	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
 		// The generated corpus dir has to be created before starting the fuzzing run.
 		err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
 		if err != nil {
@@ -1010,6 +1037,14 @@ func (c *runCmd) prepareCorpusDirs(buildResult *build.Result) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+		}
+	case config.BuildSystemMaven, config.BuildSystemGradle:
+		// The seed corpus dir has to be created before starting the fuzzing run.
+		// Otherwise jazzer will store the findings in the project dir.
+		// It is not necessary to create the corpus dir. Jazzer will do that for us.
+		err := os.MkdirAll(cmdutils.JazzerSeedCorpus(c.opts.fuzzTest, c.opts.ProjectDir), 0o755)
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
 

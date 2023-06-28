@@ -46,6 +46,11 @@ var (
 		`== Java Assertion Error`)
 	jazzerInputPathPatter = regexp.MustCompile(`INFO: using inputs from: (?P<input_path>.*)$`)
 
+	jestFindingBeginningPattern = regexp.MustCompile(
+		`^\s*●`)
+	jestFindingSourceCodePattern = regexp.MustCompile(
+		`^\s*\>?\s\d*\s+\|`)
+
 	// Examples for matching strings:
 	// #2	INITED cov: 10 ft: 11 corp: 1/1b exec/s: 0 rss: 30Mb
 	// #670	REDUCE cov: 13 ft: 15 corp: 4/5b lim: 8 exec/s: 0 rss: 31Mb L: 1/2 MS: 2 CopyPart-EraseBytes-
@@ -80,6 +85,9 @@ type parser struct {
 	pendingFinding                       *finding.Finding
 	numMetricsLinesSinceFindingIsPending int
 
+	foundJestFinding      bool
+	foundJestErrorDetails bool
+
 	lastNewFeatureTime time.Time // Timestamp representing the point when the last new feature was reported
 	lastFeatures       int       // Last features reported by Libfuzzer
 	lastNewEdgeTime    time.Time // Timestamp representing the point when the last new edge was reported
@@ -87,8 +95,9 @@ type parser struct {
 }
 
 type Options struct {
-	SupportJazzer bool
-	KeepColor     bool
+	SupportJazzer   bool
+	SupportJazzerJS bool
+	KeepColor       bool
 	// The parser writes all parsed lines to StartupOutputWriter up to
 	// the point where the fuzzer has completed initialization.
 	StartupOutputWriter io.Writer
@@ -142,7 +151,7 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	if !p.initStarted && !p.initFinished {
-		if p.SupportJazzer {
+		if p.SupportJazzer || p.SupportJazzerJS {
 			// Try to parse jazzer input path messages in order to
 			// set generated and seed corpus paths for the report
 			// handler.
@@ -252,6 +261,13 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	if p.pendingFinding != nil {
+		if p.SupportJazzerJS && !p.foundJestErrorDetails {
+			_, found := regexutil.FindNamedGroupsMatch(jestFindingSourceCodePattern, line)
+			if found {
+				p.pendingFinding.Details = strings.TrimSpace(strings.Join(p.pendingFinding.Logs[1:], "\n"))
+				p.foundJestErrorDetails = true
+			}
+		}
 		// The line is not a metrics line and doesn't mark a new finding,
 		// so we append it to the pending finding (unless it's filtered)
 		if !minijail.IsIgnoredLine(line) {
@@ -289,13 +305,22 @@ func (p *parser) parseAsNewFinding(line string) *finding.Finding {
 		}
 	}
 
+	if p.SupportJazzerJS && !p.foundJestFinding {
+		finding := p.parseAsJestFinding(line)
+		if finding != nil {
+			return finding
+		}
+	}
+
 	finding := p.parseAsGoFinding(line)
 	if finding != nil {
 		return finding
 	}
 
 	finding = p.parseAsLibfuzzerFinding(line)
-	if finding != nil {
+	// If JazzerJS is supported, the libfuzzer finding is part of a
+	// JazzerJS finding and should not be treated as a new finding
+	if finding != nil && !p.SupportJazzerJS {
 		return finding
 	}
 
@@ -405,6 +430,20 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 			Type:    finding.ErrorTypeWarning, // aka Bug
 			Details: matches["error_type"],
 			Logs:    []string{line},
+		}
+	}
+
+	return nil
+}
+
+func (p *parser) parseAsJestFinding(line string) *finding.Finding {
+	_, found := regexutil.FindNamedGroupsMatch(jestFindingBeginningPattern, line)
+	if found {
+		p.foundJestFinding = true
+
+		return &finding.Finding{
+			Type: finding.ErrorTypeWarning,
+			Logs: []string{line},
 		}
 	}
 
@@ -535,6 +574,11 @@ func (p *parser) finalizeAndSendPendingFindingIfAny(ctx context.Context) error {
 	if p.pendingFinding == nil {
 		return nil
 	}
+
+	if p.pendingFinding.Details == "" {
+		return nil
+	}
+
 	return p.finalizeAndSendPendingFinding(ctx)
 }
 
@@ -543,8 +587,9 @@ func (p *parser) finalizeAndSendPendingFinding(ctx context.Context) error {
 
 	// Parse the stack trace
 	parserOpts := &stacktrace.ParserOptions{
-		ProjectDir:    p.ProjectDir,
-		SupportJazzer: p.SupportJazzer,
+		ProjectDir:      p.ProjectDir,
+		SupportJazzer:   p.SupportJazzer,
+		SupportJazzerJS: p.SupportJazzerJS,
 	}
 	p.pendingFinding.StackTrace, err = stacktrace.NewParser(parserOpts).Parse(p.pendingFinding.Logs)
 	if err != nil {
