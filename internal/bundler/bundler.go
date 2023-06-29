@@ -45,7 +45,14 @@ func (b *Bundler) Bundle() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer bundle.Close()
+	// if an error occurs during bundling we should make sure that
+	// the bundle gets removed
+	defer func() {
+		bundle.Close()
+		if err != nil {
+			os.Remove(bundle.Name())
+		}
+	}()
 
 	// Create archive writer
 	bufWriter := bufio.NewWriter(bundle)
@@ -57,6 +64,8 @@ func (b *Bundler) Bundle() (string, error) {
 		fuzzers, err = newLibfuzzerBundler(b.opts, archiveWriter).bundle()
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		fuzzers, err = newJazzerBundler(b.opts, archiveWriter).bundle()
+	default:
+		err = errors.Errorf("Unknown build system for bundler: %s", b.opts.BuildSystem)
 	}
 	if err != nil {
 		return "", err

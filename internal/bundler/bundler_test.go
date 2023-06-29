@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code-intelligence.com/cifuzz/internal/testutil"
 )
 
 func TestParsingAdditionalFilesArguments(t *testing.T) {
@@ -71,4 +73,23 @@ func TestParsingAdditionalFilesArguments(t *testing.T) {
 			assert.Equal(t, tc.wantTarget, target)
 		})
 	}
+}
+
+// If an error occurs during bundling there should be no
+// broken bundle file left
+func TestRemoveBundleOnError(t *testing.T) {
+	testDir := testutil.MkdirTemp(t, "", "bundle-delete-*")
+	bundlePath := filepath.Join(testDir, "artifact.tar.gz")
+	opts := &Opts{
+		// using invalid build system to make the bundling fail
+		BuildSystem: "FOO",
+		OutputPath:  bundlePath,
+	}
+	bundler := New(opts)
+
+	path, err := bundler.Bundle()
+	require.Empty(t, path)
+	require.Error(t, err)
+
+	assert.NoFileExists(t, bundlePath)
 }
