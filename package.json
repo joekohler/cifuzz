@@ -1,5 +1,6 @@
 {
 	"devDependencies": {
+		"danger": "^11.2.6",
 		"prettier": "2.8.8"
 	}
 }
