@@ -8,6 +8,7 @@ target in the [Makefile](Makefile) and the `build-command` setting in
 the [cifuzz.yaml](cifuzz.yaml).
 
 You can start fuzzing with
+
 ```bash
 cifuzz run my_fuzz_test
 ```

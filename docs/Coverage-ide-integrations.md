@@ -3,9 +3,10 @@
 ## Jetbrains IDE's
 
 ### CMake (in CLion)
+
 You can start coverage runs from within CLion with the help of CMake
 user presets. Custom cifuzz presets can be added by running:
-    
+
     cifuzz integrate cmake
 
 Those presets have to be enabled before they show up as a run configuration.
@@ -34,18 +35,19 @@ coverage --experimental_use_llvm_covmap
 coverage --experimental_generate_llvm_lcov
 ```
 
-This allows bazel to run the fuzz tests with coverage. 
+This allows bazel to run the fuzz tests with coverage.
 
-You can start a coverage run by opening the bazel BUILD file and executing the 
-fuzz test defined with `cc_fuzz_test` with "Run ... with Coverage". 
+You can start a coverage run by opening the bazel BUILD file and executing the
+fuzz test defined with `cc_fuzz_test` with "Run ... with Coverage".
 This will run the fuzz test with the finding inputs from the `*_inputs` directory
 and produce a coverage report which can be viewed in your IDE **if the fuzz test
-passes**. If the fuzz test fails, the bugs must be fixed before a coverage report 
+passes**. If the fuzz test fails, the bugs must be fixed before a coverage report
 can be produced.
 
 ![Bazel fuzz test in IntelliJ](assets/coverage_intellij_bazel.gif)
 
 ### Maven/Gradle (in IntelliJ)
+
 You can start a coverage with "Run ... with Coverage". This will run the
 fuzz test with the finding inputs from the `*Inputs` directory in
 your test resources and produce a coverage report.
@@ -55,6 +57,7 @@ your test resources and produce a coverage report.
 ## VS Code
 
 ### CMake/Maven/Gradle
+
 You can start coverage runs from within VS Code with the help of tasks. See
 [How to Integrate with External Tools via
 Tasks](https://code.visualstudio.com/docs/editor/tasks) for more details. A
@@ -68,13 +71,14 @@ Coverage reports can be visualized with the
 ![CMake fuzz test in VSCode](/docs/assets/coverage_vscode.gif)
 
 ### Bazel
-Right now we do not support starting a coverage run directly from VSCode for Bazel, 
-but you can use a created coverage report with the 
-[Coverage Gutters extension](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters). 
+
+Right now we do not support starting a coverage run directly from VSCode for Bazel,
+but you can use a created coverage report with the
+[Coverage Gutters extension](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters).
 
 For this you have to create a coverage report with cifuzz by running:
 
     cifuzz coverage --format lcov --output lcov.info <target>
 
-The extension will pick up the results in the `lcov.info` file automatically 
+The extension will pick up the results in the `lcov.info` file automatically
 and visualize it inside VSCode.

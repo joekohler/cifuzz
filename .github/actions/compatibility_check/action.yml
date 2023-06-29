@@ -1,8 +1,8 @@
-name: 'Compatibility Check'
-description: 'Checks if a new version is compatible to existing builds|findings'
+name: "Compatibility Check"
+description: "Checks if a new version is compatible to existing builds|findings"
 inputs:
   os:
-    description: 'current vm operating system'
+    description: "current vm operating system"
     required: true
 runs:
   using: "composite"

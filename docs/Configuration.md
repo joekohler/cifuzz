@@ -1,4 +1,5 @@
 # cifuzz configuration
+
 You can change the behavior of **cifuzz** both via command-line flags
 and via settings stored in the `cifuzz.yaml` config file. Flags take
 precedence over the respective config file setting.
@@ -56,7 +57,7 @@ See https://llvm.org/docs/LibFuzzer.html#corpus.
 
 ```yaml
 seed-corpus-dirs:
- - path/to/seed-corpus
+  - path/to/seed-corpus
 ```
 
 <a id="dict"></a>
@@ -68,6 +69,7 @@ sequences.
 See https://llvm.org/docs/LibFuzzer.html#dictionaries.
 
 #### Example
+
 ```yaml
 dict: path/to/dictionary.dct
 ```
@@ -75,25 +77,28 @@ dict: path/to/dictionary.dct
 <a id="engine-args"></a>
 
 ### engine-args
-Command-line arguments to pass to libFuzzer or Jazzer for running fuzz tests. 
-Engine-args are not supported for running ```cifuzz coverage``` on JVM-projects.
+
+Command-line arguments to pass to libFuzzer or Jazzer for running fuzz tests.
+Engine-args are not supported for running `cifuzz coverage` on JVM-projects.
 
 For possible libFuzzer options see https://llvm.org/docs/LibFuzzer.html#options.
 
 For advanced configuration with Jazzer parameters see https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/advanced.md.
 
 #### Example Libfuzzer
+
 ```yaml
 engine-args:
- - -rss_limit_mb=4096
- - -timeout=5s 
+  - -rss_limit_mb=4096
+  - -timeout=5s
 ```
 
 #### Example Jazzer
+
 ```yaml
 engine-args:
- - --instrumentation_includes=com.** 
- - --keep_going
+  - --instrumentation_includes=com.**
+  - --keep_going
 ```
 
 <a id="timeout"></a>
@@ -104,6 +109,7 @@ Maximum time in seconds to run the fuzz tests. The default is to run
 indefinitely.
 
 #### Example
+
 ```yaml
 timeout: 300
 ```
@@ -117,6 +123,7 @@ damage to the system. Set to false to run fuzz tests unsandboxed.
 Only supported on Linux.
 
 #### Example
+
 ```yaml
 use-sandbox: false
 ```
@@ -128,6 +135,7 @@ use-sandbox: false
 Set to true to print output of the `cifuzz run` command as JSON.
 
 #### Example
+
 ```yaml
 print-json: true
 ```
@@ -137,6 +145,7 @@ print-json: true
 Set to true to disable desktop notifications
 
 #### Example
+
 ```yaml
 no-notifications: true
 ```
@@ -146,6 +155,7 @@ no-notifications: true
 Set URL of the CI App
 
 #### Example
+
 ```yaml
 server: https://app.code-intelligence.com
 ```
@@ -155,6 +165,7 @@ server: https://app.code-intelligence.com
 Set the project name of the CI App project
 
 #### Example
+
 ```yaml
 project: my-project-1a2b3c4d
 ```
@@ -162,12 +173,13 @@ project: my-project-1a2b3c4d
 ### style
 
 Choose the style to run cifuzz in
-- ```pretty```: Colored output and icons (default)
-- ```color```: Colored output
-- ```plain```: Pure text without any styles
+
+- `pretty`: Colored output and icons (default)
+- `color`: Colored output
+- `plain`: Pure text without any styles
 
 #### Example
+
 ```yaml
 style: plain
 ```
-

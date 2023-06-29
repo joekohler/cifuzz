@@ -20,7 +20,7 @@ linters-settings:
           - ["ID"] # Ignore
   staticcheck:
     checks:
-      - '-SA3000'
+      - "-SA3000"
   gocritic:
     enabled-tags:
       - diagnostic

@@ -1,8 +1,8 @@
-name: 'Run cifuzz examples'
-description: 'running examples with previously installed cifuzz'
+name: "Run cifuzz examples"
+description: "running examples with previously installed cifuzz"
 inputs:
-  os: 
-    description: 'current vm operating system'
+  os:
+    description: "current vm operating system"
     required: true
 runs:
   using: "composite"

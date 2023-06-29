@@ -3,6 +3,7 @@
 ## Setup
 
 ### CMake
+
 When using `cifuzz init` and `cifuzz create` the commands will tell you
 which manual steps are necessary to use the cifuzz CMake integration inside
 your existing project. Usually you also have to add instructions in your
@@ -31,7 +32,7 @@ functions. A useful tool for this is The
 
 An example can look like this:
 
-``` cpp
+```cpp
 #include <cifuzz/cifuzz.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
@@ -46,6 +47,7 @@ FUZZ_TEST(const uint8_t *data, size_t size) {
   myFunction(my_int, my_string);
 }
 ```
+
 </details>
 
 <details>
@@ -71,6 +73,5 @@ public class FuzzTestCase {
     }
 }
 ```
+
 </details>
-
-

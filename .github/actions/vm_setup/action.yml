@@ -1,83 +1,83 @@
-name: 'VM Setup'
-description: 'setting up vms for cifuzz'
+name: "VM Setup"
+description: "setting up vms for cifuzz"
 inputs:
   os:
-    description: 'current vm operating system'
+    description: "current vm operating system"
     required: true
 runs:
   using: "composite"
   steps:
-      - name: Setup Go environment
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.19"
+    - name: Setup Go environment
+      uses: actions/setup-go@v3
+      with:
+        go-version: "1.19"
 
-      - name: Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v3
-        with:
-          path: |
-            C:/Program Files/LLVM
-            ./llvm
-          key: ${{ inputs.os }}-llvm-14.0
+    - name: Cache LLVM and Clang
+      id: cache-llvm
+      uses: actions/cache@v3
+      with:
+        path: |
+          C:/Program Files/LLVM
+          ./llvm
+        key: ${{ inputs.os }}-llvm-14.0
 
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@8852e4d5c58653ed05135c0a5d949d9c2febcb00
-        with:
-          version: "14.0"
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@8852e4d5c58653ed05135c0a5d949d9c2febcb00
+      with:
+        version: "14.0"
+        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
-      - name: Setup - Linux
-        if: contains(inputs.os, 'ubuntu')
-        run: sudo apt-get install -y lcov libcap-dev
-        shell: bash
+    - name: Setup - Linux
+      if: contains(inputs.os, 'ubuntu')
+      run: sudo apt-get install -y lcov libcap-dev
+      shell: bash
 
-      # needed to fix MacOSX clang/llvm after using the action above
-      # https://github.com/KyleMayes/install-llvm-action/issues/15
-      - name: Setup - MacOSX
-        if: contains(inputs.os, 'macos')
-        run: |
-          LLVM_PATH=${{ env.LLVM_PATH }}
-          LLVM_VERSION=14.0
-          echo "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)" >> $GITHUB_ENV
-          echo "CPATH=$LLVM_PATH/lib/clang/$LLVM_VERSION/include/" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$LLVM_PATH/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$LLVM_PATH/include" >> $GITHUB_ENV
-          echo "CC=$LLVM_PATH/bin/clang" >> $GITHUB_ENV
-          echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
-          # use below opts to fix compilation issues on macOS, e.g. that "assert.h" is missing, etc.
-          # at some point we would like to remove these lines but we haven't found a way to fix this otherwise
-          echo 'common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk' >> ~/.bazelrc
-          echo 'common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk:-fuse-ld=lld' >> ~/.bazelrc
-          # we ran into an error using 6.1 so we fixed it to the last working version
-          # TODO: remove this as soon as possible
-          echo "USE_BAZEL_VERSION=6.0.0" >> $GITHUB_ENV
-          # install lcov which is needed for coverage report generation
-          brew install lcov
-        shell: bash
+    # needed to fix MacOSX clang/llvm after using the action above
+    # https://github.com/KyleMayes/install-llvm-action/issues/15
+    - name: Setup - MacOSX
+      if: contains(inputs.os, 'macos')
+      run: |
+        LLVM_PATH=${{ env.LLVM_PATH }}
+        LLVM_VERSION=14.0
+        echo "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)" >> $GITHUB_ENV
+        echo "CPATH=$LLVM_PATH/lib/clang/$LLVM_VERSION/include/" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$LLVM_PATH/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$LLVM_PATH/include" >> $GITHUB_ENV
+        echo "CC=$LLVM_PATH/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$LLVM_PATH/bin/clang++" >> $GITHUB_ENV
+        # use below opts to fix compilation issues on macOS, e.g. that "assert.h" is missing, etc.
+        # at some point we would like to remove these lines but we haven't found a way to fix this otherwise
+        echo 'common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk' >> ~/.bazelrc
+        echo 'common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk:-fuse-ld=lld' >> ~/.bazelrc
+        # we ran into an error using 6.1 so we fixed it to the last working version
+        # TODO: remove this as soon as possible
+        echo "USE_BAZEL_VERSION=6.0.0" >> $GITHUB_ENV
+        # install lcov which is needed for coverage report generation
+        brew install lcov
+      shell: bash
 
-      # Action for configuring Developer Command Prompt for Microsoft Visual C++
-      # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
-      - name: ClangCL - Windows
-        uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
-        if: contains(inputs.os, 'windows')
+    # Action for configuring Developer Command Prompt for Microsoft Visual C++
+    # Pinned to the commit of the v1.10.0 tag on 2022-05-05.
+    - name: ClangCL - Windows
+      uses: ilammy/msvc-dev-cmd@7315a94840631165970262a99c72cfb48a65d25d
+      if: contains(inputs.os, 'windows')
 
-      - name: Install lcov - Windows
-        if: contains(inputs.os, 'windows')
-        run: choco install lcov
-        shell: pwsh
+    - name: Install lcov - Windows
+      if: contains(inputs.os, 'windows')
+      run: choco install lcov
+      shell: pwsh
 
-      - name: Update Path - MacOS/Linux
-        if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-        shell: bash
+    - name: Update Path - MacOS/Linux
+      if: contains(inputs.os, 'macos') || contains(inputs.os, 'ubuntu')
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+      shell: bash
 
-      - name: Update Path - Windows
-        if: contains(inputs.os, 'windows')
-        # Windows can't find cifuzz executable without this
-        # https://www.scivision.dev/github-actions-path-append/
-        run: |
-          echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "$env:ChocolateyInstall\lib\lcov\tools\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        shell: pwsh
+    - name: Update Path - Windows
+      if: contains(inputs.os, 'windows')
+      # Windows can't find cifuzz executable without this
+      # https://www.scivision.dev/github-actions-path-append/
+      run: |
+        echo "${HOME}/AppData/Roaming/cifuzz/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "$env:ChocolateyInstall\lib\lcov\tools\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: pwsh

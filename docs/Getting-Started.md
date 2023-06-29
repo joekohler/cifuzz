@@ -56,8 +56,8 @@ on how to generate and visualize coverage reports right from your IDE.
 
 ## Regression testing
 
-If you are interested in running your fuzz tests as regression tests to maintain 
-a fast and responsive development cycle, you can check out our 
+If you are interested in running your fuzz tests as regression tests to maintain
+a fast and responsive development cycle, you can check out our
 [regression testing](Regression-Testing.md) guide.
 
 ## Sandboxing
@@ -81,6 +81,7 @@ by colon and be specified in the same format that is supported by the
 
 `CIFUZZ_MINIJAIL_BINDINGS=<src>[,[dest][,<writeable>]]`, where `<src>` must be an absolute path
 and `<writeable>` is either `0` or `1`. For example:
+
 ```
 CIFUZZ_MINIJAIL_BINDINGS=/tmp/foo,/tmp/foo,1:/home/user/foo,/home/user/foo,1
 ```

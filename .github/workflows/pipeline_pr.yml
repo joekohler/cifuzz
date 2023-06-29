@@ -17,8 +17,8 @@ jobs:
         if: ${{ github.event_name != 'merge_group' }}
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^(?!WIP|XXX|fixup).*'
-          error: 'A commit message should not start with (WIP|XXX|fixup)'
+          pattern: "^(?!WIP|XXX|fixup).*"
+          error: "A commit message should not start with (WIP|XXX|fixup)"
           excludeDescription: true
           checkAllCommitMessages: true
           accessToken: ${{ secrets.GITHUB_TOKEN }}
