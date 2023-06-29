@@ -150,3 +150,11 @@ class FuzzTest {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"fuzz", "fuzz2", "fuzz3", "fuzzerTestOneInput"}, result)
 }
+
+func TestGetJazzerSeedCorpus(t *testing.T) {
+	seedCorpusDir := JazzerSeedCorpus("com.example.FuzzTestCase", "project-dir")
+	expectedSeedCorpusDir := filepath.Join(
+		"project-dir", "src", "test", "resources", "com", "example", "FuzzTestCaseInputs",
+	)
+	assert.Equal(t, expectedSeedCorpusDir, seedCorpusDir)
+}
