@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -45,6 +46,8 @@ func TestLibFuzzerAdapter_ReportsParsing(t *testing.T) {
 	} else {
 		llvmDir = "/llvm"
 	}
+
+	projectDir := filepath.Join("path", "to", "test-project")
 
 	tests := []struct {
 		name     string
@@ -738,12 +741,30 @@ SUMMARY: libFuzzer: timeout`,
 				},
 			},
 		},
+		{
+			name: "jazzer corpus dirs",
+			logs: fmt.Sprintf(`
+INFO: using inputs from: %s
+INFO: using inputs from: %s
+INFO: using inputs from: /tmp/jazzer-java-seeds5643680988214732014`,
+				filepath.Join(projectDir, ".cifuzz-corpus", "com.example.FuzzTestCase"),
+				filepath.Join(projectDir, "src", "test", "resources", "com.example.FuzzTestCase"),
+			),
+			expected: []*report.Report{
+				{
+					GeneratedCorpus: filepath.Join(projectDir, ".cifuzz-corpus", "com.example.FuzzTestCase"),
+				},
+				{
+					SeedCorpus: filepath.Join(projectDir, "src", "test", "resources", "com.example.FuzzTestCase"),
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r, w := io.Pipe()
 
-			reporter := NewLibfuzzerOutputParser(&Options{SupportJazzer: true})
+			reporter := NewLibfuzzerOutputParser(&Options{SupportJazzer: true, ProjectDir: projectDir})
 			reportsCh := make(chan *report.Report, maxBufferedReports)
 			reporterErrCh := make(chan error)
 
