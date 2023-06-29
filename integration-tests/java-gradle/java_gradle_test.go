@@ -2,12 +2,10 @@ package gradle
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -101,24 +99,21 @@ func TestIntegration_Gradle(t *testing.T) {
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
 
 	// Check that options set via the config file are respected
-	configFileContent := `use-sandbox: false`
+	configFileContent := "print-json: true"
 	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0644)
 	require.NoError(t, err)
-	// When minijail is used, the artifact prefix is set to the minijail
-	// output path
+	expectedOutputExp = regexp.MustCompile(`"finding": {`)
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(fmt.Sprintf(`artifact_prefix='%s`, regexp.QuoteMeta(projectDir)))},
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
 	})
 
-	if runtime.GOOS == "linux" {
-		// Check that command-line flags take precedence over config file
-		// settings (only on Linux because we only support Minijail on
-		// Linux).
-		cifuzzRunner.Run(t, &shared.RunOptions{
-			Args:            []string{"--use-sandbox=true"},
-			ExpectedOutputs: []*regexp.Regexp{regexp.MustCompile(`minijail`)},
-		})
-	}
+	// Check that command-line flags take precedence over config file
+	// settings (only on Linux because we only support Minijail on
+	// Linux).
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Args:             []string{"--json=false"},
+		UnexpectedOutput: expectedOutputExp,
+	})
 
 	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
 	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0644)
