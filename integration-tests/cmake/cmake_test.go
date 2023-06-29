@@ -314,34 +314,55 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	require.NotEmpty(t, asanFinding.InputFile)
 	require.False(t, filepath.IsAbs(asanFinding.InputFile), "Should be relative: %s", asanFinding.InputFile)
 	require.FileExists(t, filepath.Join(testdata, asanFinding.InputFile))
+
+	// On Windows the 2nd stackframe (the one of the fuzz test) alternates
+	// depending on the environment (eg. llvm-symbolizer)
+	// TODO: remove when we have a stable environment
+	fuzzTestStackFrame1 := stacktrace.StackFrame{
+		SourceFile:  "src/parser/parser_fuzz_test.cpp",
+		Line:        29,
+		Column:      3,
+		FrameNumber: 1,
+		Function:    "LLVMFuzzerTestOneInputNoReturn",
+	}
+	fuzzTestStackFrame2 := stacktrace.StackFrame{
+		SourceFile:  "src/parser/parser_fuzz_test.cpp",
+		Line:        11,
+		Column:      3,
+		FrameNumber: 1,
+		Function:    "LLVMFuzzerTestOneInput",
+	}
+	asanStackFrame := stacktrace.StackFrame{
+		SourceFile:  "src/parser/parser.cpp",
+		Line:        19,
+		Column:      14,
+		FrameNumber: 0,
+		Function:    "parse",
+	}
+	ubsanStackFrame := stacktrace.StackFrame{
+		SourceFile:  "src/parser/parser.cpp",
+		Line:        23,
+		Column:      9,
+		FrameNumber: 0,
+		Function:    "parse",
+	}
+	if runtime.GOOS == "windows" {
+		// On Windows, the column is not printed
+		fuzzTestStackFrame1.Column = 0
+		fuzzTestStackFrame2.Column = 0
+		asanStackFrame.Column = 0
+		ubsanStackFrame.Column = 0
+
+	}
+
 	// TODO: This check currently fails on macOS because there
 	// llvm-symbolizer doesn't read debug info from object files.
 	// See https://github.com/google/sanitizers/issues/207#issuecomment-136495556
 	if runtime.GOOS != "darwin" {
-		expectedStackTrace := []*stacktrace.StackFrame{
-			{
-				SourceFile:  "src/parser/parser.cpp",
-				Line:        19,
-				Column:      14,
-				FrameNumber: 0,
-				Function:    "parse",
-			},
-			{
-				SourceFile:  "src/parser/parser_fuzz_test.cpp",
-				Line:        29,
-				Column:      3,
-				FrameNumber: 1,
-				Function:    "LLVMFuzzerTestOneInputNoReturn",
-			},
-		}
-		if runtime.GOOS == "windows" {
-			// On Windows, the column is not printed
-			for i := range expectedStackTrace {
-				expectedStackTrace[i].Column = 0
-			}
-		}
-
-		require.Equal(t, expectedStackTrace, asanFinding.StackTrace)
+		require.Equal(t, asanStackFrame, *asanFinding.StackTrace[0])
+		assert.Condition(t, func() bool {
+			return *asanFinding.StackTrace[1] == fuzzTestStackFrame1 || *asanFinding.StackTrace[1] == fuzzTestStackFrame2
+		}, "stack frames not matching:\n %+v \n %+v \n %+v", asanFinding.StackTrace[1], fuzzTestStackFrame1, fuzzTestStackFrame2)
 	}
 
 	// Verify that there is a UBSan finding and that it has the correct details.
@@ -350,31 +371,12 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	require.NotEmpty(t, ubsanFinding.InputFile)
 	require.False(t, filepath.IsAbs(ubsanFinding.InputFile), "Should be relative: %s", ubsanFinding.InputFile)
 	require.FileExists(t, filepath.Join(testdata, ubsanFinding.InputFile))
-	if runtime.GOOS != "darwin" {
-		expectedStackTrace := []*stacktrace.StackFrame{
-			{
-				SourceFile:  "src/parser/parser.cpp",
-				Line:        23,
-				Column:      9,
-				FrameNumber: 0,
-				Function:    "parse",
-			},
-			{
-				SourceFile:  "src/parser/parser_fuzz_test.cpp",
-				Line:        29,
-				Column:      3,
-				FrameNumber: 1,
-				Function:    "LLVMFuzzerTestOneInputNoReturn",
-			},
-		}
-		if runtime.GOOS == "windows" {
-			// On Windows, the column is not printed
-			for i := range expectedStackTrace {
-				expectedStackTrace[i].Column = 0
-			}
-		}
 
-		require.Equal(t, expectedStackTrace, ubsanFinding.StackTrace)
+	if runtime.GOOS != "darwin" {
+		require.Equal(t, ubsanStackFrame, *ubsanFinding.StackTrace[0])
+		assert.Condition(t, func() bool {
+			return *ubsanFinding.StackTrace[1] == fuzzTestStackFrame1 || *ubsanFinding.StackTrace[1] == fuzzTestStackFrame2
+		}, "stack frames not matching:\n %+v \n %+v \n %+v", ubsanFinding.StackTrace[1], fuzzTestStackFrame1, fuzzTestStackFrame2)
 	}
 }
 
