@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -54,36 +56,61 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 }
 
 func TestFinding_MoveInputFile(t *testing.T) {
-	projectDir, err := os.MkdirTemp(testBaseDir, "move-test-project-dir-")
-	require.NoError(t, err)
-	seedCorpusDir, err := os.MkdirTemp(testBaseDir, "move-test-seed-corpus-")
-	require.NoError(t, err)
+	testCases := []struct {
+		buildSystem                           string
+		expectInputFileToBeCopiedToSeedCorpus bool
+	}{
+		{
+			buildSystem:                           config.BuildSystemCMake,
+			expectInputFileToBeCopiedToSeedCorpus: true,
+		},
+		{
+			buildSystem:                           config.BuildSystemMaven,
+			expectInputFileToBeCopiedToSeedCorpus: false,
+		},
+	}
 
-	// Create an input file
-	testfile := "crash_123_test"
-	err = os.WriteFile(testfile, []byte("input"), 0644)
-	require.NoError(t, err)
+	for _, tc := range testCases {
+		func() {
+			projectDir, err := os.MkdirTemp(testBaseDir, "move-test-project-dir-")
+			require.NoError(t, err)
+			defer fileutil.Cleanup(projectDir)
 
-	finding := testFinding()
-	finding.InputFile = testfile
-	finding.Logs = append(finding.Logs, fmt.Sprintf("some surrounding text, %s more text", testfile))
-	findingDir := filepath.Join(projectDir, nameFindingsDir, finding.Name)
+			seedCorpusDir, err := os.MkdirTemp(testBaseDir, "move-test-seed-corpus-")
+			require.NoError(t, err)
+			defer fileutil.Cleanup(seedCorpusDir)
 
-	err = finding.CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, config.BuildSystemCMake)
-	require.NoError(t, err)
+			// Create an input file
+			testfile := "crash_123_test"
+			err = os.WriteFile(testfile, []byte("input"), 0644)
+			require.NoError(t, err)
 
-	// Check that the input file in the finding dir was created
-	matches, err := filepath.Glob(filepath.Join(findingDir, nameCrashingInput+"*"))
-	require.NoError(t, err)
-	require.Len(t, matches, 1)
+			finding := testFinding()
+			finding.InputFile = testfile
+			finding.Logs = append(finding.Logs, fmt.Sprintf("some surrounding text, %s more text", testfile))
+			findingDir := filepath.Join(projectDir, nameFindingsDir, finding.Name)
 
-	// Check that the input file was copied to the seed corpus
-	matches, err = filepath.Glob(filepath.Join(seedCorpusDir, finding.Name+"*"))
-	require.NoError(t, err)
-	require.Len(t, matches, 1)
+			err = finding.CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, tc.buildSystem)
+			require.NoError(t, err)
 
-	// Check that the log was updated
-	require.Contains(t, finding.Logs[2], nameCrashingInput)
+			// Check that the input file in the finding dir was created
+			matches, err := filepath.Glob(filepath.Join(findingDir, nameCrashingInput+"*"))
+			require.NoError(t, err)
+			assert.Len(t, matches, 1)
+
+			// Check if the input file was copied to the seed corpus
+			matches, err = filepath.Glob(filepath.Join(seedCorpusDir, finding.Name+"*"))
+			require.NoError(t, err)
+			if tc.expectInputFileToBeCopiedToSeedCorpus {
+				assert.Len(t, matches, 1)
+			} else {
+				assert.Len(t, matches, 0)
+			}
+
+			// Check that the log was updated
+			assert.Contains(t, finding.Logs[2], nameCrashingInput)
+		}()
+	}
 }
 
 func TestListFindings(t *testing.T) {
