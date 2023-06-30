@@ -32,6 +32,8 @@ const (
 	Maven  Key = "mvn"
 	Gradle Key = "gradle"
 
+	Node Key = "node"
+
 	VisualStudio Key = "Visual Studio"
 
 	MessageVersion = "cifuzz requires %s %s or higher, have %s"

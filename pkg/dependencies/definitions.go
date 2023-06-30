@@ -186,6 +186,14 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.GradlePath)
 		},
 	},
+	Node: {
+		Key:        Node,
+		MinVersion: *semver.MustParse("16.0"),
+		GetVersion: nodeVersion,
+		Installed: func(dep *Dependency, projectDir string) bool {
+			return dep.checkFinder(dep.finder.NodePath)
+		},
+	},
 	VisualStudio: {
 		Key:        VisualStudio,
 		MinVersion: *semver.MustParse("17.0"),

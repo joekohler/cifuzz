@@ -27,6 +27,7 @@ var (
 	llvmRegex   = regexp.MustCompile(`(?m)LLVM version (?P<version>\d+\.\d+(\.\d+)?)`)
 	javaRegex   = regexp.MustCompile(`(?m)version "(?P<version>\d+(\.\d+\.\d+)*)([_\.]\d+)?"`)
 	gradleRegex = regexp.MustCompile(`(?m)Gradle (?P<version>\d+(\.\d+\.\d+)?)`)
+	nodeRegex   = regexp.MustCompile(`(?m)(?P<version>\d+(\.\d+\.\d+)?)`)
 
 	bazelRegex   = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 	genHTMLRegex = regexp.MustCompile(`.*LCOV version (?P<version>\d+\.\d+(\.\d+)?)`)
@@ -179,6 +180,20 @@ func gradleVersion(dep *Dependency, projectDir string) (*semver.Version, error) 
 		return nil, err
 	}
 	log.Debugf("Found Gradle version %s: %s", version, path)
+	return version, nil
+}
+
+func nodeVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
+	path, err := exec.LookPath("node")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	version, err := getVersionFromCommand(path, []string{"--version"}, nodeRegex, dep.Key)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Found Node version %s in PATH: %s", version, path)
 	return version, nil
 }
 

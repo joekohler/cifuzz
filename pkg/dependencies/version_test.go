@@ -96,6 +96,11 @@ OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)`,
 OpenJDK Runtime Environment (build 18+36-2087)
 OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)`,
 	},
+	{
+		Want:   semver.MustParse("16.16.0"),
+		Regex:  nodeRegex,
+		Output: `v16.16.0`,
+	},
 }
 
 func TestVersionParsing(t *testing.T) {
