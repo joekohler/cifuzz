@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 
 func TestOk(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
-	defer cleanup()
+	t.Cleanup(cleanup)
 
 	outputFile := filepath.Join(testDir, "fuzz-test.cpp")
 	args := []string{
@@ -50,7 +50,7 @@ func TestOk(t *testing.T) {
 
 func TestOkMaven(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemMaven)
-	defer cleanup()
+	t.Cleanup(cleanup)
 
 	outputFile := filepath.Join(testDir, "FuzzTestCase.java")
 	args := []string{
@@ -64,7 +64,7 @@ func TestOkMaven(t *testing.T) {
 
 func TestOkGradle(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemGradle)
-	defer cleanup()
+	t.Cleanup(cleanup)
 
 	outputFile := filepath.Join(testDir, "FuzzTestCase.java")
 	args := []string{
@@ -81,12 +81,30 @@ func TestOkJavaScript(t *testing.T) {
 		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
 	}
 
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemNode)
-	defer cleanup()
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "nodejs")
+	t.Cleanup(cleanup)
 
 	outputFile := filepath.Join(testDir, "myTest.fuzz.js")
 	args := []string{
 		"js",
+		"--output", outputFile,
+	}
+	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	require.NoError(t, err)
+	require.FileExists(t, outputFile)
+}
+
+func TestOkTypeScript(t *testing.T) {
+	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
+	}
+
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "node-typescript")
+	t.Cleanup(cleanup)
+
+	outputFile := filepath.Join(testDir, "myTest.fuzz.ts")
+	args := []string{
+		"ts",
 		"--output", outputFile,
 	}
 	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
@@ -111,7 +129,7 @@ func TestCMakeMissing(t *testing.T) {
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
-	defer cleanup()
+	t.Cleanup(cleanup)
 	args := []string{
 		"cpp",
 		"--output",
@@ -140,7 +158,7 @@ func TestClangVersion(t *testing.T) {
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
-	defer cleanup()
+	t.Cleanup(cleanup)
 	args := []string{
 		"cpp",
 		"--output",
@@ -170,7 +188,7 @@ func TestVisualStudioVersion(t *testing.T) {
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", config.BuildSystemCMake)
-	defer cleanup()
+	t.Cleanup(cleanup)
 	args := []string{
 		"cpp",
 		"--output",
