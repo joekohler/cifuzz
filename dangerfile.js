@@ -2,7 +2,7 @@ const { danger, warn, message, markdown } = require("danger");
 const { basename, dirname } = require("path");
 
 // Check for description
-if (danger.github.pr.body.length <= 0) {
+if (!danger.github.pr.body || danger.github.pr.body.length <= 0) {
 	warn(
 		"This PR doesn't have a description. " +
 			"We recommend following the template to include all necessary information."
@@ -35,10 +35,10 @@ const missingTestsForCreatedGoFiles = createdGoFiles.filter(function (x) {
 
 // No idea why these extra lines are necessary
 // but without them the bullet points *sometimes* don't work
-if (missingTestsForCreatedGoFiles.length > 0) {
+if (missingTestsForCreatedGoFiles?.length > 0) {
 	const message = `
-  
-  The following created files don't have corresponding test files: 
+
+  The following created files don't have corresponding test files:
   - ${missingTestsForCreatedGoFiles.join("\n - ")}`;
 	warn(message);
 }
@@ -62,19 +62,19 @@ const missingTestsForModifiedGoFiles = modifiedGoFiles.filter(function (x) {
 	);
 });
 
-if (missingTestsForModifiedGoFiles.length > 0) {
+if (missingTestsForModifiedGoFiles?.length > 0) {
 	const message = `
-  
-  The following files have been modified but their tests have not changed: 
+
+  The following files have been modified but their tests have not changed:
   - ${missingTestsForModifiedGoFiles.join("\n - ")}`;
 	warn(message);
 }
 
 // Say thanks if contributors use the template
 if (
-	danger.github.pr.body.includes("Motivation/Context") &&
-	danger.github.pr.body.includes("Description") &&
-	danger.github.pr.body.includes("How to use/reproduce")
+	danger.github.pr.body?.includes("Motivation/Context") &&
+	danger.github.pr.body?.includes("Description") &&
+	danger.github.pr.body?.includes("How to use/reproduce")
 ) {
 	markdown("Thank you for using the PR template ❤️");
 }
@@ -88,7 +88,7 @@ const expandedTestCoverage = createdTestFiles.filter(function (x) {
 	return !createdGoFiles.includes(`${filePath}/${file}`);
 });
 
-if (expandedTestCoverage.length > 0) {
+if (expandedTestCoverage?.length > 0) {
 	markdown(
 		"You're a rockstar for creating tests for files that didn't have any yet ⭐"
 	);
