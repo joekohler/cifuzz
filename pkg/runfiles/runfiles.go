@@ -28,6 +28,7 @@ type RunfilesFinder interface {
 	MavenPath() (string, error)
 	GradlePath() (string, error)
 	JavaHomePath() (string, error)
+	NodePath() (string, error)
 }
 
 var Finder RunfilesFinder

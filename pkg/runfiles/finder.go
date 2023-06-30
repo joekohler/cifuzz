@@ -100,6 +100,11 @@ func (f RunfilesFinderImpl) GradlePath() (string, error) {
 	return path, errors.WithStack(err)
 }
 
+func (f RunfilesFinderImpl) NodePath() (string, error) {
+	path, err := exec.LookPath("node")
+	return path, errors.WithStack(err)
+}
+
 func (f RunfilesFinderImpl) Minijail0Path() (string, error) {
 	return f.findFollowSymlinks("bin/minijail0")
 }
