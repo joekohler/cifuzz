@@ -1,0 +1,10 @@
+{
+	"name": "nodejs-example",
+	"scripts": {
+		"test": "jest",
+		"coverage": "jest --coverage"
+	},
+	"devDependencies": {
+		"jest": "^29.5.0"
+	}
+}
