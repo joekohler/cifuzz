@@ -50,6 +50,8 @@ func ValidFuzzTests(cmd *cobra.Command, args []string, toComplete string) ([]str
 		return validCMakeFuzzTests(conf.ProjectDir)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		return validJVMFuzzTests(conf.ProjectDir, toComplete)
+	case config.BuildSystemNodeJS:
+		return validNodeFuzzTests(conf.ProjectDir, toComplete)
 
 	case config.BuildSystemOther:
 		// For other build systems, the <fuzz test> argument must be
@@ -171,6 +173,16 @@ func validJVMFuzzTests(projectDir string, toComplete string) ([]string, cobra.Sh
 		filepath.Join(projectDir, "src", "test"),
 	}
 	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, toComplete)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	return fuzzTests, cobra.ShellCompDirectiveNoFileComp
+}
+
+// validNodeFuzzTests returns a list of valid Node.js fuzz test identifiers
+// (i.e. the fully qualified class name of the fuzz test)
+func validNodeFuzzTests(projectDir string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	fuzzTests, err := cmdutils.ListNodeFuzzTests(projectDir, toComplete)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
