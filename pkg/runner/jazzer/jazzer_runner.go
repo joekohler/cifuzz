@@ -50,6 +50,7 @@ type Runner struct {
 func NewRunner(options *RunnerOptions) *Runner {
 	libfuzzerRunner := libfuzzer.NewRunner(options.LibfuzzerOptions)
 	libfuzzerRunner.SupportJazzer = true
+	libfuzzerRunner.SupportJazzerJS = false
 	return &Runner{options, libfuzzerRunner}
 }
 

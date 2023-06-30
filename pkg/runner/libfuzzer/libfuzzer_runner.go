@@ -83,7 +83,8 @@ func (options *RunnerOptions) ValidateOptions() error {
 
 type Runner struct {
 	*RunnerOptions
-	SupportJazzer bool
+	SupportJazzer   bool
+	SupportJazzerJS bool
 
 	started chan struct{}
 	cmd     *executil.Cmd
@@ -91,9 +92,10 @@ type Runner struct {
 
 func NewRunner(options *RunnerOptions) *Runner {
 	return &Runner{
-		RunnerOptions: options,
-		SupportJazzer: false,
-		started:       make(chan struct{}, 1),
+		RunnerOptions:   options,
+		SupportJazzer:   false,
+		SupportJazzerJS: false,
+		started:         make(chan struct{}, 1),
 	}
 }
 
@@ -255,6 +257,7 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 	}
 	reporter := libfuzzer_parser.NewLibfuzzerOutputParser(&libfuzzer_parser.Options{
 		SupportJazzer:       r.SupportJazzer,
+		SupportJazzerJS:     r.SupportJazzerJS,
 		KeepColor:           r.KeepColor,
 		StartupOutputWriter: startupOutputWriter,
 		ProjectDir:          r.ProjectDir,

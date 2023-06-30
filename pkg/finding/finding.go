@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 const (
@@ -194,8 +195,11 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) e
 		return errors.WithStack(err)
 	}
 
-	if buildSystem != config.BuildSystemMaven &&
-		buildSystem != config.BuildSystemGradle {
+	if sliceutil.Contains([]string{
+		config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther,
+	},
+		buildSystem,
+	) {
 		// Copy the input file to the seed corpus dir.
 		// This is only necessary for c/c++ projects.
 		err = os.MkdirAll(seedCorpusDir, 0o755)
@@ -258,6 +262,9 @@ func (f *Finding) ShortDescriptionColumns() []string {
 		case strings.Contains(f.Details, "Security Issue:"):
 			// Jazzer findings
 			errorType = f.Details
+		case f.Details == "fuzz target exited":
+			// Jazzer.js findings
+			errorType = f.Details
 		default:
 			errorType = strings.ReplaceAll(strings.Split(f.Details, " ")[0], "-", " ")
 		}
@@ -279,7 +286,11 @@ func (f *Finding) ShortDescriptionColumns() []string {
 		} else {
 			location = fmt.Sprintf("%s:%d", f.SourceFile, f.Line)
 		}
-		columns = append(columns, fmt.Sprintf("in %s (%s)", f.Function, location))
+		if f.Function != "" {
+			columns = append(columns, fmt.Sprintf("in %s (%s)", f.Function, location))
+		} else {
+			columns = append(columns, fmt.Sprintf("in %s", location))
+		}
 	}
 	return columns
 }
