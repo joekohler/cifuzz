@@ -1,7 +1,6 @@
-// const { FuzzedDataProvider } = require("@jazzer.js/core");
-// const target = require("./target");
+const { FuzzedDataProvider } = require("@jazzer.js/core");
 
-test.fuzz("My async fuzz test", (data) => {
+test.fuzz("My fuzz test", (data) => {
  	// Call the functions you want to test with the provided data and optionally
  	// assert that the results are as expected. For example:
 	/*
