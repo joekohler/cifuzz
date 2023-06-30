@@ -1,0 +1,8 @@
+{
+	"includes": ["*"],
+	"excludes": ["node_modules"],
+	"customHooks": [],
+	"fuzzerOptions": [],
+	"sync": false,
+	"timeout": 1000
+}
