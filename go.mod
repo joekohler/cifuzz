@@ -22,7 +22,7 @@ require (
 	github.com/pterm/pterm v0.12.62
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
-	github.com/u-root/u-root v0.11.1-0.20230225005747-5b46c23c3414
+	github.com/u-root/u-root v0.11.1-0.20230701062237-921c08deecd7
 	golang.org/x/net v0.11.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/term v0.9.0
@@ -30,9 +30,6 @@ require (
 
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
 replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
-
-// TODO: Revert when https://github.com/u-root/u-root/pull/2710 is merged
-replace github.com/u-root/u-root v0.11.1-0.20230225005747-5b46c23c3414 => github.com/jochil/u-root v0.0.0-20230628153403-957ded8d2c60
 
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
