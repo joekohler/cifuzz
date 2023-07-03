@@ -22,6 +22,33 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
+// Warning: Changing these will lead to a breaking change!
+const (
+	// EnvBuildStep states for what a fuzz test is build.
+	// e.g. "coverage", "fuzzing"
+	EnvBuildStep string = "CIFUZZ_BUILD_STEP"
+
+	// EnvBuildLocation states the path of the executable.
+	// Default is identical with FUZZ_TEST.
+	EnvBuildLocation string = "CIFUZZ_BUILD_LOCATION"
+
+	// EnvCommand holds the name of the command cifuzz was called with.
+	// e.g. "run", "bundle", "remote-run"
+	EnvCommand string = "CIFUZZ_COMMAND"
+
+	// EnvFuzzTest holds the name of the fuzz test.
+	EnvFuzzTest string = "FUZZ_TEST"
+
+	// EnvFuzzTestCFlags hold the CFLAGS used for building the fuzz test.
+	EnvFuzzTestCFlags string = "FUZZ_TEST_CFLAGS"
+
+	// EnvFuzzTestCXXFlags hold the CXXFLAGS used for building the fuzz test.
+	EnvFuzzTestCXXFlags string = "FUZZ_TEST_CXXFLAGS"
+
+	// EnvFuzzTestLDFlags hold the LDFLAGS used for building the fuzz test.
+	EnvFuzzTestLDFlags string = "FUZZ_TEST_LDFLAGS"
+)
+
 type BuilderOptions struct {
 	ProjectDir   string
 	BuildCommand string
@@ -121,26 +148,16 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 		}
 	}
 
-	// Let the build command reference the fuzz test (base)name.
-	buildCommandEnv, err := envutil.Setenv(b.env, "FUZZ_TEST", fuzzTest)
+	err = b.setBuildCommandEnv(fuzzTest)
 	if err != nil {
 		return nil, err
-	}
-
-	if slices.Contains(b.Sanitizers, "coverage") {
-		// Allow the build command to figure out if it's executed for a
-		// coverage build
-		buildCommandEnv, err = envutil.Setenv(buildCommandEnv, "CIFUZZ_COVERAGE_BUILD", "1")
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Run the build command
 	cmd := exec.Command("/bin/sh", "-c", b.BuildCommand)
 	cmd.Stdout = b.Stdout
 	cmd.Stderr = b.Stderr
-	cmd.Env = buildCommandEnv
+	cmd.Env = b.env
 	log.Debugf("Command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
@@ -187,6 +204,12 @@ func (b *Builder) Clean() error {
 	if b.CleanCommand == "" {
 		return nil
 	}
+
+	err := b.setCleanCommandEnv()
+	if err != nil {
+		return err
+	}
+
 	// Run the clean command
 	cmd := exec.Command("/bin/sh", "-c", b.CleanCommand)
 	cmd.Stdout = b.Stdout
@@ -200,8 +223,45 @@ func (b *Builder) Clean() error {
 	return nil
 }
 
+func (b *Builder) setBuildCommandEnv(fuzzTest string) error {
+	var err error
+
+	b.env, err = envutil.Setenv(b.env, EnvCommand, cmdutils.CurrentInvocation.Command)
+	if err != nil {
+		return err
+	}
+
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTest, fuzzTest)
+	if err != nil {
+		return err
+	}
+
+	b.env, err = envutil.Setenv(b.env, EnvBuildLocation, fuzzTest)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Builder) setCleanCommandEnv() error {
+	var err error
+
+	b.env, err = envutil.Setenv(b.env, EnvCommand, cmdutils.CurrentInvocation.Command)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (b *Builder) setLibFuzzerEnv() error {
 	var err error
+
+	b.env, err = envutil.Setenv(b.env, EnvBuildStep, "fuzzing")
+	if err != nil {
+		return err
+	}
 
 	// Set CFLAGS and CXXFLAGS
 	cflags := build.LibFuzzerCFlags()
@@ -231,11 +291,11 @@ func (b *Builder) setLibFuzzerEnv() error {
 		return err
 	}
 	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", strings.Join(fuzzTestCFlags, " "))
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CXXFLAGS", strings.Join(fuzzTestCFlags, " "))
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
@@ -251,7 +311,7 @@ func (b *Builder) setLibFuzzerEnv() error {
 		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
 	}
 	fuzzTestLdflags = append(fuzzTestLdflags, "-fsanitize=fuzzer", filepath.Join(b.buildDir, "dumper.o"))
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_LDFLAGS", strings.Join(fuzzTestLdflags, " "))
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestLDFlags, strings.Join(fuzzTestLdflags, " "))
 	if err != nil {
 		return err
 	}
@@ -261,6 +321,11 @@ func (b *Builder) setLibFuzzerEnv() error {
 
 func (b *Builder) setCoverageEnv() error {
 	var err error
+
+	b.env, err = envutil.Setenv(b.env, EnvBuildStep, "coverage")
+	if err != nil {
+		return err
+	}
 
 	// Set CFLAGS and CXXFLAGS. Note that these flags must not contain
 	// spaces, because the environment variables are space separated.
@@ -297,11 +362,11 @@ func (b *Builder) setCoverageEnv() error {
 		return err
 	}
 	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CFLAGS", strings.Join(fuzzTestCFlags, " "))
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_CXXFLAGS", strings.Join(fuzzTestCFlags, " "))
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
 	}
@@ -309,7 +374,7 @@ func (b *Builder) setCoverageEnv() error {
 	// Users should pass the environment variable FUZZ_TEST_LDFLAGS to
 	// the linker command building the fuzz test. We use it to link in libFuzzer
 	// in coverage builds to use its crash-resistant merge feature.
-	b.env, err = envutil.Setenv(b.env, "FUZZ_TEST_LDFLAGS", "-fsanitize=fuzzer")
+	b.env, err = envutil.Setenv(b.env, EnvFuzzTestLDFlags, "-fsanitize=fuzzer")
 	if err != nil {
 		return err
 	}

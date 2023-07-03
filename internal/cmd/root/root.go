@@ -44,6 +44,8 @@ func New() (*cobra.Command, error) {
 			log.Infof("cifuzz version %s", version.Version)
 			log.Debugf("Running on %s/%s", runtime.GOOS, runtime.GOARCH)
 
+			cmdutils.InitCurrentInvocation(cmd)
+
 			err := cmdutils.Chdir()
 			if err != nil {
 				log.Error(err)
