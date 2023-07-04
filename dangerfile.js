@@ -49,7 +49,9 @@ if (createdGoFiles?.length > 0) {
 		const message = `
 
   The following created files don't have corresponding test files:
-  - ${missingTestsForCreatedGoFiles.join("\n - ")}`;
+  - [ ] ${missingTestsForCreatedGoFiles.join("\n - [ ]")}
+  
+  If you checked the file and there is no need for the test, you can tick the checkbox.`;
 		warn(message);
 	}
 }
@@ -99,7 +101,9 @@ if (modifiedGoFiles?.length > 0) {
 		const message = `
 
   The following files have been modified but their tests have not changed:
-  - ${missingTestsForModifiedGoFiles.join("\n - ")}`;
+  - [ ] ${missingTestsForModifiedGoFiles.join("\n - [ ] ")}
+  
+  If you checked the file and there is no need for the test, you can tick the checkbox.`;
 		warn(message);
 	}
 }
