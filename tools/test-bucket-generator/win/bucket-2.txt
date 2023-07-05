@@ -1,3 +1,1 @@
 code-intelligence.com/cifuzz/integration-tests/kotlin-gradle
-code-intelligence.com/cifuzz/tools/cmake
-code-intelligence.com/cifuzz/integration-tests/other

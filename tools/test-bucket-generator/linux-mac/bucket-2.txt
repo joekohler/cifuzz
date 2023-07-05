@@ -1,6 +1,5 @@
 code-intelligence.com/cifuzz/integration-tests/bazel
 code-intelligence.com/cifuzz/integration-tests/java-gradle
 code-intelligence.com/cifuzz/integration-tests/java-maven-spring
-code-intelligence.com/cifuzz/integration-tests/cmake
-code-intelligence.com/cifuzz/internal/cmd/coverage/llvm
-code-intelligence.com/cifuzz/tools/replayer
+code-intelligence.com/cifuzz/pkg/runner/libfuzzer/integrationtest
+code-intelligence.com/cifuzz/integration-tests/other
