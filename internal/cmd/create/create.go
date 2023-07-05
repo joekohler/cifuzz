@@ -53,27 +53,15 @@ type createCmd struct {
 	opts *createOpts
 }
 
-// map of supported test types -> label:value
-var supportedTestTypes = map[string]string{
-	"C/C++":  string(config.CPP),
-	"Java":   string(config.Java),
-	"Kotlin": string(config.Kotlin),
-}
-
 func New() *cobra.Command {
 	return newWithOptions(&createOpts{})
 }
 
 func newWithOptions(opts *createOpts) *cobra.Command {
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		supportedTestTypes["JavaScript"] = string(config.JavaScript)
-		supportedTestTypes["TypeScript"] = string(config.TypeScript)
-	}
-
 	var bindFlags func()
 
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(supportedTestTypes), "|")),
+		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(config.SupportedTestTypes()), "|")),
 		Short: "Create a new fuzz test",
 		Long: `This command creates a new templated fuzz test source file in the current directory.
 After running this command, you should edit the created file in order to
@@ -105,7 +93,7 @@ fuzz test via 'cifuzz run'.`,
 			return cmd.run()
 		},
 		Args:      cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: maps.Values(supportedTestTypes),
+		ValidArgs: maps.Values(config.SupportedTestTypes()),
 	}
 
 	bindFlags = cmdutils.AddFlags(cmd,
@@ -157,7 +145,7 @@ to keep them close to the tested code - just like regular unit tests.`)
 
 // getTestType returns the test type (selected by argument or input dialog)
 func (c *createCmd) getTestType() (config.FuzzTestType, error) {
-	userSelectedType, err := dialog.Select("Select type of the fuzz test", supportedTestTypes, true)
+	userSelectedType, err := dialog.Select("Select type of the fuzz test", config.SupportedTestTypes(), true)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
