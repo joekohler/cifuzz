@@ -129,11 +129,11 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	if !slices.Equal(b.Sanitizers, []string{"coverage"}) {
 		// We compile the dumper without any user-provided flags. This
 		// should be safe as it does not use any stdlib functions.
-		dumperSource, err := runfiles.Finder.DumperSourcePath()
+		dumperSource, err := b.RunfilesFinder.DumperSourcePath()
 		if err != nil {
 			return nil, err
 		}
-		clang, err := runfiles.Finder.ClangPath()
+		clang, err := b.RunfilesFinder.ClangPath()
 		if err != nil {
 			return nil, err
 		}
