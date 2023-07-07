@@ -1,114 +1,111 @@
-const { danger, warn, message, markdown } = require("danger");
+const { danger, warn, markdown } = require("danger");
 const { basename, dirname } = require("path");
 
-// Check for description
-if (!danger.github.pr.body || danger.github.pr.body.length <= 0) {
-	warn(
-		"This PR doesn't have a description. " +
-			"We recommend following the template to include all necessary information."
-	);
-} else {
-	// Say thanks if contributors use the template
-	if (
-		danger.github.pr.body?.includes("Motivation/Context") &&
-		danger.github.pr.body?.includes("Description") &&
-		danger.github.pr.body?.includes("How to use/reproduce")
-	) {
-		markdown("Thank you for using the PR template ❤️");
-	}
+const goFileFilter = fileName => fileName.includes(".go") && !fileName.includes("_test.go");
+const testFileFilter = fileName => fileName.includes("_test.go");
+
+const createdGoFiles = danger.git.created_files.filter(goFileFilter);
+const createdTestFiles = danger.git.created_files.filter(testFileFilter);
+const modifiedGoFiles = danger.git.modified_files.filter(goFileFilter);
+const modifiedTestFiles = danger.git.modified_files.filter(testFileFilter);
+
+// Warnings
+checkDescription();
+prSize();
+missingTestsForCreatedFiles();
+missingTestsForModifiedFiles();
+
+// Encouragement
+newTestsForExistingFiles();
+removedMoreCodeThanAdded();
+
+function checkDescription() {
+  if (!danger.github.pr.body || danger.github.pr.body.length <= 0) {
+    warn(`This PR doesn't have a description. 
+    We recommend following the template to include all necessary information.`);
+  } else {
+    if (
+      danger.github.pr.body?.includes("Motivation/Context") &&
+      danger.github.pr.body?.includes("Description") &&
+      danger.github.pr.body?.includes("How to use/reproduce")
+    ) {
+      markdown("Thank you for using the PR template ❤️");
+    }
+  }
 }
 
-// Check if PR is too big
-if (danger.github.pr.changed_files > 15) {
-	warn(
-		`This PR changes a lot of files (${danger.github.pr.changed_files}). ` +
-			"It could be useful to break it up into multiple PRs to keep your changes simple and easy to review."
-	);
+function prSize() {
+  if (danger.github.pr.changed_files > 15) {
+    warn(`This PR changes a lot of files (${danger.github.pr.changed_files}). 
+      It could be useful to break it up into multiple PRs to keep your changes simple and easy to review.`);
+  }
 }
 
-const createdGoFiles = danger.git.created_files.filter(
-	(fileName) => fileName.includes(".go") && !fileName.includes("_test.go")
-);
-const createdTestFiles = danger.git.created_files.filter((fileName) =>
-	fileName.includes("_test.go")
-);
+function missingTestsForCreatedFiles() {
+  if (createdGoFiles?.length > 0) {
+    const missingTestsForCreatedGoFiles = createdGoFiles.filter(x => {
+      // Create the test file names for the go file and check
+      // if it can be found in the list of created test files
+      const filePath = dirname(x);
+      const testFile = basename(x).replace(".go", "_test.go");
+      return !createdTestFiles.includes(`${filePath}/${testFile}`);
+    });
 
-// Checking for missing tests in created files
-if (createdGoFiles?.length > 0) {
-	const missingTestsForCreatedGoFiles = createdGoFiles.filter(function (x) {
-		// Create the test file names for the go file and check
-		// if it can be found in the list of created test files
-		const filePath = dirname(x);
-		const testFile = basename(x).replace(".go", "_test.go");
-		return !createdTestFiles.includes(`${filePath}/${testFile}`);
-	});
-
-	// No idea why these extra lines are necessary
-	// but without them the bullet points *sometimes* don't work
-	if (missingTestsForCreatedGoFiles?.length > 0) {
-		const message = `
-
+    // No idea why these extra lines are necessary
+    // but without them the bullet points *sometimes* don't work
+    if (missingTestsForCreatedGoFiles?.length > 0) {
+      warn(`
   The following created files don't have corresponding test files:
   - [ ] ${missingTestsForCreatedGoFiles.join("\n - [ ]")}
   
-  If you checked the file and there is no need for the test, you can tick the checkbox.`;
-		warn(message);
-	}
+  If you checked the file and there is no need for the test, you can tick the checkbox.`);
+    }
+  }
 }
 
-// Say thanks for adding new tests for already existing files
-if (createdTestFiles?.length > 0) {
-	const expandedTestCoverage = createdTestFiles.filter(function (x) {
-		// Create the go file names for the test file and check
-		// if it can be found in the list of created go files
-		const filePath = dirname(x);
-		const file = basename(x).replace("_test.go", ".go");
-		return !createdGoFiles.includes(`${filePath}/${file}`);
-	});
+function missingTestsForModifiedFiles() {
+  if (modifiedGoFiles?.length > 0) {
+    const missingTestsForModifiedGoFiles = modifiedGoFiles.filter(x => {
+      // Create the test file names for the go file and check
+      // if it can be found in the list of modified or created test files
+      const filePath = dirname(x);
+      const testFile = basename(x).replace(".go", "_test.go");
+      return (
+        !modifiedTestFiles.includes(`${filePath}/${testFile}`) &&
+        !createdTestFiles.includes(`${filePath}/${testFile}`)
+      );
+    });
 
-	if (expandedTestCoverage?.length > 0) {
-		markdown(
-			"You're a rockstar for creating tests for files that didn't have any yet ⭐"
-		);
-	}
-}
-
-// Checking for missing tests in modified files
-// Only check this if files have been modified to make the bot faster
-const modifiedGoFiles = danger.git.modified_files.filter(
-	(fileName) => fileName.includes(".go") && !fileName.includes("_test.go")
-);
-
-if (modifiedGoFiles?.length > 0) {
-	const modifiedTestFiles = danger.git.modified_files.filter((fileName) =>
-		fileName.includes("_test.go")
-	);
-
-	const missingTestsForModifiedGoFiles = modifiedGoFiles.filter(function (x) {
-		// Create the test file names for the go file and check
-		// if it can be found in the list of modified or created test files
-		const filePath = dirname(x);
-		const testFile = basename(x).replace(".go", "_test.go");
-		return (
-			!modifiedTestFiles.includes(`${filePath}/${testFile}`) &&
-			!createdTestFiles.includes(`${filePath}/${testFile}`)
-		);
-	});
-
-	// No idea why these extra lines are necessary
-	// but without them the bullet points *sometimes* don't work
-	if (missingTestsForModifiedGoFiles?.length > 0) {
-		const message = `
-
+    // No idea why these extra lines are necessary
+    // but without them the bullet points *sometimes* don't work
+    if (missingTestsForModifiedGoFiles?.length > 0) {
+      warn(`
   The following files have been modified but their tests have not changed:
   - [ ] ${missingTestsForModifiedGoFiles.join("\n - [ ] ")}
   
-  If you checked the file and there is no need for the test, you can tick the checkbox.`;
-		warn(message);
-	}
+  If you checked the file and there is no need for the test, you can tick the checkbox.`);
+    }
+  }
 }
 
-// Congratulate for removing more lines than adding
-if (danger.github.pr.deletions > danger.github.pr.additions) {
-	markdown("You removed more lines of code than you added, nice cleanup 🧹");
+function newTestsForExistingFiles() {
+  if (createdTestFiles?.length > 0) {
+    const expandedTestCoverage = createdTestFiles.filter(x => {
+      // Create the go file names for the test file and check
+      // if it can be found in the list of created go files
+      const filePath = dirname(x);
+      const file = basename(x).replace("_test.go", ".go");
+      return !createdGoFiles.includes(`${filePath}/${file}`);
+    });
+
+    if (expandedTestCoverage?.length > 0) {
+      markdown(`You're a rockstar for creating tests for files without any ⭐`);
+    }
+  }
+}
+
+function removedMoreCodeThanAdded() {
+  if (danger.github.pr.deletions > danger.github.pr.additions) {
+    markdown(`You removed more lines of code than you added, nice cleanup 🧹`);
+  }
 }
