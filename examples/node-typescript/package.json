@@ -2,7 +2,7 @@
 	"name": "node-typescript",
 	"scripts": {
 		"build": "tsc",
-		"dryRun": "jest",
+		"test": "jest",
 		"fuzz": "JAZZER_FUZZ=1 jest --coverage",
 		"coverage": "jest --coverage"
 	},
