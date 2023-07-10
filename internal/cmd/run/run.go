@@ -265,6 +265,10 @@ depends on the build system configured for the project.
 			}
 
 			if opts.BuildSystem == config.BuildSystemNodeJS {
+				if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+					fmt.Println("cifuzz does not support Node.js projects yet.")
+					os.Exit(0)
+				}
 				// Check if the fuzz test contains a filter for the test name
 				if strings.Contains(args[0], ":") {
 					split := strings.Split(args[0], ":")
