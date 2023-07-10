@@ -1,0 +1,5 @@
+{
+	"includes": ["ExploreMe", "FuzzTestCase.fuzz"],
+	"excludes": ["node_modules"],
+	"fuzzerOptions": ["-max_len=8192"]
+}
