@@ -90,8 +90,11 @@ func TestIntegration_NodeJS_InitCreateRun(t *testing.T) {
 	modifyFuzzTestToCallFunction(t, fuzzTestPath)
 	// Run the fuzz test
 	expectedOutputExp := regexp.MustCompile("Crash!")
+	// setting -max_len to 8192 in ".jazzerjsrc" file to test if the file is read and picked up
+	unexpectedOutputExp := regexp.MustCompile("INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes")
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+		ExpectedOutputs:  []*regexp.Regexp{expectedOutputExp},
+		UnexpectedOutput: unexpectedOutputExp,
 	})
 
 	// Check that the findings command lists the finding
@@ -108,7 +111,6 @@ func TestIntegration_NodeJS_InitCreateRun(t *testing.T) {
 			Function:    "exploreMe",
 		},
 	}
-
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
 }
 
