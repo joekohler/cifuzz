@@ -11,26 +11,31 @@ project. To do so, execute the following command:
 To integrate with your existing jest setup, please add this to your
 'jest.config.ts':
 
-    "jest": {
-      "projects": [
+    import type { Config } from "jest";
+
+    const config: Config = {
+      verbose: true,
+      projects: [
         {
-          "displayName": "Jest",
-          "preset": "ts-jest",
+           displayName: "Jest",
+           preset: "ts-jest",
         },
         {
-          "displayName": {
-            "name": "Jazzer.js",
-            "color": "cyan",
+           displayName: {
+             name: "Jazzer.js",
+             color: "cyan",
           },
-          "preset": "ts-jest",
-          "runner": "@jazzer.js/jest-runner",
-          "testEnvironment": "node",
-          "testMatch": ["<rootDir>/*.fuzz.[jt]s"],
+          preset: "ts-jest",
+          runner: "@jazzer.js/jest-runner",
+          testEnvironment: "node",
+          testMatch: ["<rootDir>/*.fuzz.[jt]s"],
         },
       ],
-      "coveragePathIgnorePatterns": ["/node_modules/", "/dist/"],
-      "modulePathIgnorePatterns": ["/node_modules", "/dist/"],
-    }
+      coveragePathIgnorePatterns: ["/node_modules/", "/dist/"],
+      modulePathIgnorePatterns: ["/node_modules", "/dist/"],
+    };
+
+    export default config;
 
 To introduce the fuzz function types globally, add the following import to globals.d.ts:
 
