@@ -101,6 +101,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		Metrics: metricsList,
 		FuzzTargetConfig: FuzzTargetConfig{
 			Name:        fuzzTargetConfigName,
+			DisplayName: fuzzTarget,
 			CAPIFuzzTarget: CAPIFuzzTarget{
 				APIFuzzTarget: APIFuzzTarget{
 					RelativePath: fuzzTarget,
