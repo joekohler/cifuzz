@@ -21,15 +21,15 @@ type Metrics struct {
 }
 
 type FuzzTargetConfig struct {
-	Name string `json:"name"`
-	CAPI CAPI   `json:"c_api"`
+	Name              string `json:"name"`
+	CAPIFuzzTarget    `json:"c_api"`
 }
 
-type CAPI struct {
-	API API `json:"api"`
+type CAPIFuzzTarget struct {
+	APIFuzzTarget `json:"api"`
 }
 
-type API struct {
+type APIFuzzTarget struct {
 	RelativePath string `json:"relative_path"`
 }
 
