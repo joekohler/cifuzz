@@ -37,7 +37,7 @@ type Campaign struct {
 // returns the name of the campaign and fuzzing run. The campaign and fuzzing
 // run name is used to identify the campaign run in the API for consecutive
 // calls.
-func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, numBuildJobs uint) (string, string, error) {
+func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) (string, string, error) {
 	fuzzTargetId := base64.URLEncoding.EncodeToString([]byte(fuzzTarget))
 
 	// generate a short random string to use as the campaign run name
