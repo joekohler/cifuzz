@@ -193,10 +193,8 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 	return installDir
 }
 
+// modifyFuzzTestToCallFunction modifies the fuzz test stub created by `cifuzz create` to actually call a function.
 func ModifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
-	// Modify the fuzz test stub created by `cifuzz create` to actually
-	// call a function.
-
 	f, err := os.OpenFile(fuzzTestPath, os.O_RDWR, 0700)
 	require.NoError(t, err)
 	defer f.Close()

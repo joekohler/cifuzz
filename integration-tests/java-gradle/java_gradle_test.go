@@ -164,10 +164,8 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	}
 }
 
+// modifyFuzzTestToCallFunction modifies the fuzz test stub created by `cifuzz create` to actually call a function.
 func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
-	// Modify the fuzz test stub created by `cifuzz create` to actually
-	// call a function.
-
 	f, err := os.OpenFile(fuzzTestPath, os.O_RDWR, 0700)
 	require.NoError(t, err)
 	defer f.Close()

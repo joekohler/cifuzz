@@ -139,7 +139,7 @@ func getJestConfig(t *testing.T, instructions []string) string {
 	return ""
 }
 
-// Modify the fuzz test stub created by `cifuzz create` to actually call a function.
+// modifyFuzzTestToCallFunction modifies the fuzz test stub created by `cifuzz create` to actually call a function.
 func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	f, err := os.OpenFile(fuzzTestPath, os.O_RDWR, 0o700)
 	require.NoError(t, err)
