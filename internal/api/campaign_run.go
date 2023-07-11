@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
 )
@@ -37,7 +38,7 @@ type Campaign struct {
 // returns the name of the campaign and fuzzing run. The campaign and fuzzing
 // run name is used to identify the campaign run in the API for consecutive
 // calls.
-func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) (string, string, error) {
+func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTarget string, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) (string, string, error) {
 	fuzzTargetId := base64.URLEncoding.EncodeToString([]byte(fuzzTarget))
 
 	// generate a short random string to use as the campaign run name
@@ -90,6 +91,22 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		}
 	}
 
+	apiFuzzTarget := APIFuzzTarget{
+		RelativePath: fuzzTarget,
+	}
+	fuzzTargetConfig := FuzzTargetConfig{
+		Name:        fuzzTargetConfigName,
+		DisplayName: fuzzTarget,
+	}
+	switch buildSystem {
+	case config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemOther:
+		fuzzTargetConfig.CAPIFuzzTarget = &CAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
+	case config.BuildSystemMaven, config.BuildSystemGradle:
+		fuzzTargetConfig.JavaAPIFuzzTarget = &JavaAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
+	default:
+		return "", "", errors.Errorf("Unsupported build system: %s", buildSystem)
+	}
+
 	fuzzingRun := FuzzingRun{
 		Name:        fuzzingRunName,
 		DisplayName: "cifuzz-fuzzing-run",
@@ -98,16 +115,8 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 			Engine:       "LIBFUZZER",
 			NumberOfJobs: 4,
 		},
-		Metrics: metricsList,
-		FuzzTargetConfig: FuzzTargetConfig{
-			Name:        fuzzTargetConfigName,
-			DisplayName: fuzzTarget,
-			CAPIFuzzTarget: CAPIFuzzTarget{
-				APIFuzzTarget: APIFuzzTarget{
-					RelativePath: fuzzTarget,
-				},
-			},
-		},
+		Metrics:          metricsList,
+		FuzzTargetConfig: fuzzTargetConfig,
 	}
 
 	campaignRunName, err := url.JoinPath(project, "campaign_runs", fmt.Sprintf("cifuzz-campaign-run-%s", hex.EncodeToString(randBytes)))

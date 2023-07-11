@@ -21,12 +21,17 @@ type Metrics struct {
 }
 
 type FuzzTargetConfig struct {
-	Name              string `json:"name"`
-	DisplayName       string `json:"display_name"`
-	CAPIFuzzTarget    `json:"c_api"`
+	Name               string `json:"name"`
+	DisplayName        string `json:"display_name"`
+	*CAPIFuzzTarget    `json:"c_api,omitempty"`
+	*JavaAPIFuzzTarget `json:"java_api,omitempty"`
 }
 
 type CAPIFuzzTarget struct {
+	APIFuzzTarget `json:"api"`
+}
+
+type JavaAPIFuzzTarget struct {
 	APIFuzzTarget `json:"api"`
 }
 

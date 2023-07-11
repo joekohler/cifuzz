@@ -429,7 +429,7 @@ func (c *runCmd) run() error {
 
 	// check if there are findings that should be uploaded
 	if authenticatedUser && len(c.reportHandler.Findings) > 0 {
-		err = c.uploadFindings(c.opts.fuzzTest, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics)
+		err = c.uploadFindings(c.opts.fuzzTest, c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics)
 		if err != nil {
 			return err
 		}
@@ -842,7 +842,7 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 	return &errorDetails, nil
 }
 
-func (c *runCmd) uploadFindings(fuzzTarget string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) error {
+func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) error {
 	token := auth.GetToken(c.opts.Server)
 	if token == "" {
 		return errors.New("No access token found")
@@ -894,7 +894,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	}
 
 	// create campaign run on server for selected project
-	campaignRunName, fuzzingRunName, err := c.apiClient.CreateCampaignRun(project, token, fuzzTarget, firstMetrics, lastMetrics)
+	campaignRunName, fuzzingRunName, err := c.apiClient.CreateCampaignRun(project, token, fuzzTarget, buildSystem, firstMetrics, lastMetrics)
 	if err != nil {
 		return err
 	}
