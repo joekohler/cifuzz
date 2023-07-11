@@ -57,7 +57,7 @@ function missingTestsForCreatedFiles() {
 		if (missingTestsForCreatedGoFiles?.length > 0) {
 			warn(`
   The following created files don't have corresponding test files:
-  - [ ] ${missingTestsForCreatedGoFiles.join("\n - [ ]")}
+  - [ ] ${missingTestsForCreatedGoFiles.join("\n - [ ] ")}
   
   If you checked the file and there is no need for the test, you can tick the checkbox.`);
 		}
