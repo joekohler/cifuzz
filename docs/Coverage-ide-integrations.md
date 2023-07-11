@@ -54,6 +54,14 @@ your test resources and produce a coverage report.
 
 ![Jazzer fuzz test in IntelliJ](/docs/assets/coverage_intellij_jazzer.gif)
 
+### Node.js (in IntelliJ)
+
+You can start a coverage with "Run ... with Coverage". This will run the
+fuzz test with the finding inputs from the `*.fuzz` directory next to
+your fuzz test file.
+
+![Jazzer.js fuzz test in IntelliJ](/docs/assets/coverage_intellij_jazzerjs.gif)
+
 ## VS Code
 
 ### CMake/Maven/Gradle

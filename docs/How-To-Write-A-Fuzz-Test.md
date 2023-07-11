@@ -75,3 +75,38 @@ public class FuzzTestCase {
 ```
 
 </details>
+
+<details>
+<summary>Node.js</summary>
+
+A javascript example can look like this:
+
+```javascript
+const { FuzzedDataProvider } = require("@jazzer.js/core");
+
+test.fuzz("My fuzz test", data => {
+	const fuzzed_data = new FuzzedDataProvider(data);
+	const a = fuzzed_data.consumeNumber();
+	const b = fuzzed_data.consumeNumber();
+	const c = fuzzed_data.consumeString(8);
+
+	myFunction(a, b, c);
+});
+```
+
+A typescript example can look like this:
+
+```typescript
+import { exploreMe } from "./ExploreMe";
+
+test.fuzz("My fuzz test", (data: Buffer) => {
+	const fuzzed_data: FuzzedDataProvider = new FuzzedDataProvider(data);
+	const a: number = fuzzed_data.consumeNumber();
+	const b: number = fuzzed_data.consumeNumber();
+	const c: string = fuzzed_data.consumeString(8);
+
+	myFunction(a, b, c);
+});
+```
+
+</details>

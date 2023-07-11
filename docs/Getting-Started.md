@@ -25,7 +25,7 @@ commands with all supported options and parameters by calling `cifuzz command
 4. Start fuzzing by executing `cifuzz run my_fuzz_test_1`. **cifuzz** now builds
    the fuzz test and starts a fuzzing run.
 
-#### Info:
+#### Java/Kotlin:
 
 For Java/Kotlin projects, users need to specify the fuzz target identifier in
 reverse domain name notation, e.g., `com.example.FuzzTestCase`. For this
@@ -43,6 +43,34 @@ Example: `cifuzz run com.example.FuzzTestCase::myNamedFuzzTest`
 This will look for the class name `FuzzTestCase` in the package `com.example`
 and run the `myNamedFuzzTest` method. We provide tab completion for named fuzz
 test methods if cifuzz finds more than one fuzz test in the JVM class.
+
+#### Javascript/Typescript:
+
+For Javascript/Typescript projects, users need to specify a fuzz target
+identifier consisting of a regex path pattern that is matched against
+all test paths. The first test, that is matched by that pattern, gets
+executed.
+
+As an example, consider the case of two fuzz tests:
+
+- project-root/tests/FuzzTestCase1.fuzz.js
+- project-root/tests/FuzzTestCase2.fuzz.js
+
+`cifuzz run FuzzTestCase` executes the first fuzz test, whose path
+contains `FuzzTestCase`. The evaluation order is determined by
+the jest test runner. `FuzzTestCase2` can be
+executed explicitely by running `cifuzz run FuzzTestCase2`.
+
+By default, the first fuzz test in that file will by executed.
+If a test file contains multiple fuzz tests, one specific
+fuzz test can be selected by specifying a regex test name pattern.
+The regex is matched against the full name, which is a combination
+of the test name and all its surrounding describe blocks.
+
+Example: `cifuzz run FuzzTestCase1:"My fuzz test"`
+
+The first fuzz test in FuzzTestCase1.fuzz.js matching "My fuzz test"
+will be executed.
 
 ## Generate coverage report
 

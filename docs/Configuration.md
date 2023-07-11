@@ -79,11 +79,16 @@ dict: path/to/dictionary.dct
 ### engine-args
 
 Command-line arguments to pass to libFuzzer or Jazzer for running fuzz tests.
-Engine-args are not supported for running `cifuzz coverage` on JVM-projects.
+Engine-args are not supported for running `cifuzz coverage` on JVM-projects
+and are not supported for Node.js projects.
 
 For possible libFuzzer options see https://llvm.org/docs/LibFuzzer.html#options.
 
 For advanced configuration with Jazzer parameters see https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/advanced.md.
+
+Fuzzer customization for Node.js projects can be specified in `.jazzerjsrc.json`
+in the root project directory. See https://github.com/CodeIntelligenceTesting/jazzer.js/blob/main/docs/jest-integration.md
+for further information.
 
 #### Example Libfuzzer
 

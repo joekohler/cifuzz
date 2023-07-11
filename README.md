@@ -292,6 +292,52 @@ repository.
 
 </details>
 
+<details>
+ <summary>Node.js</summary>
+
+**Info:** Support for Node.js projects is still experimental and
+hidden behind a feature flag. You can try it out by running:
+
+```bash
+export CIFUZZ_PRERELEASE=1
+```
+
+- [Node.js](https://nodejs.org) >= 16.0
+
+**Ubuntu / Debian**
+
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
+```bash
+sudo apt install nodejs
+```
+
+**Arch**
+
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
+```bash
+sudo pacman -S nodejs
+```
+
+**macOS**
+
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
+```bash
+brew install nodejs
+```
+
+**Windows**
+
+<!-- when changing this, please make sure it is in sync with the E2E pipeline -->
+
+```bash
+choco install nodejs
+```
+
+</details>
+
 ### Windows
 
 In order to get font colors and glyphs to render properly install the
