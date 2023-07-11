@@ -141,7 +141,8 @@ func AddEngineArgFlag(cmd *cobra.Command) func() {
 	cmd.Flags().StringArray("engine-arg", nil,
 		"Command-line `argument` to pass to the fuzzing engine.\n"+
 			"See https://llvm.org/docs/LibFuzzer.html#options.\n"+
-			"This flag can be used multiple times.")
+			"This flag can be used multiple times.\n"+
+			"Not supported for Node.js projects.")
 	return func() {
 		ViperMustBindPFlag("engine-args", cmd.Flags().Lookup("engine-arg"))
 	}
