@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/installer"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -106,4 +107,25 @@ func MkdirTemp(t *testing.T, dir, pattern string) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
 	return tempDir
+}
+
+// RepoRoot returns the path pointing to the root of the cifuzz project
+func RepoRoot(t *testing.T) string {
+	_, b, _, _ := runtime.Caller(0)
+	// Note: The number of levels we go up here has to be adjusted if
+	// this source file is moved.
+	basepath := filepath.Dir(filepath.Dir(filepath.Dir(b)))
+	return basepath
+}
+
+// SetupCoverage creates a directory for coverage data and sets the
+// needed environment variable
+func SetupCoverage(t *testing.T, env []string, subdir string) []string {
+	t.Helper()
+	covDir := filepath.Join(RepoRoot(t), "coverage", subdir)
+	err := os.MkdirAll(covDir, 0755)
+	require.NoError(t, err)
+	env, err = envutil.Setenv(env, "GOCOVERDIR", covDir)
+	require.NoError(t, err)
+	return env
 }

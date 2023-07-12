@@ -33,7 +33,10 @@ func TestIntegration_Version(t *testing.T) {
 	require.NoError(t, err)
 
 	cifuzz := filepath.Join(testDir, "bin", "cifuzz")
-	out, err := exec.Command(cifuzz, "--version").Output()
+	cmd := exec.Command(cifuzz, "--version")
+	cmd.Env = testutil.SetupCoverage(t, os.Environ(), "integration")
+	require.NoError(t, err)
+	out, err := cmd.Output()
 	require.NoError(t, err)
 
 	assert.Contains(t, string(out), version)

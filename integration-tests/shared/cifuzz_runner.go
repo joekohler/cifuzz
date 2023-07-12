@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
@@ -169,7 +170,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		args...,
 	)
 	cmd.Dir = opts.WorkDir
-	cmd.Env = opts.Env
+	cmd.Env = testutil.SetupCoverage(t, opts.Env, "integration")
 	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
 	require.NoError(t, err)
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)

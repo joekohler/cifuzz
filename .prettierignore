@@ -2,3 +2,4 @@ third-party/
 **/dist/*.js
 package-lock.json
 **/.cifuzz-*/
+coverage/

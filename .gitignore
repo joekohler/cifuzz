@@ -11,8 +11,7 @@
 /tools/install/bundler/embed/bundle
 /.installer-lock
 
-coverage.out
-*.coverage.html
+coverage/
 
 *.tar
 *.tar.gz
