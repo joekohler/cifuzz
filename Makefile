@@ -95,6 +95,12 @@ install:
 	go run -tags installer cmd/installer/installer.go --verbose
 	$(RM) cmd/installer/build
 
+.PHONY: install/coverage
+install/coverage:
+	go run tools/builder/builder.go --version $(version) --coverage
+	go run -tags installer cmd/installer/installer.go --verbose
+	$(RM) cmd/installer/build
+
 .PHONY: installer
 installer:
 	go run tools/builder/builder.go --version $(version)
@@ -207,10 +213,42 @@ test/e2e-use-installed-cifuzz:
 test/race: deps build/$(current_os)
 	go test -v ./... -race
 
-.PHONY: test/coverage
-test/coverage: deps
-	go test -v ./... -coverprofile coverage.out
-	go tool cover -html coverage.out
+.PHONY: coverage
+coverage: export E2E_TESTS_MATRIX = V
+coverage: deps install/coverage
+coverage:
+	-$(RM) coverage
+	mkdir -p coverage/e2e coverage/unit coverage/integration
+	-go test ./... -cover -args -test.gocoverdir="${PWD}/coverage/unit"
+	go tool covdata func -i=./coverage/unit,./coverage/e2e,./coverage/integration
+
+.PHONY: coverage/merge
+coverage/merge:
+	go tool covdata func -i=./coverage/unit,./coverage/e2e,./coverage/integration
+	go tool covdata textfmt -i=./coverage/unit,./coverage/e2e,./coverage/integration -o coverage/profile
+	go tool cover -html coverage/profile -o coverage/report.html
+
+.PHONY: coverage/e2e
+coverage/e2e: export E2E_TESTS_MATRIX = V
+coverage/e2e: deps install/coverage
+	-$(RM) coverage/e2e
+	mkdir -p coverage/e2e
+	-go test ./e2e-tests/...
+	go tool covdata func -i=./coverage/e2e
+
+.PHONY: coverage/integration
+coverage/integration: deps
+	-$(RM) coverage/integration
+	mkdir -p coverage/integration
+	-go test ./... -run 'TestIntegration.*'
+	go tool covdata func -i=./coverage/integration
+
+.PHONY: coverage/unit
+coverage/unit: deps
+	-$(RM) coverage/unit
+	mkdir -p coverage/unit
+	-go test ./... -short -cover -args -test.gocoverdir="${PWD}/coverage/unit"
+	go tool covdata func -i=./coverage/unit
 
 .PHONY: site/setup
 site/setup:
