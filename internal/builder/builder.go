@@ -30,6 +30,8 @@ type Options struct {
 	TargetDir string
 	GOOS      string
 	GOARCH    string
+	// build cifuzz with coverage instrumentation
+	Coverage bool
 }
 
 func NewCIFuzzBuilder(opts Options) (*CIFuzzBuilder, error) {
@@ -302,7 +304,21 @@ func (i *CIFuzzBuilder) BuildCIFuzz() error {
 	// Build cifuzz
 	ldFlags := fmt.Sprintf("-ldflags=-X code-intelligence.com/cifuzz/internal/version.Version=%s", i.Version)
 	cifuzz := filepath.Join("cmd", "cifuzz", "main.go")
-	cmd := exec.Command("go", "build", "-o", CIFuzzExecutablePath(i.binDir()), ldFlags, cifuzz)
+
+	args := []string{
+		"build",
+		"-o",
+		CIFuzzExecutablePath(i.binDir()),
+		ldFlags,
+	}
+
+	if i.Coverage {
+		args = append(args, "-cover")
+	}
+
+	args = append(args, cifuzz)
+
+	cmd := exec.Command("go", args...)
 	cmd.Dir = i.projectDir
 	cmd.Env = buildEnv
 	cmd.Stderr = os.Stderr

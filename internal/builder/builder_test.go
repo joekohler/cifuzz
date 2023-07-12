@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -24,6 +25,7 @@ func TestIntegration_Version(t *testing.T) {
 		TargetDir: testDir,
 		GOOS:      runtime.GOOS,
 		GOARCH:    runtime.GOARCH,
+		Coverage:  true,
 	})
 	require.NoError(t, err)
 

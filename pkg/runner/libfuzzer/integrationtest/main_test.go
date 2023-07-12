@@ -26,6 +26,7 @@ func TestMain(m *testing.M) {
 	opts := builderPkg.Options{
 		Version:   "dev",
 		TargetDir: filepath.Join(baseTempDir, "install-dir"),
+		Coverage:  true,
 	}
 	builder, err = builderPkg.NewCIFuzzBuilder(opts)
 	if err != nil {

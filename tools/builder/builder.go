@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -22,6 +23,8 @@ func main() {
 	buildDirFlag := flags.String("build-dir", "cmd/installer/build", "the directory where the build results are written to")
 	flags.Bool("verbose", false, "Print verbose output")
 	cmdutils.ViperMustBindPFlag("verbose", flags.Lookup("verbose"))
+	flags.Bool("coverage", false, "activate coverage instrumentation")
+	cmdutils.ViperMustBindPFlag("coverage", flags.Lookup("coverage"))
 
 	if err := flags.Parse(os.Args); err != nil {
 		log.Error(errors.WithStack(err))
@@ -49,6 +52,7 @@ func main() {
 		TargetDir: buildDir,
 		GOOS:      *goos,
 		GOARCH:    *goarch,
+		Coverage:  viper.GetBool("coverage"),
 	}
 
 	builder, err := builderPkg.NewCIFuzzBuilder(opts)

@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 	opts := builderPkg.Options{
 		Version:   "dev",
 		TargetDir: installDir,
+		Coverage:  true,
 	}
 	builder, err := builderPkg.NewCIFuzzBuilder(opts)
 	if err != nil {

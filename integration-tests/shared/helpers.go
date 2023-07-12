@@ -183,7 +183,7 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 		require.NoError(t, err)
 
 		// Build cifuzz in the install directory
-		opts := builderPkg.Options{Version: "dev", TargetDir: installDir}
+		opts := builderPkg.Options{Version: "dev", TargetDir: installDir, Coverage: true}
 		builder, err := builderPkg.NewCIFuzzBuilder(opts)
 		require.NoError(t, err)
 		err = builder.BuildCIFuzzAndDeps()
