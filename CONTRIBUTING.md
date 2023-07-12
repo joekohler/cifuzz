@@ -11,7 +11,7 @@ For more information, see [how to create and publish a new release](./docs/RELEA
 #### Build dependencies:
 
 - [git](https://git-scm.com/)
-- [go >= 1.19](https://go.dev/doc/install)
+- [go >= 1.20](https://go.dev/doc/install)
 - [libcap](https://man7.org/linux/man-pages/man3/libcap.3.html)
 
 #### Test dependencies:
