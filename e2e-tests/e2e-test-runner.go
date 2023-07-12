@@ -14,6 +14,7 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
+	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/cicheck"
 )
@@ -142,6 +143,10 @@ func runTest(t *testing.T, testCase *TestCase) {
 		testCase.CIUser = AnonymousCIUser
 	}
 
+	// using environment variables of the main process to avoid running
+	// cifuzz without any environment (for example without $HOME)
+	testCase.Environment = append(os.Environ(), testCase.Environment...)
+
 	if testCase.CIUser == LoggedInCIUser {
 		if os.Getenv(envvarWithE2EUserToken) == "" {
 			fmt.Println("You are trying to test LoggedIn behavior, you need to set " + envvarWithE2EUserToken + " envvar.")
@@ -153,6 +158,9 @@ func runTest(t *testing.T, testCase *TestCase) {
 	if testCase.CIUser == InvalidTokenCIUser {
 		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN=invalid")
 	}
+
+	// setting up coverage
+	testCase.Environment = testutil.SetupCoverage(t, testCase.Environment, "e2e")
 
 	// Generate all the combinations we want to test
 	testCaseRuns := []testCaseRunOptions{}
@@ -186,9 +194,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 				cmd = exec.Command("cifuzz", testCaseRun.command)
 			}
 
-			// add env vars
-			cmd.Env = append(cmd.Env, testCase.Environment...)
-
+			cmd.Env = testCase.Environment
 			cmd.Dir = contextFolder
 
 			stdout := bytes.Buffer{}
