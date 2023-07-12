@@ -26,13 +26,12 @@ var findingTests = &[]e2e.TestCase{
 		},
 	},
 	{
-		Description:  "finding command ran by an unauthorized user in a project with or without finding details prints findings table without severity score and fuzz test name",
+		Description:  "finding command ran by an unauthorized user in a project with or without finding details prints findings table without severity score",
 		Command:      "finding",
 		SampleFolder: []string{"project-with-findings", "project-with-findings-and-error-details"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stdout, "n/a")
-			assert.NotContains(t, output.Stdout, "my_fuzz_test")
 			assert.Contains(t, output.Stdout, "in exploreMe (src/explore_me.cpp:18:11)")
 		},
 	},
@@ -45,7 +44,6 @@ var findingTests = &[]e2e.TestCase{
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.NotContains(t, output.Stdout, "n/a")
 			assert.Contains(t, output.Stdout, "9.0")
-			assert.Contains(t, output.Stdout, "my_fuzz_test")
 			assert.Contains(t, output.Stdout, "heap buffer overflow")
 			assert.Contains(t, output.Stdout, "in exploreMe (src/explore_me.cpp:18:11)")
 		},
@@ -60,7 +58,7 @@ var findingTests = &[]e2e.TestCase{
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stderr, "Failed to authenticate with the configured API access token.")
 			assert.Contains(t, output.Stderr, "⚠️Invalid token: Received 401 Unauthorized from server ")
-			assert.Contains(t, output.Stderr, "⚠️Not authorized to get error details. Please log in to enable this feature.")
+			assert.Contains(t, output.Stderr, "Detailed error information have *not* been added. Please log in to retrieve additional error details.")
 			// it should not print the actual score
 			assert.Contains(t, output.Stdout, "n/a")
 			assert.NotContains(t, output.Stdout, "9.0")

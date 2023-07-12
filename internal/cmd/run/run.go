@@ -35,7 +35,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
-	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
@@ -336,25 +335,25 @@ depends on the build system configured for the project.
 }
 
 func (c *runCmd) run() error {
-	err := c.checkDependencies()
+	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
 	if err != nil {
 		return err
 	}
-
-	authenticatedUser := false
+	if !authenticated {
+		log.Infof(messaging.UsageWarning())
+	}
 
 	var errorDetails *[]finding.ErrorDetails
-
-	authenticatedUser, err = c.setupSync()
-	if err != nil {
-		return err
-	}
-
-	if authenticatedUser {
+	if authenticated {
 		errorDetails, err = c.errorDetails()
 		if err != nil {
 			return err
 		}
+	}
+
+	err = c.checkDependencies()
+	if err != nil {
+		return err
 	}
 
 	// Create a temporary directory which the builder can use to create
@@ -428,7 +427,7 @@ func (c *runCmd) run() error {
 	}
 
 	// check if there are findings that should be uploaded
-	if authenticatedUser && len(c.reportHandler.Findings) > 0 {
+	if authenticated && len(c.reportHandler.Findings) > 0 {
 		err = c.uploadFindings(c.opts.fuzzTest, c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics)
 		if err != nil {
 			return err
@@ -765,60 +764,6 @@ func (c *runCmd) checkDependencies() error {
 		return cmdutils.WrapSilentError(depsErr)
 	}
 	return nil
-}
-
-// setupSync initiates user dialog and returns if findings should be synced
-func (c *runCmd) setupSync() (bool, error) {
-	interactive := viper.GetBool("interactive")
-	if cicheck.IsCIEnvironment() {
-		interactive = false
-	}
-	var willSync bool
-
-	var err error
-	c.opts.Server, err = api.ValidateAndNormalizeServerURL(c.opts.Server)
-	if err != nil {
-		return false, cmdutils.WrapSilentError(err)
-	}
-
-	authenticated, err := auth.GetAuthStatus(c.opts.Server)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if errors.As(err, &connErr) {
-			log.Warn("Connection to API failed. Skipping sync.")
-			log.Debugf("Connection error: %s (continuing gracefully)", connErr)
-			return false, nil
-		} else {
-			fmt.Println("AUTH STATUS CHECK ERROR")
-			return false, cmdutils.WrapSilentError(err)
-		}
-	}
-
-	if authenticated {
-		willSync = true
-		log.Infof(`✓ You are authenticated with CI Sense.
-Your results will be synced to %s`, c.opts.Server)
-	} else if !interactive {
-		willSync = false
-		log.Warn(`You are not authenticated with CI Sense.
-Your results will not be synced.`)
-	}
-
-	if interactive && !authenticated {
-		// establish server connection to check user auth
-		willSync, err = auth.ShowServerConnectionDialog(c.opts.Server, messaging.Run)
-		if err != nil {
-			var connErr *api.ConnectionError
-			if errors.As(err, &connErr) {
-				log.Warn("Connection to API failed. Skipping sync.")
-				log.Debugf("Connection error: %v (continuing gracefully)", connErr)
-				return false, nil
-			} else {
-				return false, cmdutils.WrapSilentError(err)
-			}
-		}
-	}
-	return willSync, nil
 }
 
 func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {

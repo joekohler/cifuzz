@@ -13,7 +13,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 )
 
 // GetToken returns the API access token for the given server.
@@ -51,7 +50,7 @@ func GetAuthStatus(server string) (bool, error) {
 
 // readTokenInteractively reads the API access token from the user with an
 // interactive dialog prompt.
-func readTokenInteractively(server string, additionalParams *url.Values) (string, error) {
+func readTokenInteractively(server string) (string, error) {
 	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -60,15 +59,6 @@ func readTokenInteractively(server string, additionalParams *url.Values) (string
 	values := url.Values{}
 	values.Set("create", "")
 	values.Add("origin", "cli")
-
-	// Add additional params to existing values
-	if additionalParams != nil {
-		for key, params := range *additionalParams {
-			for _, param := range params {
-				values.Add(key, param)
-			}
-		}
-	}
 
 	url, err := url.Parse(path)
 	if err != nil {
@@ -101,8 +91,8 @@ func readTokenInteractively(server string, additionalParams *url.Values) (string
 
 // ReadCheckAndStoreTokenInteractively reads the API access token from the
 // user, checks if it is valid and stores it.
-func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient, additionalParams *url.Values) (string, error) {
-	token, err := readTokenInteractively(apiClient.Server, additionalParams)
+func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient) (string, error) {
+	token, err := readTokenInteractively(apiClient.Server)
 	if err != nil {
 		return "", err
 	}
@@ -132,23 +122,21 @@ It's possible that the token has been revoked.`)
 				return err
 			}
 			if tryAgain {
-				_, err = ReadCheckAndStoreTokenInteractively(&apiClient, nil)
+				_, err = ReadCheckAndStoreTokenInteractively(&apiClient)
 				if err != nil {
 					return err
 				}
 			}
 		}
 	} else {
-		log.Success("You are logged in.")
+		log.Success("You are authenticated.")
 	}
 	return nil
 }
 
 // ShowServerConnectionDialog ask users if they want to use a SaaS backend
 // if they are not authenticated and returns their wish to authenticate.
-func ShowServerConnectionDialog(server string, context messaging.MessagingContext) (bool, error) {
-	additionalParams := messaging.ShowServerConnectionMessage(server, context)
-
+func ShowServerConnectionDialog(server string) (bool, error) {
 	wishToAuthenticate, err := dialog.Confirm("Do you want to authenticate?", true)
 	if err != nil {
 		return false, err
@@ -156,7 +144,7 @@ func ShowServerConnectionDialog(server string, context messaging.MessagingContex
 
 	if wishToAuthenticate {
 		apiClient := api.APIClient{Server: server}
-		_, err := ReadCheckAndStoreTokenInteractively(&apiClient, additionalParams)
+		_, err := ReadCheckAndStoreTokenInteractively(&apiClient)
 		if err != nil {
 			return false, err
 		}

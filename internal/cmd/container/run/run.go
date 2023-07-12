@@ -14,17 +14,20 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 )
 
 type containerRunOpts struct {
 	bundler.Opts  `mapstructure:",squash"`
 	Interactive   bool   `mapstructure:"interactive"`
+	Server        string `mapstructure:"server"`
 	ContainerPath string `mapstructure:"container"`
 }
 
@@ -110,7 +113,13 @@ container is built and run locally instead of being pushed to a CI Sense server.
 }
 
 func (c *containerRunCmd) run() error {
-	var err error
+	authenticated, err := auth.GetAuthStatus(c.opts.Server)
+	if err != nil {
+		return err
+	}
+	if !authenticated {
+		log.Infof(messaging.UsageWarning())
+	}
 
 	logging.StartBuildProgressSpinner(log.ContainerBuildInProgressMsg)
 	containerID, err := c.buildContainerFromImage()

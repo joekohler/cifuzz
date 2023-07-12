@@ -23,6 +23,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -204,7 +205,13 @@ variable or by running 'cifuzz login' first.
 }
 
 func (c *runRemoteCmd) run() error {
-	var err error
+	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
+	if err != nil {
+		return err
+	}
+	if !authenticated {
+		log.Infof(messaging.UsageWarning())
+	}
 
 	token := auth.GetToken(c.opts.Server)
 	if token == "" {
@@ -223,7 +230,7 @@ func (c *runRemoteCmd) run() error {
 			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
 			return cmdutils.ErrSilent
 		}
-		token, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient, nil)
+		token, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient)
 		if err != nil {
 			return err
 		}

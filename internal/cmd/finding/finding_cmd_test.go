@@ -147,6 +147,18 @@ func TestPrintFinding(t *testing.T) {
 	require.NotContains(t, stdErr, "cifuzz found more extensive information about this finding:")
 }
 
+func TestPrintUsageWarning(t *testing.T) {
+	projectDir := testutil.BootstrapEmptyProject(t, "test-list-findings-")
+	opts := &options{
+		ProjectDir: projectDir,
+		ConfigDir:  projectDir,
+	}
+
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	require.NoError(t, err)
+	require.Contains(t, stdErr, "You are not authenticated with CI Sense.")
+}
+
 func TestPrintFinding_Authenticated(t *testing.T) {
 	t.Setenv("CIFUZZ_API_TOKEN", "token")
 	server := mockserver.New(t)

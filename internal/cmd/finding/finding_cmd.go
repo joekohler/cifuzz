@@ -98,11 +98,8 @@ func (cmd *findingCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	if !authenticated && cmd.opts.Interactive {
-		_, err = auth.ShowServerConnectionDialog(cmd.opts.Server, messaging.Finding)
-		if err != nil {
-			return err
-		}
+	if !authenticated {
+		log.Infof(messaging.UsageWarning())
 	}
 
 	errorDetails, err := cmd.checkForErrorDetails()
@@ -135,13 +132,7 @@ func (cmd *findingCmd) run(args []string) error {
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 1, ' ', 0)
 
 		data := [][]string{
-			{"Severity", "Name", "Description", "Location"},
-		}
-
-		if authenticated {
-			data = [][]string{
-				{"Severity", "Name", "Description", "Fuzz Test", "Location"},
-			}
+			{"Severity", "Name", "Description", "Fuzz Test", "Location"},
 		}
 
 		for _, f := range findings {
@@ -151,34 +142,24 @@ func (cmd *findingCmd) run(args []string) error {
 			if len(f.ShortDescriptionColumns()) > 1 {
 				locationInfo = f.ShortDescriptionColumns()[1]
 			}
-			if authenticated {
-				// check if MoreDetails exists to avoid nil pointer errors
-				if f.MoreDetails != nil {
-					// check if we have a severity and if we have a severity score
-					if f.MoreDetails.Severity != nil {
-						colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
-						score = colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score))
-					}
+			// check if MoreDetails exists to avoid nil pointer errors
+			if f.MoreDetails != nil {
+				// check if we have a severity and if we have a severity score
+				if f.MoreDetails.Severity != nil {
+					colorFunc := getColorFunctionForSeverity(f.MoreDetails.Severity.Score)
+					score = colorFunc(fmt.Sprintf("%.1f", f.MoreDetails.Severity.Score))
 				}
-				data = append(data, []string{
-					score,
-					f.Name,
-					// FIXME: replace f.ShortDescriptionColumns()[0] with
-					// f.MoreDetails.Name once we cover all bugs with our
-					// error-details.json
-					f.ShortDescriptionColumns()[0],
-					// showing the fuzz test name is a SaaS only feature...
-					f.FuzzTest,
-					locationInfo,
-				})
-			} else {
-				data = append(data, []string{
-					score,
-					f.Name,
-					f.ShortDescriptionColumns()[0],
-					locationInfo,
-				})
 			}
+			data = append(data, []string{
+				score,
+				f.Name,
+				// FIXME: replace f.ShortDescriptionColumns()[0] with
+				// f.MoreDetails.Name once we cover all bugs with our
+				// error-details.json
+				f.ShortDescriptionColumns()[0],
+				f.FuzzTest,
+				locationInfo,
+			})
 		}
 		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
 		if err != nil {
@@ -224,11 +205,7 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		if err != nil {
 			return err
 		}
-
-		// only show more details if the user is authenticated
-		if auth, err := auth.GetAuthStatus(cmd.opts.Server); err == nil && auth {
-			PrintMoreDetails(f)
-		}
+		PrintMoreDetails(f)
 	}
 	return nil
 }
