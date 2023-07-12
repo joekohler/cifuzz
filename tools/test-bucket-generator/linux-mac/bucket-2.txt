@@ -1,5 +1,4 @@
 code-intelligence.com/cifuzz/integration-tests/bazel
 code-intelligence.com/cifuzz/integration-tests/java-gradle
-code-intelligence.com/cifuzz/integration-tests/java-maven-spring
-code-intelligence.com/cifuzz/pkg/runner/libfuzzer/integrationtest
+code-intelligence.com/cifuzz/integration-tests/errors/cpp
 code-intelligence.com/cifuzz/integration-tests/other
