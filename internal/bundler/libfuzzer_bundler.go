@@ -378,6 +378,8 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	systemDeps []string,
 	err error,
 ) {
+	log.Debugf("Assembling artifacts for %s", buildResult.Executable)
+
 	fuzzTestExecutableAbsPath := buildResult.Executable
 
 	// Add all build artifacts under a subdirectory of the fuzz test base path so that these files don't clash with
@@ -425,6 +427,7 @@ func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
 	externalLibrariesPrefix := ""
 depsLoop:
 	for _, dep := range buildResult.RuntimeDeps {
+		log.Debugf("Adding runtime dependency %s", dep)
 		var isBelowBuildDir bool
 		isBelowBuildDir, err = fileutil.IsBelow(dep, buildResult.BuildDir)
 		if err != nil {
@@ -476,6 +479,7 @@ depsLoop:
 		// 1. is handled by ignoring these runtime dependencies.
 		for _, wellKnownSystemLibrary := range wellKnownSystemLibraries[runtime.GOOS] {
 			if wellKnownSystemLibrary.MatchString(dep) {
+				log.Debugf("Runtime dependency %s is a standard system library and will not be added", dep)
 				continue depsLoop
 			}
 		}
@@ -484,6 +488,7 @@ depsLoop:
 		// required contents of the Docker image specified as the run environment.
 		if fileutil.IsSystemLibrary(dep) {
 			systemDeps = append(systemDeps, dep)
+			log.Debugf("Runtime dependency %s is a standard system library and will not be added", dep)
 			continue depsLoop
 		}
 
@@ -511,6 +516,7 @@ depsLoop:
 	// Add dictionary to archive
 	var archiveDict string
 	if b.opts.Dictionary != "" {
+		log.Debugf("Adding dictionary %s", b.opts.Dictionary)
 		archiveDict = filepath.Join(fuzzTestPrefix(buildResult), "dict")
 		err = b.archiveWriter.WriteFile(archiveDict, b.opts.Dictionary)
 		if err != nil {
@@ -527,6 +533,7 @@ depsLoop:
 		return
 	}
 	if exists {
+		log.Debugf("Adding user-provided seeds to seed corpus from %s", seedCorpusDirs)
 		seedCorpusDirs = append([]string{buildResult.SeedCorpus}, seedCorpusDirs...)
 	}
 	var archiveSeedsDir string

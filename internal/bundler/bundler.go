@@ -87,7 +87,6 @@ func (b *Bundler) Bundle() (string, error) {
 		return "", err
 	}
 
-	// Container bundle does not define build.log?
 	if b.opts.BundleBuildLogFile != "" {
 		err = archiveWriter.WriteFile("build.log", b.opts.BundleBuildLogFile)
 		if err != nil {
@@ -132,6 +131,8 @@ func (b *Bundler) createEmptyBundle() (*os.File, error) {
 		return nil, errors.Wrap(errors.WithStack(err), "failed to create fuzzing artifact archive")
 	}
 
+	log.Debugf("Bundle output path: %s", b.opts.OutputPath)
+
 	return bundle, nil
 }
 
@@ -147,6 +148,8 @@ func (b *Bundler) determineDockerImageForBundle() string {
 			dockerImageUsedInBundle = "eclipse-temurin:20"
 		}
 	}
+
+	log.Debugf("Bundle uses %s as docker image", dockerImageUsedInBundle)
 
 	return dockerImageUsedInBundle
 }
@@ -199,6 +202,8 @@ func (b *Bundler) copyAdditionalFilesToArchive(archiveWriter archive.ArchiveWrit
 		if err != nil {
 			return err
 		}
+
+		log.Debugf("Adding additional dir/file %s", arg)
 
 		if !filepath.IsAbs(source) {
 			source = filepath.Join(b.opts.ProjectDir, source)
