@@ -115,7 +115,11 @@ func (b *Bundler) createEmptyBundle() (*os.File, error) {
 	archiveExt := ".tar.gz"
 
 	if b.opts.OutputPath != "" {
-		// do nothing
+		// Check that outpath path makes sense
+		if !strings.HasSuffix(b.opts.OutputPath, archiveExt) {
+			log.Debugf("Provided output path was missing extension, %s has been added", archiveExt)
+			b.opts.OutputPath += archiveExt
+		}
 	} else if len(b.opts.FuzzTests) == 1 {
 		fuzzTestName := strings.ReplaceAll(b.opts.FuzzTests[0], "::", "_")
 		b.opts.OutputPath = filepath.Base(fuzzTestName) + archiveExt
