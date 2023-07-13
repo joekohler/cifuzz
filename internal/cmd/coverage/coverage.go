@@ -3,6 +3,7 @@ package coverage
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	gradleCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/gradle"
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
+	nodeCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/node"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
@@ -49,10 +51,11 @@ type coverageOptions struct {
 	Preset                string
 	ProjectDir            string
 
-	fuzzTest    string
-	argsToPass  []string
-	buildStdout io.Writer
-	buildStderr io.Writer
+	fuzzTest        string
+	testNamePattern string
+	argsToPass      []string
+	buildStdout     io.Writer
+	buildStderr     io.Writer
 }
 
 func (opts *coverageOptions) validate() error {
@@ -69,12 +72,6 @@ func (opts *coverageOptions) validate() error {
 		if err != nil {
 			return err
 		}
-	}
-
-	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
-		err = errors.Errorf(config.NotSupportedErrorMessage("coverage", opts.BuildSystem))
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
 	}
 
 	err = config.ValidateBuildSystem(opts.BuildSystem)
@@ -163,6 +160,18 @@ or a lcov trace file.
 				return cmdutils.WrapSilentError(err)
 			}
 
+			if opts.BuildSystem == config.BuildSystemNodeJS {
+				if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+					fmt.Println("cifuzz does not support Node.js projects yet.")
+					os.Exit(0)
+				}
+				// Check if the fuzz test contains a filter for the test name
+				if strings.Contains(args[0], ":") {
+					split := strings.Split(args[0], ":")
+					args[0], opts.testNamePattern = split[0], strings.ReplaceAll(split[1], "\"", "")
+				}
+			}
+
 			fuzzTest, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
 				log.Error(err)
@@ -223,9 +232,6 @@ func (c *coverageCmd) run() error {
 	if err != nil {
 		return err
 	}
-
-	logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
-	log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
 
 	if c.opts.Preset == "vscode" {
 		var format string
@@ -322,25 +328,47 @@ func (c *coverageCmd) run() error {
 			BuildStdout: c.opts.buildStdout,
 			BuildStderr: c.opts.buildStderr,
 		}
+	case config.BuildSystemNodeJS:
+		if len(c.opts.argsToPass) > 0 {
+			log.Warnf("Passing additional arguments is not supported for Node.js.\n"+
+				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
+		gen = &nodeCoverage.CoverageGenerator{
+			OutputPath:      c.opts.OutputPath,
+			OutputFormat:    c.opts.OutputFormat,
+			TestPathPattern: c.opts.fuzzTest,
+			TestNamePattern: c.opts.testNamePattern,
+			ProjectDir:      c.opts.ProjectDir,
+			Stderr:          c.OutOrStderr(),
+			BuildStdout:     c.opts.buildStdout,
+			BuildStderr:     c.opts.buildStderr,
+		}
 	default:
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
 
-	err = gen.BuildFuzzTestForCoverage()
-	if err != nil {
-		logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
-		var execErr *cmdutils.ExecError
-		if errors.As(err, &execErr) {
-			// It is expected that some commands might fail due to user
-			// configuration so we print the error without the stack trace
-			// (in non-verbose mode) and silence it
-			log.Error(err)
-			return cmdutils.ErrSilent
+	if c.opts.BuildSystem != config.BuildSystemNodeJS {
+		logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
+		log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
+
+		err = gen.BuildFuzzTestForCoverage()
+		if err != nil {
+			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
+			var execErr *cmdutils.ExecError
+			if errors.As(err, &execErr) {
+				// It is expected that some commands might fail due to user
+				// configuration so we print the error without the stack trace
+				// (in non-verbose mode) and silence it
+				log.Error(err)
+				return cmdutils.ErrSilent
+			}
+			return err
 		}
-		return err
+
+		logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
 	}
 
-	logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
 	reportPath, err := gen.GenerateCoverageReport()
 	if err != nil {
 		return err
@@ -429,6 +457,8 @@ func (c *coverageCmd) checkDependencies() error {
 		deps = []dependencies.Key{dependencies.Maven}
 	case config.BuildSystemGradle:
 		deps = []dependencies.Key{dependencies.Gradle}
+	case config.BuildSystemNodeJS:
+		deps = []dependencies.Key{dependencies.Node}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{
 			dependencies.Clang,

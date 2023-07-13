@@ -12,4 +12,5 @@ var ValidOutputFormats = map[string][]string{
 	config.BuildSystemOther:  {FormatHTML, FormatLCOV},
 	config.BuildSystemMaven:  {FormatHTML, FormatJacocoXML},
 	config.BuildSystemGradle: {FormatHTML, FormatJacocoXML},
+	config.BuildSystemNodeJS: {FormatHTML, FormatLCOV},
 }

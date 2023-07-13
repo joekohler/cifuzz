@@ -116,3 +116,25 @@ func TestLlvmCovVersion(t *testing.T) {
 	assert.Contains(t, string(output),
 		fmt.Sprintf(dependencies.MessageVersion, "llvm-cov", dep.MinVersion.String(), version))
 }
+
+func TestNodeMissing(t *testing.T) {
+	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+		t.Skip()
+	}
+
+	dependencies.TestMockAllDeps(t)
+	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Node))
+
+	// clone the example project because this command needs to parse an actual
+	// project config... if there is none it will fail before the dependency check
+	_, cleanup := testutil.BootstrapExampleProjectForTest("coverage-cmd-test", config.BuildSystemNodeJS)
+	defer cleanup()
+
+	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "FuzzTestCase")
+	fmt.Println(err)
+	require.Error(t, err)
+
+	output, err := io.ReadAll(testOut)
+	require.NoError(t, err)
+	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "node"))
+}
