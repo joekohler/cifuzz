@@ -165,7 +165,11 @@ on the build system. This can be overridden with a docker-image flag.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			var fuzzTests []string
+			fuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				return err
+			}
 			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
