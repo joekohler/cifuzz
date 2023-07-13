@@ -15,7 +15,7 @@ var versionTests = &[]e2e.TestCase{
 		Args:        []string{"--version"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Equal(t, output.Stderr, "")
+			assert.Equal(t, "", output.Stderr)
 			assert.Contains(t, output.Stdout, "cifuzz version ")
 			assert.Contains(t, output.Stdout, "Running on ")
 		},

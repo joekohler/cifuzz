@@ -24,7 +24,7 @@ var helpTests = &[]e2e.TestCase{
 		Args:        []string{"--help", "-h"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Equal(t, output.Stderr, "")
+			assert.Equal(t, "", output.Stderr)
 			assert.Contains(t, output.Stdout, "Available Commands")
 		},
 	},
@@ -42,7 +42,7 @@ var helpTests = &[]e2e.TestCase{
 		Args:        []string{"--help"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Equal(t, output.Stderr, "")
+			assert.Equal(t, "", output.Stderr)
 			assert.Contains(t, output.Stdout, "This command bundles all runtime artifacts")
 		},
 	},
