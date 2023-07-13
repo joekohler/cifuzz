@@ -10,16 +10,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-func TestIntegration_NodeJS_InitCreateRun(t *testing.T) {
+func TestIntegration_NodeJS_InitCreateRunCoverage(t *testing.T) {
 	if testing.Short() || os.Getenv("CIFUZZ_PRERELEASE") == "" {
 		t.Skip()
 	}
@@ -78,7 +81,7 @@ func TestIntegration_NodeJS_InitCreateRun(t *testing.T) {
 
 	// Check that the findings command doesn't list any findings yet
 	findings := shared.GetFindings(t, cifuzz, projectDir)
-	require.Empty(t, findings)
+	assert.Empty(t, findings)
 
 	// Run the (empty) fuzz test
 	cifuzzRunner.Run(t, &shared.RunOptions{
@@ -88,30 +91,18 @@ func TestIntegration_NodeJS_InitCreateRun(t *testing.T) {
 
 	// Make the fuzz test call a function
 	modifyFuzzTestToCallFunction(t, fuzzTestPath)
-	// Run the fuzz test
-	expectedOutputExp := regexp.MustCompile("Crash!")
-	// setting -max_len to 8192 in ".jazzerjsrc" file to test if the file is read and picked up
-	unexpectedOutputExp := regexp.MustCompile("INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes")
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs:  []*regexp.Regexp{expectedOutputExp},
-		UnexpectedOutput: unexpectedOutputExp,
+
+	t.Run("run", func(t *testing.T) {
+		testRun(t, &cifuzzRunner)
 	})
-
-	// Check that the findings command lists the finding
-	findings = shared.GetFindings(t, cifuzz, projectDir)
-	require.Len(t, findings, 1)
-	require.Contains(t, findings[0].Details, "Crash!")
-
-	expectedStackTrace := []*stacktrace.StackFrame{
-		{
-			SourceFile:  "ExploreMe.js",
-			Line:        11,
-			Column:      12,
-			FrameNumber: 0,
-			Function:    "exploreMe",
-		},
-	}
-	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
+	t.Run("htmlReport", func(t *testing.T) {
+		// Produce a coverage report for parser_fuzz_test
+		testHTMLCoverageReport(t, cifuzz, projectDir, "FuzzTestCase")
+	})
+	t.Run("lcovReport", func(t *testing.T) {
+		// Produces a coverage report for crashing_fuzz_test
+		testLcovCoverageReport(t, cifuzz, projectDir, "FuzzTestCase")
+	})
 }
 
 func getNpmArgs(t *testing.T, instructions []string) []string {
@@ -175,4 +166,115 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	require.NoError(t, err)
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	require.NoError(t, err)
+}
+
+func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run the fuzz test
+	expectedOutputExp := regexp.MustCompile("Crash!")
+	// setting -max_len to 8192 in ".jazzerjsrc" file to test if the file is read and picked up
+	unexpectedOutputExp := regexp.MustCompile("INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes")
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs:  []*regexp.Regexp{expectedOutputExp},
+		UnexpectedOutput: unexpectedOutputExp,
+	})
+
+	// Check that the findings command lists the finding
+	findings := shared.GetFindings(t, cifuzzRunner.CIFuzzPath, cifuzzRunner.DefaultWorkDir)
+	require.Len(t, findings, 1)
+	assert.Contains(t, findings[0].Details, "Crash!")
+
+	expectedStackTrace := []*stacktrace.StackFrame{
+		{
+			SourceFile:  "ExploreMe.js",
+			Line:        11,
+			Column:      12,
+			FrameNumber: 0,
+			Function:    "exploreMe",
+		},
+	}
+	assert.Equal(t, expectedStackTrace, findings[0].StackTrace)
+
+	// Check that options set via the config file are respected
+	configFileContent := "print-json: true"
+	err := os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), []byte(configFileContent), 0644)
+	require.NoError(t, err)
+	expectedOutputExp = regexp.MustCompile(`"finding": {`)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	})
+
+	// Check that command-line flags take precedence over config file settings
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Args:             []string{"--json=false"},
+		UnexpectedOutput: expectedOutputExp,
+	})
+
+	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
+	err = os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), nil, 0644)
+	require.NoError(t, err)
+}
+
+func testHTMLCoverageReport(t *testing.T, cifuzz, dir, fuzzTest string) {
+	cmd := executil.Command(cifuzz, "coverage", "-v",
+		"--output", "coverage-report", fuzzTest)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "coverage-report", "lcov-report", "index.html")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains coverage for ExploreMe.js
+	// and FuzzTestCase.fuzz.js
+	reportBytes, err := os.ReadFile(reportPath)
+	require.NoError(t, err)
+	report := string(reportBytes)
+	assert.Contains(t, report, "ExploreMe.js")
+	assert.Contains(t, report, "FuzzTestCase.fuzz.js")
+}
+
+func testLcovCoverageReport(t *testing.T, cifuzz, dir, fuzzTest string) {
+	cmd := executil.Command(cifuzz, "coverage", "-v",
+		"--format=lcov", "--output", "coverage-report", fuzzTest)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "coverage-report", "lcov.info")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains the right coverage
+	// for both source files
+	reportFile, err := os.Open(reportPath)
+	require.NoError(t, err)
+	defer reportFile.Close()
+	summary := summary.ParseLcov(reportFile)
+	assert.Equal(t, 2, len(summary.Files))
+	for _, file := range summary.Files {
+		if file.Filename == "ExploreMe.js" {
+			assert.Equal(t, 1, file.Coverage.FunctionsHit)
+			assert.Equal(t, 6, file.Coverage.LinesHit)
+			assert.Equal(t, 4, file.Coverage.BranchesHit)
+		} else if file.Filename == "FuzzTestCase.fuzz.js" {
+			assert.Equal(t, 1, file.Coverage.FunctionsHit)
+			assert.Equal(t, 8, file.Coverage.LinesHit)
+			assert.Equal(t, 0, file.Coverage.BranchesHit)
+		}
+	}
 }
