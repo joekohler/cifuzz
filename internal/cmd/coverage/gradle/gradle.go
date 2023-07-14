@@ -23,30 +23,37 @@ import (
 
 const GradleReportTask = "cifuzzReport"
 
-type CoverageGenerator struct {
-	OutputFormat string
-	OutputPath   string
-	FuzzTest     string
-	ProjectDir   string
+type GradleRunner interface {
+	RunCommand(args []string) error
+}
 
-	Parallel gradle.ParallelOptions
-
-	Stderr      io.Writer
+type GradleRunnerImpl struct {
+	ProjectDir  string
 	BuildStdout io.Writer
 	BuildStderr io.Writer
 
 	runfilesFinder runfiles.RunfilesFinder
 }
 
-func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
-	// ensure a finder is set
-	if cov.runfilesFinder == nil {
-		cov.runfilesFinder = runfiles.Finder
-	}
+type CoverageGenerator struct {
+	OutputFormat string
+	OutputPath   string
+	FuzzTest     string
+	TargetMethod string
+	ProjectDir   string
 
-	gradleArgs := []string{
-		fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest),
+	Parallel gradle.ParallelOptions
+	Stderr   io.Writer
+
+	GradleRunner GradleRunner
+}
+
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
+	testParam := fmt.Sprintf("-Pcifuzz.fuzztest=%s", cov.FuzzTest)
+	if cov.TargetMethod != "" {
+		testParam += fmt.Sprintf(".%s", cov.TargetMethod)
 	}
+	gradleArgs := []string{testParam}
 
 	if cov.OutputPath == "" {
 		buildDir, err := gradle.GetBuildDirectory(cov.ProjectDir)
@@ -68,7 +75,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		gradleArgs = append(gradleArgs, fmt.Sprintf("-Pcifuzz.report.format=%s", coverage.FormatJacocoXML))
 	}
 
-	return cov.runGradleCommand(gradleArgs)
+	return cov.GradleRunner.RunCommand(gradleArgs)
 }
 
 func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
@@ -87,16 +94,21 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	return filepath.Join(cov.OutputPath, "html"), nil
 }
 
-func (cov *CoverageGenerator) runGradleCommand(args []string) error {
-	gradleCmd, err := gradle.GetGradleCommand(cov.ProjectDir)
+func (runner *GradleRunnerImpl) RunCommand(args []string) error {
+	// ensure a finder is set
+	if runner.runfilesFinder == nil {
+		runner.runfilesFinder = runfiles.Finder
+	}
+
+	gradleCmd, err := gradle.GetGradleCommand(runner.ProjectDir)
 	if err != nil {
 		return err
 	}
 
 	cmd := executil.Command(gradleCmd, args...)
-	cmd.Dir = cov.ProjectDir
-	cmd.Stdout = cov.BuildStdout
-	cmd.Stderr = cov.BuildStderr
+	cmd.Dir = runner.ProjectDir
+	cmd.Stdout = runner.BuildStdout
+	cmd.Stderr = runner.BuildStderr
 	log.Debugf("Running gradle command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 
 	sigs := make(chan os.Signal, 1)

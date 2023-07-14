@@ -314,15 +314,19 @@ func (c *coverageCmd) run() error {
 		}
 
 		gen = &gradleCoverage.CoverageGenerator{
-			OutputPath: c.opts.OutputPath,
-			FuzzTest:   c.opts.fuzzTest,
-			ProjectDir: c.opts.ProjectDir,
+			OutputPath:   c.opts.OutputPath,
+			FuzzTest:     c.opts.fuzzTest,
+			TargetMethod: c.opts.targetMethod,
+			ProjectDir:   c.opts.ProjectDir,
 			Parallel: gradle.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 			},
-			Stderr:      c.OutOrStderr(),
-			BuildStdout: c.opts.buildStdout,
-			BuildStderr: c.opts.buildStderr,
+			Stderr: c.OutOrStderr(),
+			GradleRunner: &gradleCoverage.GradleRunnerImpl{
+				ProjectDir:  c.opts.ProjectDir,
+				BuildStdout: c.opts.buildStdout,
+				BuildStderr: c.opts.buildStderr,
+			},
 		}
 	case config.BuildSystemMaven:
 		if len(c.opts.argsToPass) > 0 {
