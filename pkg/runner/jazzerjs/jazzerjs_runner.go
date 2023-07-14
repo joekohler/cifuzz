@@ -50,13 +50,11 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	var args []string
-	args = append(args, "npm", "test")
+	args := []string{"npx", "jest"}
 
 	// ---------------------------
 	// --- fuzz target arguments -
 	// ---------------------------
-	args = append(args, "--")
 	args = append(args, options.JazzerJSTestPathPatternFlag(r.TestPathPattern))
 	args = append(args, options.JazzerJSTestNamePatternFlag(r.TestNamePattern))
 
