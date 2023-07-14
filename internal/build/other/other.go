@@ -290,7 +290,7 @@ func (b *Builder) setLibFuzzerEnv() error {
 	if err != nil {
 		return err
 	}
-	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
+	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
 	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
@@ -361,7 +361,7 @@ func (b *Builder) setCoverageEnv() error {
 	if err != nil {
 		return err
 	}
-	fuzzTestCFlags := []string{"'-I" + cifuzzIncludePath + "'"}
+	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
 	b.env, err = envutil.Setenv(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
 		return err
