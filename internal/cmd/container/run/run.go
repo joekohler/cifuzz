@@ -175,7 +175,7 @@ func (c *containerRunCmd) buildContainerFromImage() (string, error) {
 		return "", err
 	}
 
-	err = container.BuildImageFromBundle(bundlePath)
+	_, err = container.BuildImageFromBundle(bundlePath)
 	if err != nil {
 		return "", err
 	}

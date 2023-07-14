@@ -1,21 +1,15 @@
 package container
 
 import (
-	"bufio"
 	"context"
 	_ "embed"
-	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"text/template"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/moby/term"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/version"
@@ -36,11 +30,11 @@ type dockerfileConfig struct {
 	Base        string
 }
 
-// BuildImageFromBundle creates an image based on an existing bundle
-func BuildImageFromBundle(bundlePath string) error {
+// BuildImageFromBundle creates an image based on an existing bundle.
+func BuildImageFromBundle(bundlePath string) (string, error) {
 	buildContextDir, err := prepareBuildContext(bundlePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	return buildImageFromDir(buildContextDir)
 }
@@ -83,16 +77,16 @@ func prepareBuildContext(bundlePath string) (string, error) {
 }
 
 // builds an image based on an existing directory
-func buildImageFromDir(buildContextDir string) error {
+func buildImageFromDir(buildContextDir string) (string, error) {
 	imageTar, err := CreateImageTar(buildContextDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer fileutil.Cleanup(imageTar.Name())
 
 	dockerClient, err := getDockerClient()
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	ctx := context.Background()
@@ -105,33 +99,16 @@ func buildImageFromDir(buildContextDir string) error {
 	}
 	res, err := dockerClient.ImageBuild(ctx, imageTar, opts)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	defer res.Body.Close()
 
-	if viper.GetBool("verbose") {
-		fd, isTerminal := term.GetFdInfo(os.Stderr)
-		err = jsonmessage.DisplayJSONMessagesStream(res.Body, os.Stderr, fd, isTerminal, nil)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	} else {
-		// Read messages from the docker daemon
-		scanner := bufio.NewScanner(res.Body)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			// If scanner.Text matches a regex for "Step X/Y" then extract the current step X and all steps Y
-			stepRegex := regexp.MustCompile(`^{"stream":"Step (?P<currentStep>\d+)/(?P<totalSteps>\d+) : `)
-			if stepRegex.MatchString(scanner.Text()) {
-				matches := stepRegex.FindStringSubmatch(scanner.Text())
-				stepString := fmt.Sprintf("%s (Step %s/%s)", log.ContainerBuildInProgressMsg, matches[1], matches[2])
-				log.UpdateCurrentProgressSpinner(stepString)
-			}
-		}
+	imageID, err := parseImageBuildOutput(res.Body)
+	if err != nil {
+		return "", err
 	}
-
-	log.Debugf("Created fuzz container image with tags %s", opts.Tags)
-	return nil
+	log.Debugf("Created fuzz container image with ID %s and tags %s", imageID, opts.Tags)
+	return imageID, nil
 }
 
 // creates a tar archive that can be used for building an image
