@@ -200,6 +200,14 @@ func AddResolveSourceFileFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddRegistryFlag(cmd *cobra.Command) func() {
+	cmd.Flags().String("registry", "", `The container registry to use for the upload of the container image,
+e.g. ghcr.io/my-org/my-project`)
+	return func() {
+		ViperMustBindPFlag("registry", cmd.Flags().Lookup("registry"))
+	}
+}
+
 func AddProjectFlag(cmd *cobra.Command) func() {
 	// TODO: Make the project name more accessible in the web app (currently
 	//       it's only shown in the URL)

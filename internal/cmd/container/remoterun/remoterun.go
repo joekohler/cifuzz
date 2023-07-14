@@ -1,24 +1,127 @@
 package remoterun
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"code-intelligence.com/cifuzz/internal/bundler"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
+	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
+	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/container"
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func New() *cobra.Command {
-	return newWithOptions()
+type containerRemoteRunOpts struct {
+	bundler.Opts `mapstructure:",squash"`
+	Registry     string `mapstructure:"registry"`
 }
 
-func newWithOptions() *cobra.Command {
+type containerRemoteRunCmd struct {
+	*cobra.Command
+	opts *containerRemoteRunOpts
+}
+
+func New() *cobra.Command {
+	return newWithOptions(&containerRemoteRunOpts{})
+}
+
+func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
+	var bindFlags func()
+
 	cmd := &cobra.Command{
 		Use:   "remote-run",
 		Short: "Build and run a Fuzz Test container image on a CI server",
+		Args:  cobra.ExactArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			bindFlags()
+
+			var argsToPass []string
+			if cmd.ArgsLenAtDash() != -1 {
+				argsToPass = args[cmd.ArgsLenAtDash():]
+				args = args[:cmd.ArgsLenAtDash()]
+			}
+
+			err := config.FindAndParseProjectConfig(opts)
+			if err != nil {
+				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+
+			// check for registry flag
+			if opts.Registry == "" {
+				err = errors.New("no registry specified")
+				log.Error(err)
+				return cmdutils.WrapSilentError(err)
+			}
+
+			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				log.Print(err.Error())
+				return cmdutils.WrapSilentError(err)
+			}
+			opts.FuzzTests = fuzzTests
+			opts.BuildSystemArgs = argsToPass
+
+			return opts.Validate()
+		},
 		RunE: func(c *cobra.Command, args []string) error {
-			fmt.Println("Called container remote-run!")
-			return nil
+			cmd := &containerRemoteRunCmd{Command: c, opts: opts}
+			return cmd.run()
 		},
 	}
+	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddAdditionalFilesFlag,
+		cmdutils.AddBranchFlag,
+		cmdutils.AddBuildCommandFlag,
+		cmdutils.AddCleanCommandFlag,
+		cmdutils.AddBuildJobsFlag,
+		cmdutils.AddCommitFlag,
+		cmdutils.AddDictFlag,
+		cmdutils.AddDockerImageFlag,
+		cmdutils.AddEngineArgFlag,
+		cmdutils.AddEnvFlag,
+		cmdutils.AddPrintJSONFlag,
+		cmdutils.AddProjectDirFlag,
+		cmdutils.AddProjectFlag,
+		cmdutils.AddRegistryFlag,
+		cmdutils.AddSeedCorpusFlag,
+		cmdutils.AddServerFlag,
+		cmdutils.AddTimeoutFlag,
+		cmdutils.AddResolveSourceFileFlag,
+	)
 
 	return cmd
+}
+
+func (c *containerRemoteRunCmd) run() error {
+	var err error
+
+	logging.StartBuildProgressSpinner(log.ContainerBuildInProgressMsg)
+	imageID, err := c.buildImage()
+	if err != nil {
+		logging.StopBuildProgressSpinnerOnError(log.ContainerBuildInProgressErrorMsg)
+		return err
+	}
+
+	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
+
+	fmt.Println(imageID)
+	return nil
+}
+
+func (c *containerRemoteRunCmd) buildImage() (string, error) {
+	b := bundler.New(&c.opts.Opts)
+	bundlePath, err := b.Bundle()
+	if err != nil {
+		return "", err
+	}
+
+	return container.BuildImageFromBundle(bundlePath)
 }
