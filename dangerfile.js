@@ -2,7 +2,11 @@ const { danger, warn, markdown } = require("danger");
 const { basename, dirname } = require("path");
 
 const goFileFilter = fileName =>
-	fileName.includes(".go") && !fileName.includes("_test.go");
+	fileName.includes(".go") &&
+	!fileName.includes("_test.go") &&
+	!fileName.includes("testutil") &&
+	!fileName.startsWith("integration-tests") &&
+	!fileName.startsWith("e2e-tests");
 const testFileFilter = fileName => fileName.includes("_test.go");
 
 const createdGoFiles = danger.git.created_files.filter(goFileFilter);
@@ -22,7 +26,7 @@ removedMoreCodeThanAdded();
 
 function checkDescription() {
 	if (!danger.github.pr.body || danger.github.pr.body.length <= 0) {
-		warn(`This PR doesn't have a description. 
+		warn(`This PR doesn't have a description.
     We recommend following the template to include all necessary information.`);
 	} else {
 		if (
@@ -37,7 +41,7 @@ function checkDescription() {
 
 function prSize() {
 	if (danger.github.pr.changed_files > 15) {
-		warn(`This PR changes a lot of files (${danger.github.pr.changed_files}). 
+		warn(`This PR changes a lot of files (${danger.github.pr.changed_files}).
       It could be useful to break it up into multiple PRs to keep your changes simple and easy to review.`);
 	}
 }
@@ -58,7 +62,7 @@ function missingTestsForCreatedFiles() {
 			warn(`
   The following created files don't have corresponding test files:
   - [ ] ${missingTestsForCreatedGoFiles.join("\n - [ ] ")}
-  
+
   If you checked the file and there is no need for the test, you can tick the checkbox.`);
 		}
 	}
@@ -83,7 +87,7 @@ function missingTestsForModifiedFiles() {
 			warn(`
   The following files have been modified but their tests have not changed:
   - [ ] ${missingTestsForModifiedGoFiles.join("\n - [ ] ")}
-  
+
   If you checked the file and there is no need for the test, you can tick the checkbox.`);
 		}
 	}
