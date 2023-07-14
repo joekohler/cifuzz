@@ -3,8 +3,10 @@ package container
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/docker/docker/api/types"
@@ -39,8 +41,47 @@ func BuildImageFromBundle(bundlePath string) (string, error) {
 	return buildImageFromDir(buildContextDir)
 }
 
+// UploadImage uploads an image to a registry.
+func UploadImage(imageID string, registry string) error {
+	log.Debugf("Start uploading image %s to %s", imageID, registry)
+
+	dockerClient, err := getDockerClient()
+	if err != nil {
+		return err
+	}
+	// TODO: make the building/pushing cancellable with SIGnals
+	ctx := context.Background()
+
+	remoteTag := fmt.Sprintf("%s:%s", strings.ToLower(registry), imageID)
+	log.Debugf("Tag used for upload: %s", remoteTag)
+
+	err = dockerClient.ImageTag(ctx, imageID, remoteTag)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	regAuth, err := RegistryAuth(registry)
+	if err != nil {
+		return err
+	}
+
+	opts := types.ImagePushOptions{RegistryAuth: regAuth}
+	res, err := dockerClient.ImagePush(ctx, remoteTag, opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer res.Close()
+
+	_, err = parseImageBuildOutput(res)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // prepareBuildContext takes a existing artifact bundle, extracts it
-// and adds needed files/information
+// and adds needed files/information.
 func prepareBuildContext(bundlePath string) (string, error) {
 	// extract bundle to a temporary directory
 	buildContextDir, err := os.MkdirTemp("", "bundle-extract")
@@ -86,7 +127,7 @@ func buildImageFromDir(buildContextDir string) (string, error) {
 
 	dockerClient, err := getDockerClient()
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	ctx := context.Background()

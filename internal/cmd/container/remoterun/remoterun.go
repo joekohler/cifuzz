@@ -1,9 +1,6 @@
 package remoterun
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -54,17 +51,15 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 				return cmdutils.WrapSilentError(err)
 			}
 
-			// check for registry flag
-			if opts.Registry == "" {
-				err = errors.New("no registry specified")
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+			// check for required registry flag
+			err = cmd.MarkFlagRequired("registry")
+			if err != nil {
+				return err
 			}
 
 			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
-				log.Print(err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
@@ -112,8 +107,7 @@ func (c *containerRemoteRunCmd) run() error {
 
 	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
-	fmt.Println(imageID)
-	return nil
+	return container.UploadImage(imageID, c.opts.Registry)
 }
 
 func (c *containerRemoteRunCmd) buildImage() (string, error) {
