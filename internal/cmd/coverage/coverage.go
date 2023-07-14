@@ -29,6 +29,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -52,6 +53,7 @@ type coverageOptions struct {
 	ProjectDir            string
 
 	fuzzTest        string
+	targetMethod    string
 	testNamePattern string
 	argsToPass      []string
 	buildStdout     io.Writer
@@ -169,6 +171,18 @@ or a lcov trace file.
 				if strings.Contains(args[0], ":") {
 					split := strings.Split(args[0], ":")
 					args[0], opts.testNamePattern = split[0], strings.ReplaceAll(split[1], "\"", "")
+				}
+			}
+
+			if sliceutil.Contains(
+				[]string{config.BuildSystemMaven, config.BuildSystemGradle},
+				opts.BuildSystem,
+			) {
+				// Check if the fuzz test is a method of a class
+				// And remove method from fuzz test argument
+				if strings.Contains(args[0], "::") {
+					split := strings.Split(args[0], "::")
+					args[0], opts.targetMethod = split[0], split[1]
 				}
 			}
 
@@ -317,16 +331,20 @@ func (c *coverageCmd) run() error {
 		}
 
 		gen = &mavenCoverage.CoverageGenerator{
-			OutputPath: c.opts.OutputPath,
-			FuzzTest:   c.opts.fuzzTest,
-			ProjectDir: c.opts.ProjectDir,
+			OutputPath:   c.opts.OutputPath,
+			FuzzTest:     c.opts.fuzzTest,
+			TargetMethod: c.opts.targetMethod,
+			ProjectDir:   c.opts.ProjectDir,
 			Parallel: maven.ParallelOptions{
 				Enabled: viper.IsSet("build-jobs"),
 				NumJobs: c.opts.NumBuildJobs,
 			},
-			Stderr:      c.OutOrStderr(),
-			BuildStdout: c.opts.buildStdout,
-			BuildStderr: c.opts.buildStderr,
+			Stderr: c.OutOrStderr(),
+			MavenRunner: &mavenCoverage.MavenRunnerImpl{
+				ProjectDir:  c.opts.ProjectDir,
+				BuildStdout: c.opts.buildStdout,
+				BuildStderr: c.opts.buildStderr,
+			},
 		}
 	case config.BuildSystemNodeJS:
 		if len(c.opts.argsToPass) > 0 {

@@ -21,27 +21,32 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-type CoverageGenerator struct {
-	OutputFormat string
-	OutputPath   string
-	FuzzTest     string
-	ProjectDir   string
+type MavenRunner interface {
+	RunCommand(args []string) error
+}
 
-	Parallel maven.ParallelOptions
-
-	Stderr      io.Writer
+type MavenRunnerImpl struct {
+	ProjectDir  string
 	BuildStdout io.Writer
 	BuildStderr io.Writer
 
 	runfilesFinder runfiles.RunfilesFinder
 }
 
-func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
-	// ensure a finder is set
-	if cov.runfilesFinder == nil {
-		cov.runfilesFinder = runfiles.Finder
-	}
+type CoverageGenerator struct {
+	OutputFormat string
+	OutputPath   string
+	FuzzTest     string
+	TargetMethod string
+	ProjectDir   string
 
+	Parallel maven.ParallelOptions
+	Stderr   io.Writer
+
+	MavenRunner MavenRunner
+}
+
+func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	// Maven tests fail if fuzz tests fail, so we ignore the error here,
 	// so we can still generate the coverage report
 	mavenTestArgs := []string{"-Dmaven.test.failure.ignore=true"}
@@ -50,9 +55,13 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	mavenTestArgs = append(mavenTestArgs, "-Djazzer.hooks=false")
 
 	// Flags for cifuzz
+	testParam := fmt.Sprintf("-Dtest=%s", cov.FuzzTest)
+	if cov.TargetMethod != "" {
+		testParam += fmt.Sprintf("#%s", cov.TargetMethod)
+	}
 	mavenTestArgs = append(mavenTestArgs,
 		"-Pcifuzz",
-		fmt.Sprintf("-Dtest=%s", cov.FuzzTest),
+		testParam,
 		"test")
 
 	if cov.Parallel.Enabled {
@@ -64,7 +73,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 			mavenTestArgs = append(mavenTestArgs, "1C")
 		}
 	}
-	err := cov.runMavenCommand(mavenTestArgs)
+	err := cov.MavenRunner.RunCommand(mavenTestArgs)
 	if err != nil {
 		return err
 	}
@@ -86,7 +95,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		mavenReportArgs = append(mavenReportArgs, "-Dcifuzz.report.format=XML,HTML")
 	}
 
-	return cov.runMavenCommand(mavenReportArgs)
+	return cov.MavenRunner.RunCommand(mavenReportArgs)
 }
 
 func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
@@ -105,8 +114,13 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	return cov.OutputPath, nil
 }
 
-func (cov *CoverageGenerator) runMavenCommand(args []string) error {
-	mavenCmd, err := cov.runfilesFinder.MavenPath()
+func (runner *MavenRunnerImpl) RunCommand(args []string) error {
+	// ensure a finder is set
+	if runner.runfilesFinder == nil {
+		runner.runfilesFinder = runfiles.Finder
+	}
+
+	mavenCmd, err := runner.runfilesFinder.MavenPath()
 	if err != nil {
 		return err
 	}
@@ -115,9 +129,9 @@ func (cov *CoverageGenerator) runMavenCommand(args []string) error {
 	cmdArgs = append(cmdArgs, args...)
 
 	cmd := executil.Command(cmdArgs[0], cmdArgs[1:]...)
-	cmd.Dir = cov.ProjectDir
-	cmd.Stdout = cov.BuildStdout
-	cmd.Stderr = cov.BuildStderr
+	cmd.Dir = runner.ProjectDir
+	cmd.Stdout = runner.BuildStdout
+	cmd.Stderr = runner.BuildStderr
 	log.Debugf("Running maven command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 
 	sigs := make(chan os.Signal, 1)
