@@ -27,14 +27,11 @@ type options struct {
 func (opts *options) Validate() error {
 	err := config.ValidateBuildSystem(opts.BuildSystem)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
-		err = errors.Errorf(config.NotSupportedErrorMessage("bundle", opts.BuildSystem))
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return errors.Errorf(config.NotSupportedErrorMessage("bundle", opts.BuildSystem))
 	}
 
 	return opts.Opts.Validate()
@@ -131,8 +128,7 @@ on the build system. This can be overridden with a docker-image flag.
 
 			err := SetUpBundleLogging(cmd, &opts.Opts)
 			if err != nil {
-				log.Errorf(err, "Failed to setup logging: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return errors.Wrap(err, "Failed to setup logging")
 			}
 
 			var argsToPass []string
@@ -143,8 +139,7 @@ on the build system. This can be overridden with a docker-image flag.
 
 			err = config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			// Fail early if the platform is not supported. Creating the
@@ -160,9 +155,7 @@ on the build system. This can be overridden with a docker-image flag.
 				opts.BuildSystem == config.BuildSystemGradle
 			if runtime.GOOS != "linux" && !isOSIndependent &&
 				!config.AllowUnsupportedPlatforms() {
-				err = errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return errors.Errorf(config.NotSupportedErrorMessage("bundle", runtime.GOOS))
 			}
 
 			var fuzzTests []string
@@ -234,7 +227,7 @@ func SetUpBundleLogging(cmd *cobra.Command, opts *bundler.Opts) error {
 
 	log.VerboseSecondaryOutput, err = os.OpenFile(opts.BundleBuildLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if logging.ShouldLogBuildToFile() {

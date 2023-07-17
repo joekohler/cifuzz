@@ -59,14 +59,12 @@ func New() *cobra.Command {
 
 			opts.BuildSystem, err = config.DetermineBuildSystem(opts.Dir)
 			if err != nil {
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			err = config.ValidateBuildSystem(opts.BuildSystem)
 			if err != nil {
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			if opts.Interactive {

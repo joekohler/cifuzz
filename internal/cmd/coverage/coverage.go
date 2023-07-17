@@ -65,8 +65,7 @@ func (opts *coverageOptions) validate() error {
 
 	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return err
 	}
 
 	if opts.BuildSystem == "" {
@@ -78,8 +77,7 @@ func (opts *coverageOptions) validate() error {
 
 	err = config.ValidateBuildSystem(opts.BuildSystem)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	validFormats := coverage.ValidOutputFormats[opts.BuildSystem]
@@ -158,8 +156,7 @@ or a lcov trace file.
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			if opts.BuildSystem == config.BuildSystemNodeJS {
@@ -188,8 +185,7 @@ or a lcov trace file.
 
 			fuzzTest, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 			opts.fuzzTest = fuzzTest[0]
 			opts.argsToPass = argsToPass
@@ -199,8 +195,7 @@ or a lcov trace file.
 			if logging.ShouldLogBuildToFile() {
 				opts.buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
 				if err != nil {
-					log.Errorf(err, "Failed to setup logging: %v", err.Error())
-					return cmdutils.WrapSilentError(err)
+					return err
 				}
 				opts.buildStderr = opts.buildStdout
 			}
@@ -418,7 +413,7 @@ func (c *coverageCmd) handleHTMLReport(reportPath string) error {
 		// try to open the report in the browser ...
 		err := c.openReport(htmlFile)
 		if err != nil {
-			//... if this fails print the file URI
+			// ... if this fails print the file URI
 			log.Error(err)
 			err = c.printReportURI(htmlFile)
 			if err != nil {
@@ -494,8 +489,7 @@ func (c *coverageCmd) checkDependencies() error {
 	}
 	err := dependencies.Check(deps, c.opts.ProjectDir)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 	return nil
 }

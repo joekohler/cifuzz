@@ -45,14 +45,11 @@ type remoteRunOpts struct {
 func (opts *remoteRunOpts) Validate() error {
 	err := config.ValidateBuildSystem(opts.BuildSystem)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	if opts.BuildSystem == config.BuildSystemNodeJS && !config.AllowUnsupportedPlatforms() {
-		err = errors.Errorf(config.NotSupportedErrorMessage("remote run", opts.BuildSystem))
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return errors.Errorf(config.NotSupportedErrorMessage("remote run", opts.BuildSystem))
 	}
 
 	if opts.BundlePath == "" {
@@ -115,8 +112,7 @@ variable or by running 'cifuzz login' first.
 
 			err := bundle.SetUpBundleLogging(cmd, &opts.Opts)
 			if err != nil {
-				log.Errorf(err, "Failed to setup logging: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return errors.Wrap(err, "Failed to setup logging")
 			}
 
 			var argsToPass []string
@@ -128,16 +124,13 @@ variable or by running 'cifuzz login' first.
 			cmdutils.ViperMustBindPFlag("bundle", cmd.Flags().Lookup("bundle"))
 			err = config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			// Fail early if the platform is not supported
 			isOSIndependent := opts.BuildSystem == config.BuildSystemMaven || opts.BuildSystem == config.BuildSystemGradle
 			if runtime.GOOS != "linux" && !isOSIndependent && !config.AllowUnsupportedPlatforms() {
-				err = errors.Errorf(config.NotSupportedErrorMessage("remote run", runtime.GOOS))
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return errors.Errorf(config.NotSupportedErrorMessage("remote run", runtime.GOOS))
 			}
 
 			var fuzzTests []string
@@ -162,7 +155,7 @@ variable or by running 'cifuzz login' first.
 
 			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
 			if err != nil {
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			// Print warning that flags which only effect the build of
@@ -268,7 +261,7 @@ func (c *runRemoteCmd) run() error {
 			// project choice
 			err = dialog.AskToPersistProjectChoice(c.opts.ProjectName)
 			if err != nil {
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 		} else {
@@ -310,7 +303,6 @@ func (c *runRemoteCmd) run() error {
 				log.Error(err)
 				return cmdutils.ErrSilent
 			}
-
 			return err
 		}
 

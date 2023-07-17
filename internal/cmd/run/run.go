@@ -81,17 +81,14 @@ func (opts *runOptions) validate() error {
 
 	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.ErrSilent
+		return err
 	}
 
 	if opts.Dictionary != "" {
 		// Check if the dictionary exists and can be accessed
 		_, err = os.Stat(opts.Dictionary)
 		if err != nil {
-			err = errors.WithStack(err)
-			log.Error(err)
-			return cmdutils.ErrSilent
+			return errors.Wrapf(err, "Failed to access dictionary %s", opts.Dictionary)
 		}
 	}
 
@@ -104,8 +101,7 @@ func (opts *runOptions) validate() error {
 
 	err = config.ValidateBuildSystem(opts.BuildSystem)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	// To build with other build systems, a build command must be provided
@@ -247,8 +243,7 @@ depends on the build system configured for the project.
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			if sliceutil.Contains(
@@ -277,8 +272,7 @@ depends on the build system configured for the project.
 
 			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
-				log.Error(err)
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 			opts.fuzzTest = fuzzTests[0]
 
@@ -289,8 +283,7 @@ depends on the build system configured for the project.
 			if logging.ShouldLogBuildToFile() {
 				opts.buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
 				if err != nil {
-					log.Errorf(err, "Failed to setup logging: %v", err.Error())
-					return cmdutils.WrapSilentError(err)
+					return err
 				}
 				opts.buildStderr = opts.buildStdout
 			}
@@ -301,8 +294,7 @@ depends on the build system configured for the project.
 			var err error
 			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
 			if err != nil {
-				log.Errorf(err, "Failed to validate server URL: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			cmd := runCmd{Command: c, opts: opts}
@@ -636,7 +628,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		// by bazel via --script_path and must therefore be accessible
 		// inside the sandbox.
 		cmd := exec.Command("bazel", "info", "install_base")
-		err := cmd.Run()
+		err = cmd.Run()
 		if err != nil {
 			// It's expected that bazel might fail due to user configuration,
 			// so we print the error without the stack trace.
@@ -758,10 +750,9 @@ func (c *runCmd) checkDependencies() error {
 		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 	}
 
-	depsErr := dependencies.Check(deps, c.opts.ProjectDir)
-	if depsErr != nil {
-		log.Error(depsErr)
-		return cmdutils.WrapSilentError(depsErr)
+	err := dependencies.Check(deps, c.opts.ProjectDir)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -832,9 +823,7 @@ func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *re
 		if !found {
 			message := fmt.Sprintf(`Project %s does not exist on server %s.
 Findings have *not* been uploaded. Please check the 'project' entry in your cifuzz.yml.`, project, c.opts.Server)
-			log.Error(errors.New(message))
-			err = errors.Errorf(message)
-			return cmdutils.WrapSilentError(err)
+			return errors.New(message)
 		}
 	}
 
@@ -890,6 +879,7 @@ func ExecuteRunner(runner Runner) error {
 	// case, we always want to print the signal error, not the
 	// "Unexpected exit code" error from the runner.
 	if signalErr != nil {
+		// TODO: Only return signalErr instead of wrapping it in a SilentErr?
 		log.Error(signalErr, signalErr.Error())
 		return cmdutils.WrapSilentError(signalErr)
 	}

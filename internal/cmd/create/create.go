@@ -31,8 +31,7 @@ type createOpts struct {
 func (opts *createOpts) Validate() error {
 	err := config.ValidateBuildSystem(opts.BuildSystem)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 
 	if opts.Interactive {
@@ -79,8 +78,7 @@ fuzz test via 'cifuzz run'.`,
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			return opts.Validate()
@@ -128,8 +126,7 @@ func (c *createCmd) run() error {
 	// create stub
 	err = stubs.Create(c.opts.outputPath, c.opts.testType)
 	if err != nil {
-		log.Errorf(err, "Failed to create fuzz test stub %s: %s", c.opts.outputPath, err.Error())
-		return cmdutils.ErrSilent
+		return errors.Wrapf(err, "Failed to create fuzz test stub %s", c.opts.outputPath)
 	}
 
 	// show success message

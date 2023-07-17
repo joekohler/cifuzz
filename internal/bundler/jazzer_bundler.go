@@ -190,8 +190,7 @@ func (b *jazzerBundler) checkDependencies() error {
 	}
 	err := dependencies.Check(deps, b.opts.ProjectDir)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 	return nil
 }
@@ -308,8 +307,7 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 		return nil, nil, err
 	}
 	if len(allValidFuzzTests) == 0 {
-		log.Error(errors.Errorf("No fuzz test(s) could be found in the project directory '%s'.", b.opts.ProjectDir))
-		return nil, nil, cmdutils.ErrSilent
+		return nil, nil, errors.Errorf("No fuzz test could be found in the project directory '%s'", b.opts.ProjectDir)
 	}
 
 	var fuzzTests []string
@@ -330,8 +328,7 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 				// Check first that the fuzz test actually exists
 				class, targetMethod := cmdutils.SeparateTargetClassAndMethod(fuzzTest)
 				if !sliceutil.Contains(allValidFuzzTests, fuzzTest) {
-					log.Error(errors.Errorf("Fuzz test '%s' in class '%s' could not be found in the project directory '%s'", targetMethod, class, b.opts.ProjectDir))
-					return nil, nil, cmdutils.ErrSilent
+					return nil, nil, errors.Errorf("Fuzz test '%s' in class '%s' could not be found in the project directory '%s'", targetMethod, class, b.opts.ProjectDir)
 				}
 
 				fuzzTests = append(fuzzTests, class)
@@ -343,8 +340,7 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 					return nil, nil, err
 				}
 				if len(fuzzTestsInClass) == 0 {
-					log.Error(errors.Errorf("No fuzz test(s) could be found for the given class: %s", fuzzTest))
-					return nil, nil, cmdutils.ErrSilent
+					return nil, nil, errors.Errorf("No fuzz test could be found for the given class: %s", fuzzTest)
 				}
 
 				for _, test := range fuzzTestsInClass {

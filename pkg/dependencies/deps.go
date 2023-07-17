@@ -1,10 +1,10 @@
 package dependencies
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
+	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -79,7 +79,12 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 
 // Check iterates of a list of dependencies and checks if they are fulfilled
 func Check(keys []Key, projectDir string) error {
-	return check(keys, deps, runfiles.Finder, projectDir)
+	err := check(keys, deps, runfiles.Finder, projectDir)
+	if err != nil {
+		return errors.Wrap(err, "Invalid dependencies")
+	}
+
+	return nil
 }
 
 func Version(key Key, projectDir string) (*semver.Version, error) {

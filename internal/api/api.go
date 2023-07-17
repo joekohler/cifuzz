@@ -209,9 +209,7 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 	artifact := &Artifact{}
 	err = json.Unmarshal(body, artifact)
 	if err != nil {
-		err = errors.WithStack(err)
-		log.Errorf(err, "Failed to parse response from upload bundle API call: %s", err.Error())
-		return nil, cmdutils.WrapSilentError(err)
+		return nil, errors.Wrap(err, "Failed to parse response from upload bundle API call")
 	}
 
 	return artifact, nil
@@ -244,9 +242,7 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 	}
 	campaignRunNameJSON, ok := objmap["name"]
 	if !ok {
-		err = errors.Errorf("Server response doesn't include run name: %v", stringutil.PrettyString(objmap))
-		log.Error(err)
-		return "", cmdutils.WrapSilentError(err)
+		return "", errors.Errorf("Server response doesn't include run name: %v", stringutil.PrettyString(objmap))
 	}
 	var campaignRunName string
 	err = json.Unmarshal(campaignRunNameJSON, &campaignRunName)
@@ -324,7 +320,7 @@ func ValidateAndNormalizeServerURL(server string) (string, error) {
 		// See if prefixing https:// makes it a valid URL
 		err = validateURL("https://" + server)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("server %q is not a valid URL", server))
+			return "", errors.Wrapf(err, "Server '%s' is not a valid URL", server)
 		}
 		server = "https://" + server
 	}
@@ -332,7 +328,7 @@ func ValidateAndNormalizeServerURL(server string) (string, error) {
 	// normalize server URL by removing trailing slash
 	url, err := url.JoinPath(server, "")
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "Failed to normalize server URL '%s", server)
 	}
 	url = strings.TrimSuffix(url, "/")
 

@@ -60,14 +60,12 @@ container is built and run locally instead of being pushed to a CI Sense server.
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
 			if err != nil {
-				log.Print(err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass

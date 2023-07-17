@@ -21,7 +21,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/cmake"
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
-	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
@@ -366,8 +365,7 @@ func (b *libfuzzerBundler) checkDependencies() error {
 	}
 	err := dependencies.Check(deps, b.opts.ProjectDir)
 	if err != nil {
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		return err
 	}
 	return nil
 }

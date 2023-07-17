@@ -56,8 +56,7 @@ func newWithOptions(opts *options) *cobra.Command {
 			bindFlags()
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 			return nil
 		},
@@ -178,8 +177,7 @@ func (cmd *findingCmd) run(args []string) error {
 	findingName := args[0]
 	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName, errorDetails)
 	if finding.IsNotExistError(err) {
-		log.Errorf(err, "Finding %s does not exist", findingName)
-		return cmdutils.WrapSilentError(err)
+		return errors.Wrapf(err, "Finding %s does not exist", findingName)
 	}
 	if err != nil {
 		return err

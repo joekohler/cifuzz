@@ -24,7 +24,13 @@ func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, er
 	}
 
 	buildLogPath = filepath.Join(logDir, logFile)
-	return os.OpenFile(buildLogPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	var writer io.Writer
+	writer, err = os.OpenFile(buildLogPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return writer, nil
 }
 
 func ShouldLogBuildToFile() bool {

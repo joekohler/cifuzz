@@ -48,18 +48,13 @@ func New() (*cobra.Command, error) {
 
 			err := cmdutils.Chdir()
 			if err != nil {
-				log.Error(err)
-				return cmdutils.ErrSilent
+				return err
 			}
 
 			if cmdutils.NeedsConfig(cmd) {
 				_, err = config.FindConfigDir()
 				if errors.Is(err, os.ErrNotExist) {
-					// The project directory doesn't exist, this is an expected
-					// error, so we print it and return a silent error to avoid
-					// printing a stack trace
-					log.Error(err, fmt.Sprintf("%v\nUse 'cifuzz init' to set up a project for use with cifuzz.", err))
-					return cmdutils.ErrSilent
+					return cmdutils.WrapIncorrectUsageError(errors.Wrap(err, "Use 'cifuzz init' to set up a project for use with cifuzz"))
 				}
 				if err != nil {
 					return err
