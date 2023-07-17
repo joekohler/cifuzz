@@ -47,3 +47,18 @@ func TestParseXML_BuildDirs(t *testing.T) {
 	assert.Len(t, project.Build.TestResources.TestResource, 1)
 	assert.Equal(t, "/test/resources", project.Build.TestResources.TestResource[0].Directory)
 }
+
+func TestParseXML_BuildDirs_WithPollutedInput(t *testing.T) {
+	in := strings.NewReader(`xxxxx
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <build>
+    <directory>/target</directory>
+  </build>
+</project>
+xxxxx`)
+	project, err := parseXML(in)
+	require.NoError(t, err)
+	require.NotEmpty(t, project)
+
+	assert.Equal(t, "/target", project.Build.Directory)
+}

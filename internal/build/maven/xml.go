@@ -1,6 +1,7 @@
 package maven
 
 import (
+	"bytes"
 	"encoding/xml"
 	"io"
 )
@@ -49,13 +50,22 @@ type Project struct {
 }
 
 func parseXML(in io.Reader) (*Project, error) {
-	bytes, err := io.ReadAll(in)
+	output, err := io.ReadAll(in)
 	if err != nil {
 		return nil, err
 	}
 
+	// Only parse output contained in <project></project> tags.
+	// It can happend that the output contains some leading
+	// and trailing bytes, which prevents successful parsing.
+	// This issue occurs on Ubuntu 23.04 with Maven 3.8.7.
+	startTag := []byte("<project")
+	endTag := []byte("</project>")
+	startIdx := bytes.Index(output, startTag)
+	endIdx := bytes.Index(output, endTag) + len(endTag)
+
 	var project Project
-	err = xml.Unmarshal(bytes, &project)
+	err = xml.Unmarshal(output[startIdx:endIdx], &project)
 	if err != nil {
 		return nil, err
 	}
