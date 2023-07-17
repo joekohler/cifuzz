@@ -51,6 +51,12 @@ func TestResolve(t *testing.T) {
 		pwd := changeWdToTestData("maven_gradle")
 		testResolveMavenGradleWindowsPaths(t, pwd)
 	})
+
+	t.Run("testResolveNodeJS", func(t *testing.T) {
+		defer revertToOriginalWd()
+		pwd := changeWdToTestData("nodejs")
+		testResolveNodeJS(t, pwd)
+	})
 }
 
 func testResolveBazel(t *testing.T, pwd string) {
@@ -148,5 +154,25 @@ func testResolveMavenGradleWindowsPaths(t *testing.T, pwd string) {
 	assert.Equal(t, fuzzTestName, resolved)
 	resolved, err = resolve(srcFile, config.BuildSystemMaven, pwd)
 	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+}
+
+func testResolveNodeJS(t *testing.T, pwd string) {
+	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+		t.Skip()
+	}
+
+	fuzzTestName := "FuzzTestCase"
+
+	// relative path
+	srcFile := filepath.Join("src", "test", "FuzzTestCase.fuzz.js")
+	resolved, err := resolve(srcFile, config.BuildSystemNodeJS, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+
+	// absolute path
+	srcFile = filepath.Join(pwd, srcFile)
+	resolved, err = resolve(srcFile, config.BuildSystemNodeJS, pwd)
+	require.NoError(t, err)
 	assert.Equal(t, fuzzTestName, resolved)
 }

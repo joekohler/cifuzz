@@ -122,6 +122,12 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 		}
 		return fuzzTest, nil
 
+	case config.BuildSystemNodeJS:
+		testFile := filepath.Base(path)
+		fuzzTest := strings.TrimSuffix(testFile, ".fuzz"+filepath.Ext(testFile))
+
+		return fuzzTest, nil
+
 	default:
 		return "", errors.New("The flag '--resolve' only supports the following build systems: CMake, Bazel, Maven, Gradle.")
 	}
