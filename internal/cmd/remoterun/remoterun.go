@@ -140,7 +140,11 @@ variable or by running 'cifuzz login' first.
 				return cmdutils.WrapSilentError(err)
 			}
 
-			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			var fuzzTests []string
+			fuzzTests, err = resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)
+			if err != nil {
+				return err
+			}
 			opts.FuzzTests = fuzzTests
 			opts.BuildSystemArgs = argsToPass
 
