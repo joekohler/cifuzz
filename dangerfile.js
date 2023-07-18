@@ -19,6 +19,7 @@ checkDescription();
 prSize();
 missingTestsForCreatedFiles();
 missingTestsForModifiedFiles();
+largeFiles();
 
 // Encouragement
 newTestsForExistingFiles();
@@ -90,6 +91,24 @@ function missingTestsForModifiedFiles() {
 
   If you checked the file and there is no need for the test, you can tick the checkbox.`);
 		}
+	}
+}
+
+async function largeFiles() {
+	const largeFiles = [];
+	for (const file of danger.git.created_files) {
+		const lines = await danger.git.linesOfCode(file);
+		if (lines > 500) {
+			largeFiles.push(file);
+		}
+	}
+
+	if (largeFiles?.length > 0) {
+		warn(`
+  The following newly created files are very large:
+  - [ ] ${largeFiles.join("\n - [ ] ")}
+
+  Please check if this is an intended change.`);
 	}
 }
 
