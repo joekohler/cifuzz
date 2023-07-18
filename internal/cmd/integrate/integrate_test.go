@@ -2,7 +2,6 @@ package integrate
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -23,15 +22,6 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-var logOutput io.ReadWriter
-
-func TestMain(m *testing.M) {
-	logOutput = bytes.NewBuffer([]byte{})
-	log.Output = logOutput
-
-	m.Run()
-}
-
 func TestMissingCIFuzzProject(t *testing.T) {
 	// Create an empty project directory and change working directory to it
 	testDir, cleanup := testutil.ChdirToTempDir("integrate-cmd-test")
@@ -39,19 +29,19 @@ func TestMissingCIFuzzProject(t *testing.T) {
 
 	// Check that the command produces the expected error when not
 	// called below a cifuzz project directory.
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
 	require.Error(t, err)
-	testutil.CheckOutput(t, logOutput, "cifuzz.yaml file does not exist")
+	assert.Contains(t, stdErr, "cifuzz.yaml file does not exist")
 
 	// Initialize a cifuzz project
 	err = fileutil.Touch(filepath.Join(testDir, "CMakeLists.txt"))
 	require.NoError(t, err)
-	_, err = cmdutils.ExecuteCommand(t, initCmd.New(), os.Stdin)
+	_, _, err = cmdutils.ExecuteCommand(t, initCmd.New(), os.Stdin)
 	require.NoError(t, err)
 
 	// Check that command produces no error when called below a cifuzz
 	// project directory
-	_, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
+	_, _, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "git")
 	require.NoError(t, err)
 }
 
@@ -110,6 +100,8 @@ func TestSetupCMakePresets(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, presetsExists)
 
+	logOutput := new(bytes.Buffer)
+	log.Output = logOutput
 	err = setupCMakePresets(testDir, finder)
 	require.NoError(t, err)
 
@@ -137,6 +129,8 @@ func TestSetupVSCodeTasks(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, presetsExists)
 
+	logOutput := new(bytes.Buffer)
+	log.Output = logOutput
 	err = setupVSCodeTasks(testDir, finder)
 	require.NoError(t, err)
 

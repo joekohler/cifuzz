@@ -1,9 +1,7 @@
 package run
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"testing"
@@ -16,26 +14,16 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-var testOut io.ReadWriter
-
 func TestMain(m *testing.M) {
-	// capture log output
-	testOut = bytes.NewBuffer([]byte{})
-	oldOut := log.Output
-	log.Output = testOut
 	viper.Set("interactive", "false")
 	viper.Set("verbose", true)
-
 	m.Run()
-
-	log.Output = oldOut
 }
 
 func TestFail(t *testing.T) {
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin)
 	assert.Error(t, err)
 }
 
@@ -53,13 +41,9 @@ func TestClangMissing(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	fmt.Fprint(os.Stderr, string(output))
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestLlvmSymbolizerVersion(t *testing.T) {
@@ -76,13 +60,9 @@ func TestLlvmSymbolizerVersion(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	fmt.Fprint(os.Stderr, string(output))
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "llvm-symbolizer", dep.MinVersion.String(), version))
 }
 
@@ -101,12 +81,8 @@ func TestVisualStudioMissing(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test")
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	fmt.Fprint(os.Stderr, string(output))
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "Visual Studio", dep.MinVersion.String(), version))
 }

@@ -1,9 +1,7 @@
 package create
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,21 +15,11 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-var testOut io.ReadWriter
-
 func TestMain(m *testing.M) {
-	// capture log output
-	testOut = bytes.NewBuffer([]byte{})
-	oldOut := log.Output
-	log.Output = testOut
 	viper.Set("verbose", true)
-
 	m.Run()
-
-	log.Output = oldOut
 }
 
 func TestOk(t *testing.T) {
@@ -43,7 +31,7 @@ func TestOk(t *testing.T) {
 		"cpp",
 		"--output", outputFile,
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
@@ -57,7 +45,7 @@ func TestOkMaven(t *testing.T) {
 		"java",
 		"--output", outputFile,
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
@@ -71,7 +59,7 @@ func TestOkGradle(t *testing.T) {
 		"java",
 		"--output", outputFile,
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
@@ -89,7 +77,7 @@ func TestOkJavaScript(t *testing.T) {
 		"js",
 		"--output", outputFile,
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
@@ -107,7 +95,7 @@ func TestOkTypeScript(t *testing.T) {
 		"ts",
 		"--output", outputFile,
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.NoError(t, err)
 	require.FileExists(t, outputFile)
 }
@@ -116,7 +104,7 @@ func TestInvalidType(t *testing.T) {
 	args := []string{
 		"foo",
 	}
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, args...)
 	require.Error(t, err)
 }
 
@@ -140,13 +128,11 @@ func TestCMakeMissing(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
 	// should not fail as this command has no hard dependencies, just recommendations
 	require.NoError(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestClangVersion(t *testing.T) {
@@ -169,13 +155,11 @@ func TestClangVersion(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
 	// should not fail as this command has no hard dependencies, just recommendations
 	require.NoError(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "clang", dep.MinVersion.String(), version))
 }
 
@@ -199,12 +183,10 @@ func TestVisualStudioVersion(t *testing.T) {
 		BuildSystem: config.BuildSystemCMake,
 	}
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, args...)
 	// should not fail as this command has no hard dependencies, just recommendations
 	require.NoError(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "Visual Studio", dep.MinVersion.String(), version))
 }

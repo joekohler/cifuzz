@@ -1,8 +1,6 @@
 package init
 
 import (
-	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,21 +12,11 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-var testOut io.ReadWriter
-
 func TestMain(m *testing.M) {
-	// capture log output
-	testOut = bytes.NewBuffer([]byte{})
-	oldOut := log.Output
-	log.Output = testOut
 	viper.Set("verbose", true)
-
 	m.Run()
-
-	log.Output = oldOut
 }
 
 func TestInitCmd(t *testing.T) {
@@ -39,11 +27,11 @@ func TestInitCmd(t *testing.T) {
 	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
 	require.NoError(t, err)
 
-	_, err = cmdutils.ExecuteCommand(t, New(), os.Stdin)
+	_, _, err = cmdutils.ExecuteCommand(t, New(), os.Stdin)
 	assert.NoError(t, err)
 
 	// second execution should return a ErrSilent as the config file should aready exists
-	_, err = cmdutils.ExecuteCommand(t, New(), os.Stdin)
+	_, _, err = cmdutils.ExecuteCommand(t, New(), os.Stdin)
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, cmdutils.ErrSilent)
 }
@@ -61,11 +49,9 @@ func TestInitCmdForNodeWithLanguageArg(t *testing.T) {
 	require.NoError(t, err)
 
 	// test for JavaScript
-	_, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "js")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "js")
 	assert.NoError(t, err)
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), "jest.config.js")
+	assert.Contains(t, stdErr, "jest.config.js")
 	assert.FileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
 
 	// remove cifuzz.yaml again
@@ -74,11 +60,9 @@ func TestInitCmdForNodeWithLanguageArg(t *testing.T) {
 	assert.NoFileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
 
 	// test for TypeScript
-	_, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "ts")
+	_, stdErr, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "ts")
 	assert.NoError(t, err)
-	output, err = io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), "jest.config.ts")
-	assert.Contains(t, string(output), "To introduce the fuzz function types globally, add the following import to globals.d.ts:")
+	assert.Contains(t, stdErr, "jest.config.ts")
+	assert.Contains(t, stdErr, "To introduce the fuzz function types globally, add the following import to globals.d.ts:")
 	assert.FileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
 }

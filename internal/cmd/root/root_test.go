@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 func TestRootCmd(t *testing.T) {
 	cmd, err := New()
 	require.NoError(t, err)
-	_, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin)
+	_, _, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin)
 	assert.NoError(t, err)
 }
 
@@ -41,7 +41,7 @@ func TestChangingToNonExistingDirectory(t *testing.T) {
 	}
 	cmd, err := New()
 	require.NoError(t, err)
-	_, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin, args...)
+	_, _, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin, args...)
 	require.Error(t, err)
 
 	// Check that the working directory did not change
@@ -69,7 +69,7 @@ func TestChangingToExistingDirectory(t *testing.T) {
 	}
 	cmd, err := New()
 	require.NoError(t, err)
-	_, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin, args...)
+	_, _, err = cmdutils.ExecuteCommand(t, cmd, os.Stdin, args...)
 	require.NoError(t, err)
 
 	// Check that the working directory actually changed

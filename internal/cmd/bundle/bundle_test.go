@@ -1,9 +1,7 @@
 package bundle
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,17 +15,10 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
-	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-var testOut io.ReadWriter
-
 func TestMain(m *testing.M) {
-	// capture log output
-	testOut = bytes.NewBuffer([]byte{})
-	oldOut := log.Output
-	log.Output = testOut
 	viper.Set("verbose", true)
 
 	// Make the bundle command not fail on unsupported platforms to be
@@ -45,12 +36,10 @@ func TestMain(m *testing.M) {
 	}
 
 	m.Run()
-
-	log.Output = oldOut
 }
 
 func TestUnknownBuildSystem(t *testing.T) {
-	_, err := cmdutils.ExecuteCommand(t, New(), os.Stdin)
+	_, _, err := cmdutils.ExecuteCommand(t, New(), os.Stdin)
 	require.Error(t, err)
 
 	// In this scenario a log with the error message will be created and we do not care about it here
@@ -69,12 +58,10 @@ func TestClangMissing(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestClangVersion(t *testing.T) {
@@ -91,12 +78,10 @@ func TestClangVersion(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "clang", dep.MinVersion.String(), version))
 }
 
@@ -112,13 +97,10 @@ func TestCMakeMissing(t *testing.T) {
 	_, cleanup := testutil.BootstrapExampleProjectForTest("run-cmd-test", config.BuildSystemCMake)
 	defer cleanup()
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestEnvVarsSetInConfigFile(t *testing.T) {

@@ -1,9 +1,7 @@
 package reload
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"testing"
@@ -16,21 +14,11 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-var testOut io.ReadWriter
-
 func TestMain(m *testing.M) {
-	// capture log output
-	testOut = bytes.NewBuffer([]byte{})
-	oldOut := log.Output
-	log.Output = testOut
 	viper.Set("verbose", true)
-
 	m.Run()
-
-	log.Output = oldOut
 }
 
 func TestReloadCmd_FailsIfNoCIFuzzProject(t *testing.T) {
@@ -44,9 +32,9 @@ func TestReloadCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 
 	// Check that the command produces the expected error when not
 	// called below a cifuzz project directory.
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
-	testutil.CheckOutput(t, testOut, "Failed to parse cifuzz.yaml")
+	assert.Contains(t, stdErr, "Failed to parse cifuzz.yaml")
 }
 
 func TestClangMissing(t *testing.T) {
@@ -63,12 +51,9 @@ func TestClangMissing(t *testing.T) {
 	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Clang))
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "clang"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "clang"))
 }
 
 func TestVisualStudioMissing(t *testing.T) {
@@ -85,12 +70,9 @@ func TestVisualStudioMissing(t *testing.T) {
 	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.VisualStudio))
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "Visual Studio"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "Visual Studio"))
 }
 
 func TestCMakeMissing(t *testing.T) {
@@ -104,12 +86,9 @@ func TestCMakeMissing(t *testing.T) {
 	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.CMake))
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
-
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output), fmt.Sprintf(dependencies.MessageMissing, "cmake"))
+	assert.Contains(t, stdErr, fmt.Sprintf(dependencies.MessageMissing, "cmake"))
 }
 
 func TestWrongCMakeVersion(t *testing.T) {
@@ -124,11 +103,9 @@ func TestWrongCMakeVersion(t *testing.T) {
 	dep := dependencies.GetDep(dependencies.CMake)
 	version := dependencies.OverwriteGetVersionWith0(dep)
 
-	_, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin)
 	require.Error(t, err)
 
-	output, err := io.ReadAll(testOut)
-	require.NoError(t, err)
-	assert.Contains(t, string(output),
+	assert.Contains(t, stdErr,
 		fmt.Sprintf(dependencies.MessageVersion, "cmake", dep.MinVersion.String(), version))
 }
