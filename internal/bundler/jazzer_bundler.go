@@ -309,7 +309,7 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 	}
 	if len(allValidFuzzTests) == 0 {
 		log.Error(errors.Errorf("No fuzz test(s) could be found in the project directory '%s'.", b.opts.ProjectDir))
-		return nil, nil, err
+		return nil, nil, cmdutils.ErrSilent
 	}
 
 	var fuzzTests []string
