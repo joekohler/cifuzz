@@ -132,14 +132,37 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if cmd, err := rootCmd.ExecuteC(); err != nil {
-		// Errors that are not ErrSilent are not expected and we want to show their full stacktrace
+	var cmd *cobra.Command
+	if cmd, err = rootCmd.ExecuteC(); err != nil {
 		var silentErr *cmdutils.SilentError
+
+		// Errors that are not ErrSilent are not expected
+		// and we want to show the full stacktrace in verbose mode
 		if !errors.As(err, &silentErr) {
+			icon := "❌ "
+			style := pterm.Style{pterm.Bold, pterm.FgRed}
 			if log.PlainStyle() {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%+v\n", err)
+				icon = ""
+				style = pterm.Style{}
+			}
+
+			if viper.GetBool("verbose") {
+				type stackTracer interface {
+					StackTrace() errors.StackTrace
+				}
+				var st stackTracer
+				// Print all error messages (in case of wrapping)
+				// but only print the stacktrace of the root error cause
+				if errors.As(errors.Cause(err), &st) {
+					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v%+v\n", icon, err, st.StackTrace()))
+				} else {
+					// Catch cases where we either did not add any stacktrace/wrapped the error
+					// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
+					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
+				}
 			} else {
-				_, _ = fmt.Fprint(cmd.ErrOrStderr(), pterm.Style{pterm.Bold, pterm.FgRed}.Sprintf("%+v\n", err))
+				supportMsg := "More information can be acquired running the command in verbose mode (-v).\n"
+				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
 			}
 		}
 
