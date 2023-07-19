@@ -115,19 +115,6 @@ func ListJVMFuzzTests(testDirs []string, prefixFilter string) ([]string, error) 
 				return nil, err
 			}
 
-			// For files with a single fuzz method, identify it only by the file name
-			if len(methods) == 1 {
-				fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)
-				if err != nil {
-					return nil, err
-				}
-
-				if fuzzTestIdentifier != "" && (prefixFilter == "" || strings.HasPrefix(fuzzTestIdentifier, prefixFilter)) {
-					fuzzTests = append(fuzzTests, fuzzTestIdentifier)
-				}
-				continue
-			}
-
 			// add the fuzz test identifier to the fuzzTests slice
 			for _, method := range methods {
 				fuzzTestIdentifier, err := ConstructJVMFuzzTestIdentifier(match, testDir)

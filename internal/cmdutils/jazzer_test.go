@@ -53,16 +53,16 @@ func TestListJVMFuzzTests(t *testing.T) {
 	result, err := ListJVMFuzzTests(testDirs, "com.example")
 	require.NoError(t, err)
 	assert.Len(t, result, 2)
-	assert.Contains(t, result, "com.example.FuzzTestCase1")
-	assert.Contains(t, result, "com.example.FuzzTestCase3")
+	assert.Contains(t, result, "com.example.FuzzTestCase1::myFuzzTest")
+	assert.Contains(t, result, "com.example.FuzzTestCase3::myFuzzTest")
 
 	// Check result without filter
 	result, err = ListJVMFuzzTests(testDirs, "")
 	require.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.Contains(t, result, "com.example.FuzzTestCase1")
-	assert.Contains(t, result, "com.filter.me.FuzzTestCase2")
-	assert.Contains(t, result, "com.example.FuzzTestCase3")
+	assert.Contains(t, result, "com.example.FuzzTestCase1::myFuzzTest")
+	assert.Contains(t, result, "com.filter.me.FuzzTestCase2::myFuzzTest")
+	assert.Contains(t, result, "com.example.FuzzTestCase3::myFuzzTest")
 }
 
 func TestGetTargetMethodsFromJVMFuzzTestFileSingleMethod(t *testing.T) {
