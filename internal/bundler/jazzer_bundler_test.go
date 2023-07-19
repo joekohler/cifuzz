@@ -169,7 +169,7 @@ public class Baz {
 	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
 	require.NoError(t, err)
 	require.ElementsMatchf(t, []string{
-		"com.example.FuzzTest", "org.example.foo.Bar",
+		"com.example.FuzzTest::fuzz", "org.example.foo.Bar::fuzzerTestOneInput",
 	}, fuzzTests, "Expected to find fuzz test in %s", tempDir)
 }
 
@@ -343,7 +343,7 @@ func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
 				"com.example.FuzzTestCase2",
 			},
 			expectedTargetMethods: []string{
-				"",
+				"myFuzzTest",
 				"oneFuzzTest",
 				"anotherFuzzTest",
 			},
@@ -351,7 +351,7 @@ func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
 		{ // One class specified that only has one method
 			fuzzTestInBundler:     []string{"com.example.FuzzTestCase1"},
 			expectedFuzzTests:     []string{"com.example.FuzzTestCase1"},
-			expectedTargetMethods: []string{""},
+			expectedTargetMethods: []string{"myFuzzTest"},
 		},
 		{ // One class specified that has two methods
 			fuzzTestInBundler: []string{"com.example.FuzzTestCase2"},
@@ -376,7 +376,7 @@ func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
 				"com.example.FuzzTestCase1",
 				"com.example.FuzzTestCase2"},
 			expectedTargetMethods: []string{
-				"",
+				"myFuzzTest",
 				"anotherFuzzTest"},
 		},
 	}
