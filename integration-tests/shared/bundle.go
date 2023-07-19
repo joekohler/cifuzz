@@ -241,7 +241,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	fuzzerMetadata := metadata.Fuzzers[0]
 
 	// Verify that name is set
-	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase")
+	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase::myFuzzTest")
 
 	// Verify that the dictionary has been packaged with the fuzzer
 	dictPath = filepath.Join(archiveDir, fuzzerMetadata.Dictionary)
@@ -266,7 +266,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	assert.Equal(t, 3, len(classMatches))
 
 	// Verify that the manifest.jar has been created
-	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase", "manifest.jar")
+	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase_myFuzzTest", "manifest.jar")
 	require.FileExists(t, manifestJARPath)
 
 	// Verify contents of manifest.jar
@@ -278,6 +278,7 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	content, err = os.ReadFile(manifestFilePath)
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "Jazzer-Target-Class: com.example.FuzzTestCase")
+	assert.Contains(t, string(content), "Jazzer-Target-Method: myFuzzTest")
 	assert.Contains(t, string(content), "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase")
 }
 
@@ -335,7 +336,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	fuzzerMetadata := metadata.Fuzzers[0]
 
 	// Verify that name is set
-	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase")
+	assert.Equal(t, fuzzerMetadata.Name, "com.example.FuzzTestCase::myFuzzTest")
 
 	// Verify that the dictionary has been packaged with the fuzzer
 	dictPath = filepath.Join(archiveDir, fuzzerMetadata.Dictionary)
@@ -365,7 +366,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	assert.Equal(t, 3, len(classMatches))
 
 	// Verify that the manifest.jar has been created
-	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase", "manifest.jar")
+	manifestJARPath := filepath.Join(archiveDir, "com.example.FuzzTestCase_myFuzzTest", "manifest.jar")
 	require.FileExists(t, manifestJARPath)
 
 	// Verify contents of manifest.jar
@@ -377,6 +378,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	content, err = os.ReadFile(manifestFilePath)
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "Jazzer-Target-Class: com.example.FuzzTestCase")
+	assert.Contains(t, string(content), "Jazzer-Target-Method: myFuzzTest")
 	assert.Contains(t, string(content), "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase")
 }
 
