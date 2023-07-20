@@ -9,7 +9,7 @@ require (
 	github.com/alexflint/go-filemutex v1.2.0
 	github.com/docker/docker v24.0.4+incompatible
 	github.com/gen2brain/beeep v0.0.0-20230602101333-f384c29b62dd
-	github.com/gookit/color v1.5.3
+	github.com/gookit/color v1.5.4
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/mattn/go-zglob v0.0.4
