@@ -74,6 +74,20 @@ func (r *Runner) Run(ctx context.Context) error {
 	// class paths
 	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
 
+	// JVM tuning args
+	// https://github.com/CodeIntelligenceTesting/jazzer/blob/9879cfd3053d88169dad6d3ef241a4e113a651bb/launcher/jvm_tooling.cpp#L234-L244
+	args = append(args,
+		// Preserve and emit stack trace information even on hot paths.
+		// This may hurt performance, but also helps find flaky bugs.
+		"-XX:-OmitStackTraceInFastThrow",
+		// Optimize GC for high throughput rather than low latency.
+		"-XX:+UseParallelGC",
+		// CriticalJNINatives has been removed in JDK 18.
+		"-XX:+IgnoreUnrecognizedVMOptions",
+		// Improves the performance of Jazzer's tracing hooks.
+		"-XX:+CriticalJNINatives",
+	)
+
 	// Jazzer main class
 	args = append(args, options.JazzerMainClass)
 
