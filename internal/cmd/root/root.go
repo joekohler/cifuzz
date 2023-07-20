@@ -129,38 +129,6 @@ func Execute() {
 
 	var cmd *cobra.Command
 	if cmd, err = rootCmd.ExecuteC(); err != nil {
-		var silentErr *cmdutils.SilentError
-
-		// Errors that are not ErrSilent are not expected
-		// and we want to show the full stacktrace in verbose mode
-		if !errors.As(err, &silentErr) {
-			icon := "❌ "
-			style := pterm.Style{pterm.Bold, pterm.FgRed}
-			if log.PlainStyle() {
-				icon = ""
-				style = pterm.Style{}
-			}
-
-			if viper.GetBool("verbose") {
-				type stackTracer interface {
-					StackTrace() errors.StackTrace
-				}
-				var st stackTracer
-				// Print all error messages (in case of wrapping)
-				// but only print the stacktrace of the root error cause
-				if errors.As(errors.Cause(err), &st) {
-					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v%+v\n", icon, err, st.StackTrace()))
-				} else {
-					// Catch cases where we either did not add any stacktrace/wrapped the error
-					// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
-					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
-				}
-			} else {
-				supportMsg := "More information can be acquired running the command in verbose mode (-v).\n"
-				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
-			}
-		}
-
 		// We only want to print the usage message if an ErrIncorrectUsage
 		// was returned or it's an error produced by cobra which was
 		// caused by incorrect usage
@@ -207,6 +175,37 @@ For more information on cifuzz sandboxing, see:
 		var signalErr *cmdutils.SignalError
 		if errors.As(err, &signalErr) {
 			os.Exit(128 + int(signalErr.Signal))
+		}
+
+		// Any other errors that are not ErrSilent are not expected
+		// and we want to show the full stacktrace in verbose mode
+		var silentErr *cmdutils.SilentError
+		if !errors.As(err, &silentErr) {
+			icon := "❌ "
+			style := pterm.Style{pterm.Bold, pterm.FgRed}
+			if log.PlainStyle() {
+				icon = ""
+				style = pterm.Style{}
+			}
+
+			if viper.GetBool("verbose") {
+				type stackTracer interface {
+					StackTrace() errors.StackTrace
+				}
+				var st stackTracer
+				// Print all error messages (in case of wrapping)
+				// but only print the stacktrace of the root error cause
+				if errors.As(errors.Cause(err), &st) {
+					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v%+v\n", icon, err, st.StackTrace()))
+				} else {
+					// Catch cases where we either did not add any stacktrace/wrapped the error
+					// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
+					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
+				}
+			} else {
+				supportMsg := "More information can be acquired running the command in verbose mode (-v).\n"
+				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
+			}
 		}
 
 		os.Exit(1)
