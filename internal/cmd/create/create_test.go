@@ -87,7 +87,7 @@ func TestOkTypeScript(t *testing.T) {
 		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
 	}
 
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "node-typescript")
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "nodejs-typescript")
 	t.Cleanup(cleanup)
 
 	outputFile := filepath.Join(testDir, "myTest.fuzz.ts")
