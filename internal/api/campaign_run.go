@@ -107,6 +107,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		fuzzTargetConfig.JavaAPIFuzzTarget = &JavaAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
 		engine = "JAVA_LIBFUZZER"
 	case config.BuildSystemNodeJS:
+		fuzzTargetConfig.NodeJSAPIFuzzTarget = &NodeJSAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
 		engine = "JAZZER_JS"
 	default:
 		return "", "", errors.Errorf("Unsupported build system: %s", buildSystem)
