@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -119,8 +120,16 @@ func runTest(t *testing.T, testCase *TestCase) {
 		}
 	}
 
-	for index, testCaseRun := range testCaseRuns {
-		t.Run(fmt.Sprintf("[%d of %d] cifuzz %s %s", index+1, len(testCaseRuns), testCaseRun.command, testCaseRun.args), func(t *testing.T) {
+	for _, testCaseRun := range testCaseRuns {
+		testName := testCaseRun.command
+		if testCaseRun.args != "" {
+			testName += " " + testCaseRun.args
+		}
+		if testCaseRun.sampleFolder != "" {
+			testName = filepath.Base(testCaseRun.sampleFolder) + "/" + testName
+		}
+
+		t.Run(testName, func(t *testing.T) {
 			commandOutput := runTestCaseInContainer(t, ctx, dockerClient, testCase, testCaseRun, imageTag)
 			fmt.Println(commandOutput.Stdout)
 
