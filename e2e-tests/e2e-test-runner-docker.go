@@ -41,27 +41,31 @@ func getDockerClient() (*client.Client, error) {
 	return dockerClient, nil
 }
 
-func prepareDockerfile(t *testing.T) string {
+func prepareDockerfile(t *testing.T, testCase *TestCase) string {
 	t.Helper()
 	var baseImage string
 	switch runtime.GOOS {
 	case "linux", "darwin":
 		baseImage = "ubuntu:latest"
 	case "windows":
-		baseImage = "mcr.microsoft.com/windows/server:ltsc2022"
+		baseImage = "mcr.microsoft.com/windows/servercore:ltsc2022"
 	default:
 		t.Fatal("unsupported OS")
 	}
 	dockerfile := "FROM " + baseImage + "\n"
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" { // Base image ships without certificates, so we can't call CI Sense API
 		dockerfile += "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates\n"
 	}
+	if len(testCase.ToolsRequired) > 0 {
+		dockerfile += getDockerfileLinesForRequiredTools(testCase.ToolsRequired)
+	}
+	t.Log("Dockerfile used:\n", dockerfile)
 	return dockerfile
 }
 
-func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *client.Client) {
+func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase) {
 	t.Helper()
-	dockerfile := prepareDockerfile(t)
+	dockerfile := prepareDockerfile(t, testCase)
 	dockerFolder := shared.CopyTestDockerDirForE2E(t, dockerfile)
 
 	imageTar, err := container.CreateImageTar(dockerFolder)
@@ -71,7 +75,7 @@ func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *c
 		Dockerfile:  "Dockerfile",
 		Remove:      true,
 		ForceRemove: true,
-		Tags:        []string{"cifuzz-test:latest"},
+		Tags:        []string{"cifuzz-e2e-test:latest"},
 	}
 
 	res, err := dockerClient.ImageBuild(ctx, imageTar, opts)
@@ -117,12 +121,13 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 		fileutil.Cleanup(contextFolder)
 	})
 	containerConfig := &dockerContainer.Config{
-		Image:      "cifuzz-test:latest",
+		Image:      "cifuzz-e2e-test:latest",
 		Tty:        false,
 		Env:        testCase.Environment,
-		Cmd:        []string{cifuzzExecutablePath, testCaseRun.command},
+		Cmd:        []string{cifuzzExecutablePath},
 		WorkingDir: targetMount,
 	}
+	containerConfig.Cmd = append(containerConfig.Cmd, strings.Split(testCaseRun.command, " ")...)
 
 	if len(testCaseRun.args) > 0 {
 		containerConfig.Cmd = append(containerConfig.Cmd, strings.Split(testCaseRun.args, " ")...)
@@ -141,15 +146,28 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 		t.Fatal("Unsupported OS")
 	}
 
+	containerBinds := []string{
+		cifuzzExecutableFile + ":" + cifuzzTargetMount,
+		contextFolder + ":" + targetMount,
+		hostCoverageDirectoryPath + ":" + coverageDirectoryPath,
+	}
+
+	for _, tool := range testCase.ToolsRequired {
+		// Mount Docker socket only when required
+		if tool == "docker" {
+			if runtime.GOOS == "windows" {
+				containerBinds = append(containerBinds, "//./pipe/docker_engine://./pipe/docker_engine")
+			} else {
+				containerBinds = append(containerBinds, "/var/run/docker.sock:/var/run/docker.sock")
+			}
+		}
+	}
+
 	cont, err := dockerClient.ContainerCreate(
 		ctx,
 		containerConfig,
 		&dockerContainer.HostConfig{
-			Binds: []string{
-				cifuzzExecutableFile + ":" + cifuzzTargetMount,
-				contextFolder + ":" + targetMount,
-				hostCoverageDirectoryPath + ":" + coverageDirectoryPath,
-			},
+			Binds: containerBinds,
 		},
 		nil,
 		nil,

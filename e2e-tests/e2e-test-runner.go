@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,15 +38,15 @@ const (
 )
 
 type TestCase struct {
-	Description  string
-	Command      string
-	Environment  []string
-	Args         []string
-	SampleFolder []string
-	CIUser       CIUser
-	// Os        []OSRuntime // When we will have tests depending on the OS
-	// ToolsRequired []string # TODO: depending on the tools we will want to test
-	Assert Assertion
+	Description   string
+	Command       string
+	Environment   []string
+	Args          []string
+	SampleFolder  []string
+	CIUser        CIUser
+	ToolsRequired []string
+	Assert        Assertion
+	SkipOnOS      string
 }
 
 type testCaseRunOptions struct {
@@ -72,11 +73,15 @@ func runTest(t *testing.T, testCase *TestCase) {
 		t.Skip("Skipping e2e tests. You need to set E2E_TESTS_MATRIX envvar to run this test.")
 	}
 
+	if testCase.SkipOnOS == runtime.GOOS {
+		t.Skip("Skipping e2e test. It is not supported on this OS.")
+	}
+
 	ctx := context.Background()
 	dockerClient, err := getDockerClient()
 	require.NoError(t, err)
 
-	buildImageFromDockerFile(t, ctx, dockerClient)
+	buildImageFromDockerFile(t, ctx, dockerClient, testCase)
 
 	// Set defaults
 	if len(testCase.Args) == 0 {

@@ -101,7 +101,7 @@ func CopyTestdataDirForE2E(t *testing.T, name string) string {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", strings.Replace(name, "/", "-", -1)))
+	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", strings.ReplaceAll(name, "/", "-")))
 
 	// Get the path to the testdata dir
 	testDataDir := filepath.Join(cwd, "..", "samples", name)
