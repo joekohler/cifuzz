@@ -101,10 +101,14 @@ func CopyTestdataDirForE2E(t *testing.T, name string) string {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", name))
+	dir := testutil.MkdirTemp(t, "", fmt.Sprintf("cifuzz-%s-testdata-", strings.Replace(name, "/", "-", -1)))
 
 	// Get the path to the testdata dir
 	testDataDir := filepath.Join(cwd, "..", "samples", name)
+	// if string starts with examples, use the project examples folder
+	if strings.HasPrefix(name, "examples/") {
+		testDataDir = filepath.Join(cwd, "..", "..", name)
+	}
 
 	// Copy the testdata dir to the temporary directory
 	err = copy.Copy(testDataDir, dir)
