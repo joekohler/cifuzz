@@ -2,6 +2,7 @@ package shared
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
@@ -280,6 +282,28 @@ func TestBundleMaven(t *testing.T, dir string, cifuzz string, args ...string) {
 	assert.Contains(t, string(content), "Jazzer-Target-Class: com.example.FuzzTestCase")
 	assert.Contains(t, string(content), "Jazzer-Target-Method: myFuzzTest")
 	assert.Contains(t, string(content), "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase")
+
+	// Verify that the source_map.json has been created
+	sourceMapPath := filepath.Join(archiveDir, "source_map.json")
+	require.FileExists(t, sourceMapPath)
+
+	// Verify contents of source_map.json
+	content, err = os.ReadFile(sourceMapPath)
+	require.NoError(t, err)
+	sourceMap := bundler.SourceMap{}
+	err = json.Unmarshal(content, &sourceMap)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(sourceMap.JavaPackages))
+
+	expectedSourceLocations := []string{
+		"src/test/java/com/example/FuzzTestCase.java",
+		"src/main/java/com/example/ExploreMe.java",
+		"src/main/java/com/example/App.java",
+	}
+	assert.Equal(t, len(expectedSourceLocations), len(sourceMap.JavaPackages["com.example"]))
+	for _, expectedSourceLocation := range expectedSourceLocations {
+		assert.Contains(t, sourceMap.JavaPackages["com.example"], expectedSourceLocation)
+	}
 }
 
 func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args ...string) {
@@ -380,6 +404,28 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	assert.Contains(t, string(content), "Jazzer-Target-Class: com.example.FuzzTestCase")
 	assert.Contains(t, string(content), "Jazzer-Target-Method: myFuzzTest")
 	assert.Contains(t, string(content), "Jazzer-Fuzz-Target-Class: com.example.FuzzTestCase")
+
+	// Verify that the source_map.json has been created
+	sourceMapPath := filepath.Join(archiveDir, "source_map.json")
+	require.FileExists(t, sourceMapPath)
+
+	// Verify contents of source_map.json
+	content, err = os.ReadFile(sourceMapPath)
+	require.NoError(t, err)
+	sourceMap := bundler.SourceMap{}
+	err = json.Unmarshal(content, &sourceMap)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(sourceMap.JavaPackages))
+
+	expectedSourceLocations := []string{
+		"src/test/java/com/example/FuzzTestCase.java",
+		"src/main/java/com/example/ExploreMe.java",
+		"src/main/java/com/example/App.java",
+	}
+	assert.Equal(t, len(expectedSourceLocations), len(sourceMap.JavaPackages["com.example"]))
+	for _, expectedSourceLocation := range expectedSourceLocations {
+		assert.Contains(t, sourceMap.JavaPackages["com.example"], expectedSourceLocation)
+	}
 }
 
 func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, cifuzzEnv []string, args ...string) (*archive.Metadata, string) {

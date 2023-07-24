@@ -63,8 +63,9 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	archiveWriter := archive.NewTarArchiveWriter(bufWriter, true)
 
 	b := newJazzerBundler(&Opts{
-		Env:     []string{"FOO=foo"},
-		tempDir: tempDir,
+		Env:        []string{"FOO=foo"},
+		ProjectDir: projectDir,
+		tempDir:    tempDir,
 	}, archiveWriter)
 	fuzzers, err := b.assembleArtifacts(buildResults)
 	require.NoError(t, err)

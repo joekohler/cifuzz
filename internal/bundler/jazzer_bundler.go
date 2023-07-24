@@ -1,11 +1,13 @@
 package bundler
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
@@ -21,6 +23,12 @@ import (
 	"code-intelligence.com/cifuzz/pkg/options"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
+
+// SourceMap provides a mapping from package names
+// into the corresponding source file locations
+type SourceMap struct {
+	JavaPackages map[string][]string `json:"java_packages,omitempty"`
+}
 
 // The directory inside the fuzzing artifact used to store runtime dependencies
 const runtimeDepsPath = "runtime_deps"
@@ -55,6 +63,28 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 	if b.opts.Dictionary != "" {
 		archiveDict = "dict"
 		err := b.archiveWriter.WriteFile(archiveDict, b.opts.Dictionary)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// add source map to archive
+	sourceMap, err := b.createSourceMap()
+	if err != nil {
+		return nil, err
+	}
+	if len(sourceMap.JavaPackages) > 0 {
+		jsonSourceMap, err := json.Marshal(sourceMap)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		sourceMapName := "source_map.json"
+		sourceMapPath := filepath.Join(b.opts.tempDir, sourceMapName)
+		err = os.WriteFile(sourceMapPath, jsonSourceMap, 0644)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		err = b.archiveWriter.WriteFile(sourceMapName, sourceMapPath)
 		if err != nil {
 			return nil, err
 		}
@@ -372,4 +402,45 @@ func (b *jazzerBundler) getTestDirs() ([]string, error) {
 	}
 
 	return testDirs, nil
+}
+
+func (b *jazzerBundler) createSourceMap() (*SourceMap, error) {
+	sourceMap := SourceMap{
+		JavaPackages: make(map[string][]string),
+	}
+
+	// Use zglob to find all java or kotlin files in the project dir.
+	// TODO: Searching the whole project dir is a temporary solution
+	// until the source and test locations provided by maven/gradle
+	// can be used.
+	sourceFiles, err := zglob.Glob(filepath.Join(b.opts.ProjectDir, "**", "*.{java,kt}"))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	for _, file := range sourceFiles {
+		packageName, err := func() (string, error) {
+			fd, err := os.Open(file)
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+			defer fd.Close()
+			return java.GetPackageFromSource(fd), nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+		if packageName == "" {
+			continue
+		}
+		relPath, err := filepath.Rel(b.opts.ProjectDir, file)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		// Replace double slashes on Windows with forward slashes
+		relPath = strings.ReplaceAll(relPath, "\\", "/")
+		sourceMap.JavaPackages[packageName] = append(sourceMap.JavaPackages[packageName], relPath)
+	}
+
+	return &sourceMap, nil
 }
