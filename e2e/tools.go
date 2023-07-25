@@ -24,9 +24,17 @@ func getDockerfileLinesForRequiredTools(toolNames []string) string {
 		lines += "RUN powershell Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))\n"
 	}
 	for _, name := range toolNames {
-		if tool, ok := toolsAvailable[name]; ok {
-			lines += tool() + "\n"
+		if name == "docker" {
+			// Docker socket is mounted separately
+			continue
 		}
+
+		tool, ok := toolsAvailable[name]
+		if !ok {
+			// Panic because this is a programming error
+			panic("Tool " + name + " is not available")
+		}
+		lines += tool() + "\n"
 	}
 	return lines
 }
