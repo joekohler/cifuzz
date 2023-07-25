@@ -1,4 +1,2 @@
 code-intelligence.com/cifuzz/integration-tests/java-maven
-code-intelligence.com/cifuzz/integration-tests/kotlin-gradle
-code-intelligence.com/cifuzz/internal/bundler
-code-intelligence.com/cifuzz/integration-tests/other
+code-intelligence.com/cifuzz/integration-tests/gradle/java
