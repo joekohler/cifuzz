@@ -160,7 +160,7 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 	if matches["column"] != "" {
 		column, err = strconv.ParseUint(matches["column"], 10, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 	}
 
@@ -248,7 +248,7 @@ func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
 	if matches["column"] != "" {
 		column, err = strconv.ParseUint(matches["column"], 10, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 	}
 

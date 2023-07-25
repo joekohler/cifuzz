@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/installer"
@@ -29,10 +30,10 @@ func RegisterTestDeps(path ...string) {
 	for _, p := range path {
 		err := filepath.Walk(p, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			_, err = os.Stat(path)
-			return err
+			return errors.WithStack(err)
 		})
 		if err != nil {
 			panic(err)

@@ -182,9 +182,9 @@ func (w *TarArchiveWriter) WriteHardLink(target string, linkname string) error {
 // WriteDir traverses sourceDir recursively and writes all regular files
 // and symlinks to the archive.
 func (w *TarArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) error {
-	return filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		relPath, err := filepath.Rel(sourceDir, path)
@@ -201,6 +201,11 @@ func (w *TarArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) er
 		// There is no harm in creating tar entries for empty directories, even though they are not necessary.
 		return w.writeFileOrEmptyDir(archivePath, path)
 	})
+	if err != nil {
+		return errors.Wrapf(err, "Failed to write files from %s to archive path %s", sourceDir, archiveBasePath)
+	}
+
+	return nil
 }
 
 func (w *TarArchiveWriter) GetSourcePath(archivePath string) string {

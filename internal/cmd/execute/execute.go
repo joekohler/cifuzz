@@ -149,12 +149,12 @@ func buildRunner(fuzzer *archive.Fuzzer) (runCmd.Runner, error) {
 	seedDirName := "seed"
 	err := os.MkdirAll(seedDirName, 0o755)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err = os.MkdirAll(corpusDirName, 0o755)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	reportHandler, err := reporthandler.NewReportHandler(

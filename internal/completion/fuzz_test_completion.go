@@ -80,12 +80,12 @@ func absoluteBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 
 	workSpace, err := getWorkspacePath()
 	if err != nil {
-		log.Error(err)
+		log.Error(errors.Wrap(err, "Failed to get path to bazel workspace"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 	buildFiles, err := findBazelBuildFiles(toComplete, workSpace)
 	if err != nil {
-		log.Error(err)
+		log.Error(errors.Wrap(err, "Failed to find bazel build files"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -102,7 +102,7 @@ func absoluteBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
 			// Command completion is best-effort: Do not fail on errors
-			log.Error(err)
+			log.Error(errors.Wrapf(err, "Failed to find absolute targets in bazel build file %s", buildFile))
 			continue
 		}
 		for _, name := range targetNames {
@@ -118,12 +118,12 @@ func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 
 	workDir, err := os.Getwd()
 	if err != nil {
-		log.Error(err)
+		log.Error(errors.Wrap(err, "Failed to get path to current working directory"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 	buildFiles, err := findBazelBuildFiles(toComplete, workDir)
 	if err != nil {
-		log.Error(err)
+		log.Error(errors.Wrap(err, "Failed to find bazel build files"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -131,7 +131,7 @@ func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
 			// Command completion is best-effort: Do not fail on errors
-			log.Error(err)
+			log.Error(errors.Wrapf(err, "Failed to find relative targets in bazel build file %s", buildFile))
 			continue
 		}
 
@@ -225,7 +225,7 @@ func findBazelBuildFiles(toComplete string, dir string) ([]string, error) {
 func findTargetsInBuildFile(filePath string) (map[string]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Read build file and remove comments and newlines, which is
@@ -257,7 +257,7 @@ func findTargetsInBuildFile(filePath string) (map[string]string, error) {
 func getWorkspacePath() (string, error) {
 	workDir, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	exists, err := fileutil.Exists(filepath.Join(workDir, "WORKSPACE"))

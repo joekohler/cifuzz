@@ -95,7 +95,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	// Create a temporary build directory
 	b.buildDir, err = os.MkdirTemp("", "cifuzz-build-")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	b.env, err = build.CommonBuildEnv()
@@ -416,7 +416,7 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Failed to search through project to find fuzz test executable")
 	}
 	// No executable was found, we handle this error in the caller
 	if executable == "" {

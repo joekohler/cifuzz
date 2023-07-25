@@ -1,6 +1,7 @@
 package run
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -132,12 +133,12 @@ func (c *containerRunCmd) buildContainerFromImage() (string, error) {
 	b := bundler.New(&c.opts.Opts)
 	bundlePath, err := b.Bundle()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Failed to create bundle")
 	}
 
 	_, err = container.BuildImageFromBundle(bundlePath)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "Failed to build image from bundle %s", bundlePath)
 	}
 
 	return container.Create(c.opts.FuzzTests[0])

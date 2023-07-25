@@ -91,14 +91,14 @@ func prepareBuildContext(bundlePath string) (string, error) {
 
 	err = archive.Extract(bundlePath, buildContextDir)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "Failed to extract bundle to %s", buildContextDir)
 	}
 
 	// read metadata from bundle to use information for building
 	// the right image
 	metadata, err := archive.MetadataFromPath(filepath.Join(buildContextDir, archive.MetadataFileName))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Failed to read bundle.yml")
 	}
 
 	// add additional files needed for the image
@@ -109,7 +109,7 @@ func prepareBuildContext(bundlePath string) (string, error) {
 	}
 	err = copyCifuzz(buildContextDir)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "Failed to copy CI Fuzz binaries to %s", buildContextDir)
 	}
 
 	log.Debugf("Prepared build context for fuzz container image at %s", buildContextDir)
@@ -169,7 +169,11 @@ func CreateImageTar(buildContextDir string) (*os.File, error) {
 	}
 
 	// the client.BuildImage from docker expects an unclosed io.Reader / os.File
-	return os.Open(imageTar.Name())
+	file, err := os.Open(imageTar.Name())
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return file, nil
 }
 
 func createDockerfile(path string, baseImage string) error {
@@ -216,7 +220,7 @@ func copyCifuzz(buildContextDir string) error {
 	ensureCifuzzScriptPath := filepath.Join(buildContextDir, "ensure-cifuzz.sh")
 	err = os.WriteFile(ensureCifuzzScriptPath, []byte(ensureCifuzzScript), 0o755)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil

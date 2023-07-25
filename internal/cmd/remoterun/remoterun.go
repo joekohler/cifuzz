@@ -345,7 +345,7 @@ func (c *runRemoteCmd) run() error {
 		//       of the fuzz target.
 		path, err := url.JoinPath(c.opts.Server, "dashboard", campaignRunName, "overview")
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		values := url.Values{}
@@ -353,7 +353,7 @@ func (c *runRemoteCmd) run() error {
 
 		url, err := url.Parse(path)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		url.RawQuery = values.Encode()
 

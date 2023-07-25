@@ -88,7 +88,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	}
 	err = os.MkdirAll(buildDir, 0755)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	b.env, err = build.CommonBuildEnv()

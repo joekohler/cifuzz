@@ -42,7 +42,7 @@ type GitPath struct{}
 func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 	url, err := url.JoinPath("/v1", "projects")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	resp, err := client.sendRequest("GET", url, nil, token)
 	if err != nil {
@@ -101,7 +101,7 @@ func (client *APIClient) CreateProject(name string, token string) (*Project, err
 
 	url, err := url.JoinPath("/v1", "projects")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
 	if err != nil {

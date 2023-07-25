@@ -162,7 +162,7 @@ func (cmd *findingCmd) run(args []string) error {
 		}
 		err = pterm.DefaultTable.WithHasHeader().WithData(data).Render()
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		err = w.Flush()
@@ -193,7 +193,7 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		}
 		_, err = fmt.Fprintln(cmd.OutOrStdout(), s)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	} else {
 		s := pterm.Style{pterm.Reset, pterm.Bold}.Sprint(f.ShortDescriptionWithName())
@@ -201,7 +201,7 @@ func (cmd *findingCmd) printFinding(f *finding.Finding) error {
 		s += fmt.Sprintf("\n  %s\n", strings.Join(f.Logs, "\n  "))
 		_, err := fmt.Fprint(cmd.OutOrStdout(), s)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		PrintMoreDetails(f)
 	}

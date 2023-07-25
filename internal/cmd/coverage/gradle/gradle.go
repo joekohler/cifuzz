@@ -66,7 +66,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	// Make sure that directory exists, otherwise the command for --format=jacocoxml will fail
 	err := os.MkdirAll(cov.OutputPath, 0700)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	gradleArgs = append(gradleArgs, GradleReportTask, fmt.Sprintf("-Pcifuzz.report.output=%s", cov.OutputPath))

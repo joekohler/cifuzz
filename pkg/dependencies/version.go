@@ -38,7 +38,7 @@ type execCheck func(string, Key) (*semver.Version, error)
 func bazelVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 	path, err := exec.LookPath("bazel")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	version, err := getVersionFromCommand(path, []string{"--version"}, bazelRegex, dep.Key)
@@ -78,7 +78,7 @@ func clangVersion(dep *Dependency, clangCheck execCheck) (*semver.Version, error
 	} else {
 		clang, err := exec.LookPath("clang")
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 		log.Warn("No clang found in CC, now using ", clang)
 	}
@@ -100,7 +100,7 @@ Other llvm tools like llvm-cov are selected based on the smaller version.`)
 	} else {
 		clangPP, err := exec.LookPath("clang++")
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 		log.Warn("No clang++ found in CC, now using ", clangPP)
 	}
@@ -143,7 +143,7 @@ func genHTMLVersion(path string, dep *Dependency) (*semver.Version, error) {
 func cmakeVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 	path, err := exec.LookPath("cmake")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	version, err := getVersionFromCommand(path, []string{"--version"}, cmakeRegex, dep.Key)

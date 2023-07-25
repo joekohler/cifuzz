@@ -21,7 +21,7 @@ func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, 
 	// get it from the API
 	url, err := url.JoinPath("v2", "error-details")
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	resp, err := client.sendRequest("GET", url, nil, token)

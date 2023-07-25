@@ -89,7 +89,11 @@ var deps = Dependencies{
 		// llvm-profdata provides no version information
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
-			return semver.NewVersion("0.0.0")
+			ver, err := semver.NewVersion("0.0.0")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			return ver, nil
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
 			path, err := dep.finder.LLVMProfDataPath()
@@ -142,7 +146,11 @@ var deps = Dependencies{
 		Key:        Perl,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
-			return semver.NewVersion("0.0.0")
+			ver, err := semver.NewVersion("0.0.0")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			return ver, nil
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.PerlPath)
@@ -160,7 +168,11 @@ var deps = Dependencies{
 		Key:        Maven,
 		MinVersion: *semver.MustParse("0.0.0"),
 		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
-			return semver.NewVersion("0.0.0")
+			ver, err := semver.NewVersion("0.0.0")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			return ver, nil
 		},
 		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.MavenPath)

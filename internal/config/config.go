@@ -223,7 +223,7 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 func IsGradleMultiProject(projectDir string) (bool, error) {
 	matches, err := zglob.Glob(filepath.Join(projectDir, "settings.{gradle,gradle.kts}"))
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	if len(matches) == 0 {
 		return false, nil

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mattn/go-zglob"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -223,7 +224,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 			if !info.IsDir() {
 				relPath, err := filepath.Rel(archiveDir, path)
 				if err != nil {
-					return err
+					return errors.WithStack(err)
 				}
 				msg += relPath + "\n"
 			}

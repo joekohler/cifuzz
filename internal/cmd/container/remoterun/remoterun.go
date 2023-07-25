@@ -1,6 +1,7 @@
 package remoterun
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -47,14 +48,13 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 
 			err := config.FindAndParseProjectConfig(opts)
 			if err != nil {
-				log.Errorf(err, "Failed to parse cifuzz.yaml: %v", err.Error())
-				return cmdutils.WrapSilentError(err)
+				return err
 			}
 
 			// check for required registry flag
 			err = cmd.MarkFlagRequired("registry")
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 
 			fuzzTests, err := resolve.FuzzTestArguments(opts.ResolveSourceFilePath, args, opts.BuildSystem, opts.ProjectDir)

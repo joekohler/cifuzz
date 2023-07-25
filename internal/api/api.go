@@ -209,6 +209,9 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 
 	err := routines.Wait()
 	if err != nil {
+		// Routines.Wait() returns our own errors so it should already have
+		// a stack trace and doesn't need to have one added
+		// nolint: wrapcheck
 		return nil, err
 	}
 
@@ -224,7 +227,7 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string) (string, error) {
 	url, err := url.JoinPath("/v1", artifact.ResourceName+":run")
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	resp, err := client.sendRequest("POST", url, nil, token)
 	if err != nil {
@@ -272,7 +275,7 @@ func (client *APIClient) sendRequest(method string, endpoint string, body io.Rea
 func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, body io.Reader, token string, timeout time.Duration) (*http.Response, error) {
 	url, err := url.JoinPath(client.Server, endpoint)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	req, err := http.NewRequestWithContext(context.Background(), method, url, body)
 	if err != nil {
@@ -346,7 +349,15 @@ func getCustomTransport() *http.Transport {
 	// of https://github.com/golang/go/issues/24135
 	dialer := proxy.FromEnvironment()
 	dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
-		return dialer.Dial(network, address)
+		conn, err := dialer.Dial(network, address)
+		if err != nil {
+			// This error is being returned to the http package and we
+			// don't know if it could have side effects with an added stack
+			// trace
+			// nolint: wrapcheck
+			return nil, err
+		}
+		return conn, nil
 	}
 	return &http.Transport{DialContext: dialContext}
 }

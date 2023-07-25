@@ -206,7 +206,7 @@ func (cov *CoverageGenerator) run() error {
 	dirWithEmptyFile := filepath.Join(cov.outputDir, "empty-file-corpus")
 	err = os.Mkdir(dirWithEmptyFile, 0o755)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	err = fileutil.Touch(filepath.Join(dirWithEmptyFile, "empty_file"))
 	if err != nil {
@@ -216,12 +216,12 @@ func (cov *CoverageGenerator) run() error {
 	emptyDir := filepath.Join(cov.outputDir, "merge-target")
 	err = os.Mkdir(emptyDir, 0o755)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	artifactsDir := filepath.Join(cov.outputDir, "merge-artifacts")
 	err = os.Mkdir(artifactsDir, 0o755)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// libFuzzer emits crashing inputs in merge mode, but these aren't useful as we only run on already known inputs.

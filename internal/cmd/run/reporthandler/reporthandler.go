@@ -361,7 +361,7 @@ func (h *ReportHandler) countCorpusEntries() (uint, error) {
 			}
 			info, err := d.Info()
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			// Don't count empty files, same as libFuzzer
 			if info.Size() != 0 {

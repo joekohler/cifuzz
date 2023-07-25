@@ -50,11 +50,11 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 
 	fuzzingRunName, err := url.JoinPath(project, "fuzzing_runs", fmt.Sprintf("cifuzz-fuzzing-run-%s", hex.EncodeToString(randBytes)))
 	if err != nil {
-		return "", "", err
+		return "", "", errors.WithStack(err)
 	}
 	fuzzTargetConfigName, err := url.JoinPath(project, "fuzz_targets", fuzzTargetId)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.WithStack(err)
 	}
 
 	// FIXME: We don't have metrics except for the first run. Successive runs
@@ -127,7 +127,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 
 	campaignRunName, err := url.JoinPath(project, "campaign_runs", fmt.Sprintf("cifuzz-campaign-run-%s", hex.EncodeToString(randBytes)))
 	if err != nil {
-		return "", "", err
+		return "", "", errors.WithStack(err)
 	}
 	campaignRun := CampaignRun{
 		Name:        campaignRunName,
@@ -152,7 +152,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 
 	url, err := url.JoinPath("/v1", project, "campaign_runs")
 	if err != nil {
-		return "", "", err
+		return "", "", errors.WithStack(err)
 	}
 	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
 	if err != nil {

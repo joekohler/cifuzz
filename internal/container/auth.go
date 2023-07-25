@@ -16,7 +16,7 @@ func RegistryAuth(registry string) (string, error) {
 	// TODO check if this works on Windows
 	homedir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	cfg, err := cliconfig.Load(filepath.Join(homedir, ".docker"))
 	if err != nil {

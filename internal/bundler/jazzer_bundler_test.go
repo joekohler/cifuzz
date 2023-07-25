@@ -188,7 +188,7 @@ func listFilesRecursively(dir string) ([]string, error) {
 
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		relPath, err := filepath.Rel(dir, path)
@@ -198,7 +198,7 @@ func listFilesRecursively(dir string) ([]string, error) {
 		paths = append(paths, relPath)
 		return nil
 	})
-	return paths, err
+	return paths, errors.Wrapf(err, "Failed to list files from directory %s", dir)
 }
 
 // As long as we only have linux based runner we should make sure

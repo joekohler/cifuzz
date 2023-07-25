@@ -897,7 +897,7 @@ func ExecuteRunner(runner Runner) error {
 		return cmdutils.WrapSilentError(err)
 	}
 
-	return err
+	return errors.Wrap(err, "Failed to execute runner")
 }
 
 func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
