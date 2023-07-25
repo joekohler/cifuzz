@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"io"
 	"os"
 	"strings"
 
@@ -59,7 +60,7 @@ func Create(fuzzTest string) (string, error) {
 	return cont.ID, nil
 }
 
-func Run(id string) error {
+func Run(id string, outW, errW io.Writer) error {
 	cli, err := getDockerClient()
 	if err != nil {
 		return err
@@ -81,7 +82,7 @@ func Run(id string) error {
 	// Continuously print the container's stdout and stderr to the host's
 	// stdout and stderr.
 	go func() {
-		out, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
+		outR, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
 			Follow:     true,
@@ -91,13 +92,13 @@ func Run(id string) error {
 			return
 		}
 		defer func() {
-			err := out.Close()
+			err := outR.Close()
 			if err != nil {
 				log.Errorf(err, "error closing container logs: %s", err.Error())
 			}
 		}()
 
-		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+		_, err = stdcopy.StdCopy(outW, errW, outR)
 		if err != nil {
 			log.Errorf(err, "error copying container logs: %s", err.Error())
 			return

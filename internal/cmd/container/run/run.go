@@ -139,7 +139,7 @@ func (c *containerRunCmd) run() error {
 		}
 	}()
 
-	err = container.Run(containerID)
+	err = container.Run(containerID, c.OutOrStdout(), c.ErrOrStderr())
 	if err != nil {
 		logging.StopBuildProgressSpinnerOnError(log.ContainerRunInProgressErrorMsg)
 		return err
