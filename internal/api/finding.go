@@ -126,6 +126,8 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		return errors.WithStack(err)
 	}
 
+	log.Debugf("Uploading finding: %s\n", string(body))
+
 	url, err := url.JoinPath("/v1", project, "findings")
 	if err != nil {
 		return errors.WithStack(err)

@@ -98,11 +98,16 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		Name:        fuzzTargetConfigName,
 		DisplayName: fuzzTarget,
 	}
+	var engine string
 	switch buildSystem {
 	case config.BuildSystemBazel, config.BuildSystemCMake, config.BuildSystemOther:
 		fuzzTargetConfig.CAPIFuzzTarget = &CAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
+		engine = "LIBFUZZER"
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		fuzzTargetConfig.JavaAPIFuzzTarget = &JavaAPIFuzzTarget{APIFuzzTarget: apiFuzzTarget}
+		engine = "JAVA_LIBFUZZER"
+	case config.BuildSystemNodeJS:
+		engine = "JAZZER_JS"
 	default:
 		return "", "", errors.Errorf("Unsupported build system: %s", buildSystem)
 	}
@@ -112,7 +117,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		DisplayName: "cifuzz-fuzzing-run",
 		Status:      "SUCCEEDED",
 		FuzzerRunConfigurations: FuzzerRunConfigurations{
-			Engine:       "LIBFUZZER",
+			Engine:       engine,
 			NumberOfJobs: 4,
 		},
 		Metrics:          metricsList,
