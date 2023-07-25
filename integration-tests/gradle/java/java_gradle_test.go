@@ -1,4 +1,4 @@
-package gradlekotlin
+package java
 
 import (
 	"bufio"
@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/integration-tests/gradle"
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
@@ -20,7 +21,7 @@ import (
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
-func TestIntegration_GradleKotlin(t *testing.T) {
+func TestIntegration_Gradle(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -29,9 +30,9 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
 
 	// Copy testdata
-	projectDir := shared.CopyTestdataDir(t, "gradlekotlin")
+	projectDir := shared.CopyTestdataDir(t, "gradle")
 
-	cifuzzRunner := shared.CIFuzzRunner{
+	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  projectDir,
 		DefaultFuzzTest: "com.example.FuzzTestCase",
@@ -39,24 +40,24 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	// Execute the init command
 	allStderrLines := cifuzzRunner.Command(t, "init", nil)
-	require.Contains(t, strings.Join(allStderrLines, " "), initCmd.GradleMultiProjectWarningMsg)
+	require.NotContains(t, strings.Join(allStderrLines, " "), initCmd.GradleMultiProjectWarningMsg)
 	require.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
 	linesToAdd := shared.FilterForInstructions(allStderrLines)
-	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle.kts"), linesToAdd, "plugins", true)
+	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle"), linesToAdd, "plugins", true)
 
 	// Execute the create command
 	testDir := filepath.Join(
 		"src",
 		"test",
-		"kotlin",
+		"java",
 		"com",
 		"example",
 	)
 	err := os.MkdirAll(filepath.Join(projectDir, testDir), 0o755)
 	require.NoError(t, err)
-	outputPath := filepath.Join(testDir, "FuzzTestCase.kt")
+	outputPath := filepath.Join(testDir, "FuzzTestCase.java")
 	cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
-		Args: []string{"kotlin", "--output", outputPath},
+		Args: []string{"java", "--output", outputPath},
 	},
 	)
 
@@ -89,13 +90,14 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
-			SourceFile:  "ExploreMe",
-			Line:        11,
+			SourceFile:  "com.example.ExploreMe",
+			Line:        19,
 			Column:      0,
 			FrameNumber: 0,
 			Function:    "exploreMe",
 		},
 	}
+
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
 
 	// Check that options set via the config file are respected
@@ -123,13 +125,13 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
 
 	// Run cifuzz bundle and verify the contents of the archive.
-	shared.TestBundleGradle(t, "kotlin", projectDir, cifuzz, "com.example.FuzzTestCase")
+	gradle.TestBundleGradle(t, "java", projectDir, cifuzz, "com.example.FuzzTestCase")
 
 	// Check if adding additional jazzer parameters via flags is respected
 	shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
 
 	t.Run("runWithUpload", func(t *testing.T) {
-		testRunWithUpload(t, &cifuzzRunner)
+		testRunWithUpload(t, cifuzzRunner)
 	})
 }
 
@@ -149,19 +151,18 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for
-	// ExploreMe.kt source file, but not for App.kt.
+	// ExploreMe.java source file, but not for App.java.
 	reportFile, err := os.Open(reportPath)
 	require.NoError(t, err)
 	defer reportFile.Close()
 	summary := summary.ParseJacocoXML(reportFile)
-
 	for _, file := range summary.Files {
-		if file.Filename == "com/example/ExploreMe.kt" {
+		if file.Filename == "com/example/ExploreMe.java" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)
 			assert.Equal(t, 10, file.Coverage.LinesHit)
 			assert.Equal(t, 8, file.Coverage.BranchesHit)
 
-		} else if file.Filename == "com/example/App.kt" {
+		} else if file.Filename == "com/example/App.java" {
 			assert.Equal(t, 0, file.Coverage.FunctionsHit)
 			assert.Equal(t, 0, file.Coverage.LinesHit)
 			assert.Equal(t, 0, file.Coverage.BranchesHit)
@@ -180,9 +181,6 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	var seenBeginningOfFuzzTestFunc bool
 	var addedFunctionCall bool
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "import com.code_intelligence.jazzer.api.FuzzedDataProvider") {
-			lines = append(lines, "import ExploreMe")
-		}
 		if strings.HasPrefix(scanner.Text(), "    @FuzzTest") {
 			seenBeginningOfFuzzTestFunc = true
 		}
@@ -190,11 +188,11 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 		// function, right above the "}".
 		if seenBeginningOfFuzzTestFunc && strings.HasPrefix(scanner.Text(), "    }") {
 			lines = append(lines, []string{
-				"        val a: Int = data.consumeInt()",
-				"        val b: Int = data.consumeInt()",
-				"        val c: String = data.consumeRemainingAsString()",
-				"		 val ex = ExploreMe(a)",
-				"        ex.exploreMe(b, c)",
+				"        int a = data.consumeInt();",
+				"        int b = data.consumeInt();",
+				"        String c = data.consumeRemainingAsString();",
+				"		 ExploreMe ex = new ExploreMe(a);",
+				"        ex.exploreMe(b, c);",
 			}...)
 			addedFunctionCall = true
 		}
