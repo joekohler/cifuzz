@@ -1,6 +1,12 @@
 # This Pipeline executes some kind of e2e test by running instructions from the docs
 # To not unnecessarily lengthen the runtime of the PR pipelines we just run these
 # tests after pushing to main.
+#
+# To test changes to this pipeline on a branch that's not main, trigger
+# the workflow manually by selecting the workflow in the left sidebar
+# in the "Actions" tab and clicking "Run workflow" on the right, then
+# select the branch you want to test.
+
 name: E2E Source Installation/Example Test
 
 on:
