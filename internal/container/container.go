@@ -18,7 +18,7 @@ import (
 )
 
 func Create(printJSON bool) (string, error) {
-	cli, err := getDockerClient()
+	cli, err := GetDockerClient()
 	if err != nil {
 		return "", err
 	}
@@ -78,7 +78,7 @@ func Create(printJSON bool) (string, error) {
 func Run(id string, outW, errW io.Writer) error {
 	ctx := context.Background()
 
-	cli, err := getDockerClient()
+	cli, err := GetDockerClient()
 	if err != nil {
 		return err
 	}

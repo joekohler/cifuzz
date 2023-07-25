@@ -45,7 +45,7 @@ func BuildImageFromBundle(bundlePath string) (string, error) {
 func UploadImage(imageID string, registry string) error {
 	log.Debugf("Start uploading image %s to %s", imageID, registry)
 
-	dockerClient, err := getDockerClient()
+	dockerClient, err := GetDockerClient()
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func buildImageFromDir(buildContextDir string) (string, error) {
 	}
 	defer fileutil.Cleanup(imageTar.Name())
 
-	dockerClient, err := getDockerClient()
+	dockerClient, err := GetDockerClient()
 	if err != nil {
 		return "", err
 	}

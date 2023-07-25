@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/cicheck"
 )
 
@@ -79,7 +80,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 	}
 
 	ctx := context.Background()
-	dockerClient, err := getDockerClient()
+	dockerClient, err := container.GetDockerClient()
 	require.NoError(t, err)
 
 	imageTag := buildImageFromDockerFile(t, ctx, dockerClient, testCase)

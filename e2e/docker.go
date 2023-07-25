@@ -16,7 +16,6 @@ import (
 	dockerContainer "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
@@ -24,22 +23,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
-
-var dockerClient *client.Client
-
-// TODO: use the function from container command
-// getDockerClient returns a docker client and will also handle its closing. It will take configuration options in the future.
-func getDockerClient() (*client.Client, error) {
-	if dockerClient != nil {
-		return dockerClient, nil
-	}
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	defer dockerClient.Close()
-	return dockerClient, nil
-}
 
 func prepareDockerfile(t *testing.T, testCase *TestCase) string {
 	t.Helper()
