@@ -1,3 +1,5 @@
+package com.example
+
 class ExploreMe(private val a: Int) {
     // Function with multiple paths that can be discovered by a fuzzer.
     fun exploreMe(b: Int, c: String) {

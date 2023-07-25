@@ -90,8 +90,8 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
-			SourceFile:  "ExploreMe",
-			Line:        11,
+			SourceFile:  "com.example.ExploreMe",
+			Line:        13,
 			Column:      0,
 			FrameNumber: 0,
 			Function:    "exploreMe",
@@ -159,8 +159,8 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	for _, file := range summary.Files {
 		if file.Filename == "com/example/ExploreMe.kt" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)
-			assert.Equal(t, 10, file.Coverage.LinesHit)
-			assert.Equal(t, 8, file.Coverage.BranchesHit)
+			assert.Equal(t, 11, file.Coverage.LinesHit)
+			assert.Equal(t, 11, file.Coverage.BranchesHit)
 
 		} else if file.Filename == "com/example/App.kt" {
 			assert.Equal(t, 0, file.Coverage.FunctionsHit)
@@ -181,9 +181,6 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	var seenBeginningOfFuzzTestFunc bool
 	var addedFunctionCall bool
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "import com.code_intelligence.jazzer.api.FuzzedDataProvider") {
-			lines = append(lines, "import ExploreMe")
-		}
 		if strings.HasPrefix(scanner.Text(), "    @FuzzTest") {
 			seenBeginningOfFuzzTestFunc = true
 		}
