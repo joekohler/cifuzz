@@ -128,10 +128,20 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(sourceMap.JavaPackages))
 
-	expectedSourceLocations := []string{
-		"src/test/java/com/example/FuzzTestCase.java",
-		"src/main/java/com/example/ExploreMe.java",
-		"src/main/java/com/example/App.java",
+	var expectedSourceLocations []string
+	switch lang {
+	case "java":
+		expectedSourceLocations = []string{
+			"src/test/java/com/example/FuzzTestCase.java",
+			"src/main/java/com/example/ExploreMe.java",
+			"src/main/java/com/example/App.java",
+		}
+	case "kotlin":
+		expectedSourceLocations = []string{
+			"src/test/kotlin/com/example/FuzzTestCase.kt",
+			"src/main/kotlin/com/example/ExploreMe.kt",
+			"src/main/kotlin/com/example/Main.kt",
+		}
 	}
 	assert.Equal(t, len(expectedSourceLocations), len(sourceMap.JavaPackages["com.example"]))
 	for _, expectedSourceLocation := range expectedSourceLocations {
