@@ -210,7 +210,7 @@ test/integration: deps deps/test deps/integration-tests
 	go test -json -v -timeout=20m ./... -run 'TestIntegration.*' 2>&1 | tee gotest.log | gotestfmt -hide all
 
 .PHONY: test/e2e
-test/e2e: deps deps/test build/linux build/windows build-container-image
+test/e2e: deps deps/test build/linux build/windows build-container-image start-container-registry
 test/e2e: export E2E_TESTS_MATRIX = 1
 test/e2e:
 	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
@@ -295,3 +295,10 @@ installer-via-docker:
 	@echo "Building a cifuzz Linux installer"
 	mkdir -p build/bin
 	docker build --platform linux/amd64 -f docker/cifuzz-builder/Dockerfile . --target bin --output build/bin
+
+.PHONY: start-container-registry
+start-container-registry:
+ifneq ($(current_os),windows)
+	docker stop cifuzz-e2e-test-registry || true
+	docker run --rm -d -p 5000:5000 --name cifuzz-e2e-test-registry registry:2
+endif
