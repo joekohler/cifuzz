@@ -581,7 +581,7 @@ func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRu
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
-	shared.TestRunWithUpload(t, testdata, cifuzz)
+	shared.TestRunWithUpload(t, testdata, cifuzz, "crashing_fuzz_test")
 }
 
 func testRunNotAuthenticated(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

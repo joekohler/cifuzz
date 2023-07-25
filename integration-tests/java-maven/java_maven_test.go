@@ -32,7 +32,7 @@ func TestIntegration_Maven(t *testing.T) {
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "maven")
 
-	cifuzzRunner := shared.CIFuzzRunner{
+	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  projectDir,
 		DefaultFuzzTest: "com.example.FuzzTestCase",
@@ -66,11 +66,12 @@ func TestIntegration_Maven(t *testing.T) {
 		"com",
 		"example",
 	)
-	err := os.MkdirAll(filepath.Join(projectDir, testDir), 0755)
+	err := os.MkdirAll(filepath.Join(projectDir, testDir), 0o755)
 	require.NoError(t, err)
 	outputPath := filepath.Join(testDir, "FuzzTestCase.java")
 	cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
-		Args: []string{"java", "--output", outputPath}},
+		Args: []string{"java", "--output", outputPath},
+	},
 	)
 
 	// Check that the fuzz test was created in the correct directory
@@ -114,7 +115,7 @@ func TestIntegration_Maven(t *testing.T) {
 
 	// Check that options set via the config file are respected
 	configFileContent := "print-json: true"
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0o644)
 	require.NoError(t, err)
 	expectedOutputExp = regexp.MustCompile(`"finding": {`)
 	cifuzzRunner.Run(t, &shared.RunOptions{
@@ -130,7 +131,7 @@ func TestIntegration_Maven(t *testing.T) {
 	})
 
 	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0644)
+	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0o644)
 	require.NoError(t, err)
 
 	// Produce a jacoco xml coverage report
@@ -143,6 +144,10 @@ func TestIntegration_Maven(t *testing.T) {
 
 	// Check if adding additional jazzer parameters via flags is respected
 	shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
+
+	t.Run("runWithUpload", func(t *testing.T) {
+		testRunWithUpload(t, cifuzzRunner)
+	})
 }
 
 func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
@@ -200,7 +205,7 @@ func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
 
 // modifyFuzzTestToCallFunction modifies the fuzz test stub created by `cifuzz create` to actually call a function.
 func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
-	f, err := os.OpenFile(fuzzTestPath, os.O_RDWR, 0700)
+	f, err := os.OpenFile(fuzzTestPath, os.O_RDWR, 0o700)
 	require.NoError(t, err)
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
@@ -234,4 +239,10 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 	require.NoError(t, err)
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	require.NoError(t, err)
+}
+
+func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	shared.TestRunWithUpload(t, testdata, cifuzz, "com.example.FuzzTestCase")
 }

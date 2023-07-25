@@ -103,6 +103,9 @@ func TestIntegration_NodeJS_InitCreateRunCoverage(t *testing.T) {
 		// Produces a coverage report for crashing_fuzz_test
 		testLcovCoverageReport(t, cifuzz, projectDir, "FuzzTestCase")
 	})
+	t.Run("runWithUpload", func(t *testing.T) {
+		testRunWithUpload(t, &cifuzzRunner)
+	})
 }
 
 func getNpmArgs(t *testing.T, instructions []string) []string {
@@ -196,7 +199,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	// Check that options set via the config file are respected
 	configFileContent := "print-json: true"
-	err := os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), []byte(configFileContent), 0644)
+	err := os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), []byte(configFileContent), 0o644)
 	require.NoError(t, err)
 	expectedOutputExp = regexp.MustCompile(`"finding": {`)
 	cifuzzRunner.Run(t, &shared.RunOptions{
@@ -210,7 +213,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	})
 
 	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-	err = os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), nil, 0644)
+	err = os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, "cifuzz.yaml"), nil, 0o644)
 	require.NoError(t, err)
 }
 
@@ -277,4 +280,10 @@ func testLcovCoverageReport(t *testing.T, cifuzz, dir, fuzzTest string) {
 			assert.Equal(t, 0, file.Coverage.BranchesHit)
 		}
 	}
+}
+
+func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdir := cifuzzRunner.DefaultWorkDir
+	shared.TestRunWithUpload(t, testdir, cifuzz, "FuzzTestCase")
 }
