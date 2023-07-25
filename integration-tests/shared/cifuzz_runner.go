@@ -128,6 +128,7 @@ type RunOptions struct {
 	FuzzTest string
 	WorkDir  string
 	Env      []string
+	Command  []string
 	Args     []string
 
 	ExpectedOutputs              []*regexp.Regexp
@@ -138,6 +139,10 @@ type RunOptions struct {
 
 func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	t.Helper()
+
+	if opts.Command == nil {
+		opts.Command = []string{"run"}
+	}
 
 	if opts.Env == nil {
 		opts.Env = os.Environ()
@@ -153,14 +158,14 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 
 	runCtx, closeRunCtx := context.WithCancel(context.Background())
 	defer closeRunCtx()
-	args := append(
+	args := append(append(opts.Command,
 		[]string{
-			"run", "-v", opts.FuzzTest,
+			"-v", opts.FuzzTest,
 			"--no-notifications",
 			"--engine-arg=-seed=1",
 			"--engine-arg=-runs=1000000",
 			"--interactive=false",
-		},
+		}...),
 		opts.Args...,
 	)
 

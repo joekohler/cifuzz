@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -26,6 +27,8 @@ import (
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 )
+
+var cmakeDockerImage = "cifuzz-test-container-run-cmake:latest"
 
 func TestIntegration_CMake(t *testing.T) {
 	if testing.Short() {
@@ -166,6 +169,13 @@ func TestIntegration_CMake(t *testing.T) {
 
 	t.Run("runNotAuthenticated", func(t *testing.T) {
 		testRunNotAuthenticated(t, cifuzzRunner)
+	})
+
+	t.Run("containerRun", func(t *testing.T) {
+		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+			t.Skip("Creating a bundle for CMake (which is required by the container run command) is currently only supported on Linux")
+		}
+		testContainerRun(t, cifuzzRunner)
 	})
 }
 
@@ -565,6 +575,21 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 	}
 }
 
+func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	buildCMakeDockerImage(t, cifuzzRunner.DefaultWorkDir)
+	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_PRERELEASE", "1")
+	require.NoError(t, err)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Command: []string{"container", "run"},
+		Args:    []string{"--docker-image", cmakeDockerImage},
+		Env:     env,
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
+			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),
+		},
+	})
+}
+
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
@@ -610,4 +635,28 @@ func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
 
 	// Check that the coverage report was created
 	require.FileExists(t, reportPath)
+}
+
+func buildCMakeDockerImage(t *testing.T, dir string) {
+	var err error
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	cmd := exec.Command("make", "build-container-image")
+	cmd.Dir = filepath.Join(cwd, "..", "..")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	cmd = exec.Command("docker", "build", "-t", cmakeDockerImage, dir)
+	cmd.Env, err = envutil.Setenv(os.Environ(), "DOCKER_BUILDKIT", "1")
+	require.NoError(t, err)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
 }
