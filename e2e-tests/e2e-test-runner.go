@@ -57,7 +57,7 @@ type testCaseRunOptions struct {
 
 // RunTests Runs all test cases generated from the input combinations
 func RunTests(t *testing.T, testCases []TestCase) {
-	useLocalAPIToken(t)
+	TestUseLocalAPIToken(t)
 	for _, testCase := range testCases { //nolint:gocritic
 		runTest(t, &testCase)
 	}

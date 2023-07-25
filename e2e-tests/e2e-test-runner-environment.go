@@ -13,7 +13,7 @@ import (
 )
 
 // Convenience option for local testing. Grab local token, backup the existing one and restore it after the test.
-func useLocalAPIToken(t *testing.T) {
+func TestUseLocalAPIToken(t *testing.T) {
 	t.Helper()
 	if !cicheck.IsCIEnvironment() && os.Getenv(envvarWithE2EUserToken) == "" {
 		fmt.Println("E2E_TEST_CIFUZZ_API_TOKEN envvar is not set. Trying to use the default one, since this is not a CI/CD run.")
