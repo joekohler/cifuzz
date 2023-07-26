@@ -1,7 +1,10 @@
 package log
 
 import (
+	"os"
+
 	"github.com/pterm/pterm"
+	"golang.org/x/term"
 )
 
 const (
@@ -35,7 +38,10 @@ func GetPtermSuccessStyle() *pterm.Style {
 var currentProgressSpinner *pterm.SpinnerPrinter
 
 func CreateCurrentProgressSpinner(style *pterm.Style, msg string) {
-	if PlainStyle() {
+	// TODO: The spinner should be shown on stderr if --json is used
+	output := os.Stdout
+
+	if PlainStyle() || !term.IsTerminal(int(output.Fd())) {
 		// do not show a printer when plain style is enabled
 		// and only display message
 		Info(msg)
@@ -47,8 +53,9 @@ func CreateCurrentProgressSpinner(style *pterm.Style, msg string) {
 		currentProgressSpinner.MessageStyle = style
 	}
 
+	spinner := pterm.DefaultSpinner.WithWriter(output)
 	// error can be ignored here since pterm doesn't return one
-	currentProgressSpinner, _ = pterm.DefaultSpinner.Start(msg)
+	currentProgressSpinner, _ = spinner.Start(msg)
 }
 
 func UpdateCurrentProgressSpinner(msg string) {
