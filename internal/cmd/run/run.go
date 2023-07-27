@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/build"
@@ -415,6 +416,10 @@ func (c *runCmd) run() error {
 	// We need this check, otherwise we might hang forever in CI
 	if c.opts.Project == "" && !c.opts.Interactive {
 		log.Info("Skipping upload of findings because no project was specified and running in non-interactive mode.")
+		return nil
+	}
+	if c.opts.Project == "" && !term.IsTerminal(int(os.Stdout.Fd())) {
+		log.Info("Skipping upload of findings because no project was specified and stdout is not a terminal.")
 		return nil
 	}
 
