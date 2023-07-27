@@ -125,14 +125,12 @@ func (c *containerRunCmd) run() error {
 
 	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
-	logging.StartBuildProgressSpinner(log.ContainerRunInProgressMsg)
-
 	// Handle signal interrupts
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		logging.StopBuildProgressSpinnerOnError("Received interrupt, stopping container and cifuzz...")
+		log.Info("Received interrupt, stopping container and cifuzz...")
 		err := container.Stop(containerID)
 		if err != nil {
 			log.Errorf(err, "Failed to stop container: %v", err.Error())
@@ -141,10 +139,8 @@ func (c *containerRunCmd) run() error {
 
 	err = container.Run(containerID, c.OutOrStdout(), c.ErrOrStderr())
 	if err != nil {
-		logging.StopBuildProgressSpinnerOnError(log.ContainerRunInProgressErrorMsg)
 		return err
 	}
-	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerRunInProgressSuccessMsg, false)
 
 	return nil
 }
