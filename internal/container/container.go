@@ -60,12 +60,16 @@ func Create(fuzzTest string) (string, error) {
 }
 
 func Run(id string, outW, errW io.Writer) error {
+	ctx := context.Background()
+
 	cli, err := getDockerClient()
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
+	condition := container.WaitConditionNextExit
+	waitResultCh, waitErrCh := cli.ContainerWait(ctx, id, condition)
+
 	err = cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
 	if err != nil {
 		return errors.WithStack(err)
@@ -104,16 +108,24 @@ func Run(id string, outW, errW io.Writer) error {
 		}
 	}()
 
-	statusCh, errCh := cli.ContainerWait(ctx, id, container.WaitConditionNotRunning)
+	// Wait for the result of the ContainerWait call.
+	exitCode := 0
 	select {
-	case err = <-errCh:
-		if err != nil {
-			return errors.WithStack(err)
+	case result := <-waitResultCh:
+		if result.Error != nil {
+			return errors.Errorf("error waiting for container: %v", result.Error.Message)
+		} else {
+			exitCode = int(result.StatusCode)
 		}
-	case <-statusCh:
+	case err := <-waitErrCh:
+		return errors.Wrap(err, "error waiting for container")
 	}
 
-	return err
+	if exitCode != 0 {
+		return errors.Errorf("container exited with non-zero exit code: %d", exitCode)
+	}
+
+	return nil
 }
 
 func Stop(id string) error {
