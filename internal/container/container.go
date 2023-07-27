@@ -26,7 +26,7 @@ func Create(fuzzTest string) (string, error) {
 	hostConfig := &container.HostConfig{}
 	containerConfig := &container.Config{
 		Image:        "cifuzz",
-		Cmd:          []string{"cifuzz", "execute", fuzzTest},
+		Cmd:          []string{fuzzTest},
 		AttachStdout: true,
 		AttachStderr: true,
 	}
@@ -40,9 +40,10 @@ func Create(fuzzTest string) (string, error) {
 	// run the command manually and debug things in the container.
 	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
 		containerConfig.Env = append(containerConfig.Env, "CMD="+strings.Join(containerConfig.Cmd, " "))
-		containerConfig.Cmd = []string{"sleep", "infinity"}
-		// When overwriting the command via Config.Cmd, docker
-		// executes the command via a shell, which has the effect that
+		containerConfig.Entrypoint = []string{"sleep", "infinity"}
+		containerConfig.Cmd = []string{}
+		// When overwriting the command via Config.Cmd or Config.Entrypoint,
+		// docker executes the command via a shell, which has the effect that
 		// signals are not forwarded to the child process. To work around
 		// this, we set Init to true, which causes docker to execute an init
 		// process which forwards signals to the child process.
