@@ -32,14 +32,6 @@ func New(t *testing.T) *MockServer {
 	}
 }
 
-func (server *MockServer) AssertRequestBodyContains(t *testing.T, path string, expected string) {
-	server.Handlers[path] = func(w http.ResponseWriter, req *http.Request) {
-		body, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-		require.Contains(t, string(body), expected)
-	}
-}
-
 func (server *MockServer) Start(t *testing.T) {
 	mux := http.NewServeMux()
 	for path, handler := range server.Handlers {
@@ -58,9 +50,19 @@ func (server *MockServer) Start(t *testing.T) {
 }
 
 func ReturnResponse(t *testing.T, responseString string) http.HandlerFunc {
+	return CheckBodyAndReturnResponse(t, responseString, nil, nil)
+}
+
+func CheckBodyAndReturnResponse(t *testing.T, responseString string, expected []string, unexpected []string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		_, err := io.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
+		for _, expectedString := range expected {
+			require.Contains(t, string(body), expectedString)
+		}
+		for _, unexpectedString := range unexpected {
+			require.NotContains(t, string(body), unexpectedString)
+		}
 		_, err = io.WriteString(w, responseString)
 		require.NoError(t, err)
 	}

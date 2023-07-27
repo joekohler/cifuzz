@@ -25,21 +25,29 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, fuzzTestName str
 	// define handlers
 	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
 	server.Handlers["/v2/error-details"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
-	server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.ReturnResponse(t, "{}")
 	server.Handlers[fmt.Sprintf("/v1/projects/%s/findings", projectName)] = mockserver.ReturnResponse(t, "{}")
 
 	// We expect the run command to POST a campaign run with the correct fuzzing
 	// engine depending on the project.
 	switch fuzzTestName {
 	case "crashing_fuzz_test":
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "c_api")
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "LIBFUZZER")
+		server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.CheckBodyAndReturnResponse(t,
+			"{}",
+			[]string{"c_api", "LIBFUZZER"}, // expected
+			[]string{"JAVA_LIBFUZZER", "nodejs_api", "java_api", "JAZZER_JS"}, // unexpected
+		)
 	case "com.example.FuzzTestCase":
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "java_api")
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "JAVA_LIBFUZZER")
+		server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.CheckBodyAndReturnResponse(t,
+			"{}",
+			[]string{"java_api", "JAVA_LIBFUZZER"}, // expected
+			[]string{"c_api", "nodejs_api", "JAZZER_JS"}, // unexpected
+		)
 	case "FuzzTestCase":
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "nodejs_api")
-		server.AssertRequestBodyContains(t, fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName), "JAZZER_JS")
+		server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.CheckBodyAndReturnResponse(t,
+			"{}",
+			[]string{"nodejs_api", "JAZZER_JS"}, // expected
+			[]string{"c_api", "java_api", "LIBFUZZER"}, // unexpected
+		)
 	}
 
 	// start the server
