@@ -1,10 +1,6 @@
 package run
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
@@ -124,18 +120,6 @@ func (c *containerRunCmd) run() error {
 	}
 
 	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
-
-	// Handle signal interrupts
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		log.Info("Received interrupt, stopping container and cifuzz...")
-		err := container.Stop(containerID)
-		if err != nil {
-			log.Errorf(err, "Failed to stop container: %v", err.Error())
-		}
-	}()
 
 	err = container.Run(containerID, c.OutOrStdout(), c.ErrOrStderr())
 	if err != nil {

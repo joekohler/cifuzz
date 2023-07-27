@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -69,6 +70,14 @@ func Run(id string, outW, errW io.Writer) error {
 		return err
 	}
 
+	sigc := make(chan os.Signal, 128)
+	signal.Notify(sigc)
+	go forwardAllSignals(ctx, cli, id, sigc)
+	defer func() {
+		signal.Stop(sigc)
+		close(sigc)
+	}()
+
 	condition := container.WaitConditionNextExit
 	waitResultCh, waitErrCh := cli.ContainerWait(ctx, id, condition)
 
@@ -124,15 +133,4 @@ func Run(id string, outW, errW io.Writer) error {
 	}
 
 	return nil
-}
-
-func Stop(id string) error {
-	cli, err := getDockerClient()
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	err = cli.ContainerStop(ctx, id, container.StopOptions{})
-	return errors.WithStack(err)
 }
