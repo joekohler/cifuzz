@@ -23,8 +23,10 @@ func Create(fuzzTest string) (string, error) {
 	}
 
 	containerConfig := &container.Config{
-		Image: "cifuzz",
-		Cmd:   []string{"cifuzz", "execute", fuzzTest},
+		Image:        "cifuzz",
+		Cmd:          []string{"cifuzz", "execute", fuzzTest},
+		AttachStdout: true,
+		AttachStderr: true,
 	}
 
 	if viper.GetBool("verbose") {
@@ -82,28 +84,24 @@ func Run(id string, outW, errW io.Writer) error {
 		log.Infof("Press Ctrl+C to stop the container.")
 	}
 
+	resp, err := cli.ContainerAttach(ctx, id, types.ContainerAttachOptions{
+		Stream: true,
+		Stdout: true,
+		Stderr: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error attaching to container")
+	}
+
 	// Continuously print the container's stdout and stderr to the host's
 	// stdout and stderr.
 	go func() {
-		outR, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-			Follow:     true,
-		})
-		if err != nil {
-			log.Errorf(err, "error getting container logs: %s", err.Error())
-			return
-		}
-		defer func() {
-			err := outR.Close()
-			if err != nil {
-				log.Errorf(err, "error closing container logs: %s", err.Error())
-			}
-		}()
+		defer resp.Close()
 
-		_, err = stdcopy.StdCopy(outW, errW, outR)
+		_, err = stdcopy.StdCopy(outW, errW, resp.Reader)
 		if err != nil {
-			log.Errorf(err, "error copying container logs: %s", err.Error())
+			err := errors.Wrap(err, "error copying container logs")
+			log.Error(err)
 			return
 		}
 	}()
