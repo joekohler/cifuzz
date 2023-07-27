@@ -24,7 +24,6 @@ func Create(fuzzTest string) (string, error) {
 
 	containerConfig := &container.Config{
 		Image: "cifuzz",
-		Tty:   false,
 		Cmd:   []string{"cifuzz", "execute", fuzzTest},
 	}
 
