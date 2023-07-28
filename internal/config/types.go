@@ -10,6 +10,7 @@ const (
 	Kotlin     FuzzTestType = "kotlin"
 	JavaScript FuzzTestType = "js"
 	TypeScript FuzzTestType = "ts"
+	Rust       FuzzTestType = "rust"
 )
 
 // map of supported test types -> label:value
@@ -38,6 +39,7 @@ func SupportedTestTypes() map[string]string {
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
 		supportedTestTypes["JavaScript"] = string(JavaScript)
 		supportedTestTypes["TypeScript"] = string(TypeScript)
+		supportedTestTypes["Rust"] = string(Rust)
 	}
 	return supportedTestTypes
 }

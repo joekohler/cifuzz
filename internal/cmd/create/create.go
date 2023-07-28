@@ -215,6 +215,8 @@ func (c *createCmd) checkDependencies() {
 		case "windows":
 			deps = append(deps, dependencies.VisualStudio)
 		}
+	case config.BuildSystemCargo:
+		deps = []dependencies.Key{dependencies.Cargo}
 	case config.BuildSystemOther:
 		deps = []dependencies.Key{dependencies.Clang}
 	}

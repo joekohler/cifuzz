@@ -34,6 +34,8 @@ const (
 
 	Node Key = "node"
 
+	Cargo Key = "cargo"
+
 	VisualStudio Key = "Visual Studio"
 
 	MessageVersion = "cifuzz requires %s %s or higher, have %s"

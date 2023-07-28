@@ -4,12 +4,14 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -77,6 +79,18 @@ func Create(path string, testType config.FuzzTestType) error {
 		content = typeScriptStub
 	}
 
+	if testType == config.Rust {
+		cmd := exec.Command("cargo", "fuzz", "add", filepath.Base(path))
+		log.Debugf("Working directory: %s", cmd.Dir)
+		log.Debugf("Command: %s", cmd.String())
+		err := cmd.Run()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		return nil
+	}
+
 	// write stub
 	if content != nil && path != "" {
 		if err := os.WriteFile(path, content, 0o644); err != nil {
@@ -113,12 +127,21 @@ func FuzzTestFilename(testType config.FuzzTestType) (string, error) {
 		basename = "myTest"
 		ext = "fuzz.ts"
 		filePattern = "%s%d.%s"
+	case config.Rust:
+		basename = "fuzz_target"
+		ext = "rs"
+		filePattern = "%s_%d.%s"
+
 	default:
 		return "", errors.New("unable to suggest filename: unknown test type")
 	}
 
 	for counter := 1; ; counter++ {
-		filename = filepath.Join(".", fmt.Sprintf(filePattern, basename, counter, ext))
+		baseDir := "."
+		if testType == config.Rust {
+			baseDir = filepath.Join("fuzz", "fuzz_targets")
+		}
+		filename = filepath.Join(baseDir, fmt.Sprintf(filePattern, basename, counter, ext))
 		exists, err := fileutil.Exists(filename)
 		if err != nil {
 			return "", err

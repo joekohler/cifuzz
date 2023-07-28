@@ -29,6 +29,7 @@ type RunfilesFinder interface {
 	GradlePath() (string, error)
 	JavaHomePath() (string, error)
 	NodePath() (string, error)
+	CargoPath() (string, error)
 }
 
 var Finder RunfilesFinder

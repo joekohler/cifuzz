@@ -139,6 +139,11 @@ func (f RunfilesFinderImpl) LogoPath() (string, error) {
 	return f.findFollowSymlinks("share/logo.png")
 }
 
+func (f RunfilesFinderImpl) CargoPath() (string, error) {
+	path, err := exec.LookPath("cargo")
+	return path, errors.WithStack(err)
+}
+
 // JavaHomePath returns the absolute path to the base directory of the
 // default system JDK/JRE. It first looks up JAVA_HOME and then falls back to
 // using the java binary in the PATH.

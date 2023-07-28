@@ -204,6 +204,16 @@ var deps = Dependencies{
 			return dep.checkFinder(dep.finder.VisualStudioPath)
 		},
 	},
+	Cargo: {
+		Key:        Cargo,
+		MinVersion: *semver.MustParse("0.0.0"),
+		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
+			return semver.NewVersion("0.0.0")
+		},
+		Installed: func(dep *Dependency, projectDir string) bool {
+			return dep.checkFinder(dep.finder.CargoPath)
+		},
+	},
 }
 
 func getMinVersionBazel() semver.Version {
