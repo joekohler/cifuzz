@@ -27,6 +27,9 @@ var nodejsSetup string
 //go:embed instructions/nodets
 var nodetsSetup string
 
+//go:embed instructions/cargo
+var cargoSetup string
+
 func Instructions(buildSystem string) string {
 	switch buildSystem {
 	case config.BuildSystemBazel:
@@ -43,6 +46,8 @@ func Instructions(buildSystem string) string {
 		return gradleGroovySetup
 	case string(config.GradleKotlin):
 		return gradleKotlinSetup
+	case config.BuildSystemCargo:
+		return cargoSetup
 	default:
 		return ""
 	}

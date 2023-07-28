@@ -29,6 +29,7 @@ const (
 	BuildSystemNodeJS string = "nodejs"
 	BuildSystemMaven  string = "maven"
 	BuildSystemGradle string = "gradle"
+	BuildSystemCargo  string = "cargo"
 	BuildSystemOther  string = "other"
 )
 
@@ -38,6 +39,7 @@ var buildSystemTypes = []string{
 	BuildSystemNodeJS,
 	BuildSystemMaven,
 	BuildSystemGradle,
+	BuildSystemCargo,
 	BuildSystemOther,
 }
 
@@ -48,6 +50,7 @@ var supportedBuildSystems = map[string][]string{
 		BuildSystemNodeJS,
 		BuildSystemMaven,
 		BuildSystemGradle,
+		BuildSystemCargo,
 		BuildSystemOther,
 	},
 	"windows": {
@@ -55,6 +58,7 @@ var supportedBuildSystems = map[string][]string{
 		BuildSystemNodeJS,
 		BuildSystemMaven,
 		BuildSystemGradle,
+		BuildSystemCargo,
 	},
 }
 
@@ -202,6 +206,7 @@ func DetermineBuildSystem(projectDir string) (string, error) {
 		BuildSystemNodeJS: {"package.json", "package-lock.json", "yarn.lock", "node_modules/"},
 		BuildSystemMaven:  {"pom.xml"},
 		BuildSystemGradle: {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"},
+		BuildSystemCargo:  {"Cargo.toml"},
 	}
 
 	for buildSystem, files := range buildSystemIdentifier {

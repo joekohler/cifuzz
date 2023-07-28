@@ -1,0 +1,7 @@
+Enable fuzz testing in your Rust project by installing cargo-fuzz.
+
+    cargo install cargo-fuzz
+    
+Initialize your project via
+
+    cargo fuzz init

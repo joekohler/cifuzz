@@ -178,6 +178,13 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, test
 			log.Print("cifuzz does not support Node.js projects yet.")
 			os.Exit(1)
 		}
+	case config.BuildSystemCargo:
+		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
+			log.Print(messaging.Instructions(buildSystem))
+		} else {
+			log.Print("cifuzz does not support cargo projects yet.")
+			os.Exit(1)
+		}
 	case config.BuildSystemMaven:
 		log.Print(messaging.Instructions(buildSystem))
 	case config.BuildSystemGradle:
