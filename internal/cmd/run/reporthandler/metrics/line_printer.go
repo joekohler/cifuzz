@@ -36,7 +36,7 @@ func (p *LinePrinter) PrintMetrics(metrics *report.FuzzingMetric) {
 		s += "\n"
 	}
 	// Print without color if the output is not a TTY
-	if file, ok := p.BasicTextPrinter.Writer.(*os.File); !ok || !term.IsTerminal(int(file.Fd())) {
+	if file, ok := p.Writer.(*os.File); !ok || !term.IsTerminal(int(file.Fd())) {
 		s = pterm.RemoveColorFromString(s)
 	}
 	p.Print(s)
