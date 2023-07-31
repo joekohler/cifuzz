@@ -70,7 +70,12 @@ func (b *Builder) Build(targetClass string, targetMethod string) (*build.Result,
 	}
 	args := append(flags, "test-compile")
 
-	err := b.runMaven(args, b.Stderr, b.Stderr)
+	err := runMaven(b.ProjectDir, args, b.Stderr, b.Stderr)
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := parsePomXML(b.ProjectDir)
 	if err != nil {
 		return nil, err
 	}
@@ -79,18 +84,15 @@ func (b *Builder) Build(targetClass string, targetMethod string) (*build.Result,
 	if err != nil {
 		return nil, err
 	}
+	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
+	// These directories are configurable
+	deps = append(deps, []string{
+		project.Build.OutputDirectory,
+		project.Build.TestOutputDirectory,
+	}...)
 
-	localDeps, err := b.getLocalDependencies()
-	if err != nil {
-		return nil, err
-	}
+	buildDir := project.Build.Directory
 
-	deps = append(deps, localDeps...)
-
-	buildDir, err := GetBuildDirectory(b.ProjectDir)
-	if err != nil {
-		return nil, err
-	}
 	result := &build.Result{
 		Name:         targetClass,
 		TargetMethod: targetMethod,
@@ -117,7 +119,7 @@ func (b *Builder) getExternalDependencies() ([]string, error) {
 		outputFlag,
 	}
 
-	err = b.runMaven(args, b.Stderr, b.Stderr)
+	err = runMaven(b.ProjectDir, args, b.Stderr, b.Stderr)
 	if err != nil {
 		return nil, err
 	}
@@ -131,34 +133,7 @@ func (b *Builder) getExternalDependencies() ([]string, error) {
 	return deps, nil
 }
 
-func (b *Builder) getLocalDependencies() ([]string, error) {
-	args := []string{
-		"help:evaluate",
-		"-Dexpression=project",
-		"-DforceStdout",
-		"--quiet",
-	}
-	stdout := new(bytes.Buffer)
-	err := b.runMaven(args, stdout, stdout)
-	if err != nil {
-		return nil, err
-	}
-
-	project, err := parseXML(stdout)
-	if err != nil {
-		return nil, err
-	}
-	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
-	// These directories are configurable
-	localDeps := []string{
-		project.Build.OutputDirectory,
-		project.Build.TestOutputDirectory,
-	}
-
-	return localDeps, nil
-}
-
-func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
+func runMaven(projectDir string, args []string, stdout, stderr io.Writer) error {
 	// always run it with the cifuzz profile
 	args = append(args, "-Pcifuzz")
 	// remove color from output
@@ -171,7 +146,7 @@ func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
 	// reports printed to stdout
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
-	cmd.Dir = b.ProjectDir
+	cmd.Dir = projectDir
 	log.Debugf("Working directory: %s", cmd.Dir)
 	log.Debugf("Command: %s", cmd.String())
 	err := cmd.Run()
@@ -182,20 +157,37 @@ func (b *Builder) runMaven(args []string, stdout, stderr io.Writer) error {
 	return nil
 }
 
-func GetBuildDirectory(projectDir string) (string, error) {
-	cmd := exec.Command("mvn",
+func parsePomXML(projectDir string) (*Project, error) {
+	args := []string{
 		"help:evaluate",
-		"-Dexpression=project.build.directory",
-		"--quiet",
+		"-Dexpression=project",
 		"-DforceStdout",
-	)
-	cmd.Dir = projectDir
-	log.Debugf("Working directory: %s", cmd.Dir)
-	log.Debugf("Command: %s", cmd.String())
-	output, err := cmd.Output()
+		"--quiet",
+	}
+	stdout := new(bytes.Buffer)
+	err := runMaven(projectDir, args, stdout, stdout)
 	if err != nil {
-		return "", cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		return nil, err
 	}
 
-	return string(output), nil
+	project, err := parseXML(stdout)
+	if err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+// GetTestDir returns the value of <testSourceDirectory> from the projects
+// pom.xml as an absolute path.
+// Note: If no tag is specified, the parser will return the
+// default value "projectDir/src/test/java".
+func GetTestDir(projectDir string) (string, error) {
+	project, err := parsePomXML(projectDir)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to get test directory of project")
+	}
+
+	log.Debugf("Found maven test source at: %s", project.Build.TestSourceDirectory)
+	return strings.TrimSpace(project.Build.TestSourceDirectory), nil
 }

@@ -62,3 +62,19 @@ xxxxx`)
 
 	assert.Equal(t, "/target", project.Build.Directory)
 }
+
+// TestParseXML_TestDir checks that testSourceDirectory is extracted correctly out of the xml.
+func TestParseXML_TestDir(t *testing.T) {
+	in := strings.NewReader(`
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <build>
+    <testSourceDirectory>src/test</testSourceDirectory>
+  </build>
+</project>
+`)
+	project, err := parseXML(in)
+	require.NoError(t, err)
+	require.NotEmpty(t, project)
+
+	assert.Equal(t, "src/test", project.Build.TestSourceDirectory)
+}

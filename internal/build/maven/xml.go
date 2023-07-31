@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 type Resource struct {
@@ -52,7 +54,7 @@ type Project struct {
 func parseXML(in io.Reader) (*Project, error) {
 	output, err := io.ReadAll(in)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to read pom.xml")
 	}
 
 	// Only parse output contained in <project></project> tags.
@@ -67,7 +69,7 @@ func parseXML(in io.Reader) (*Project, error) {
 	var project Project
 	err = xml.Unmarshal(output[startIdx:endIdx], &project)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to unmarshal pom.xml")
 	}
 
 	return &project, nil
