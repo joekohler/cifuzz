@@ -188,23 +188,25 @@ For more information on cifuzz sandboxing, see:
 				style = pterm.Style{}
 			}
 
-			if viper.GetBool("verbose") {
-				type stackTracer interface {
-					StackTrace() errors.StackTrace
-				}
-				var st stackTracer
-				// Print all error messages (in case of wrapping)
-				// but only print the stacktrace of the root error cause
-				if errors.As(errors.Cause(err), &st) {
+			type stackTracer interface {
+				StackTrace() errors.StackTrace
+			}
+			var st stackTracer
+			// Print all error messages (in case of wrapping) but only print
+			// the stacktrace of the root error cause in verbose mode
+			// In non-verbose mode we print a message to point to verbose mode
+			// for more information
+			if errors.As(errors.Cause(err), &st) {
+				if viper.GetBool("verbose") {
 					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v%+v\n", icon, err, st.StackTrace()))
 				} else {
-					// Catch cases where we either did not add any stacktrace/wrapped the error
-					// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
-					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
+					supportMsg := "More information can be acquired running the command in verbose mode (--verbose).\n"
+					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
 				}
 			} else {
-				supportMsg := "More information can be acquired running the command in verbose mode (-v).\n"
-				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
+				// Catch cases where we either did not add any stacktrace/wrapped the error
+				// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
+				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
 			}
 		}
 
