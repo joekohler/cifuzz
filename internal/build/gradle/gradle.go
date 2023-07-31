@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	classpathRegex = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
-	buildDirRegex  = regexp.MustCompile("(?m)^cifuzz.buildDir=(?P<buildDir>.*)$")
+	classpathRegex         = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
+	buildDirRegex          = regexp.MustCompile("(?m)^cifuzz.buildDir=(?P<buildDir>.*)$")
+	testSourceFoldersRegex = regexp.MustCompile("(?m)^cifuzz.test.source-folders=(?P<testSourceFolders>.*)$")
 )
 
 func FindGradleWrapper(projectDir string) (string, error) {
@@ -199,12 +200,12 @@ func GetTestSourceSets(projectDir string) ([]string, error) {
 	if err != nil {
 		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
-	paths := strings.Split(
-		strings.TrimSpace(
-			strings.ReplaceAll(string(output), "cifuzz.test.source-folders=", ""),
-		),
-		string(os.PathListSeparator))
+	result := testSourceFoldersRegex.FindStringSubmatch(string(output))
+	if result == nil {
+		return nil, errors.New("Unable to parse gradle build directory from init script.")
+	}
+	paths := strings.Split(strings.TrimSpace(result[1]), string(os.PathListSeparator))
 
-	log.Debugf("found gradle test sources at: %s", paths)
+	log.Debugf("Found gradle test sources at: %s", paths)
 	return paths, nil
 }
