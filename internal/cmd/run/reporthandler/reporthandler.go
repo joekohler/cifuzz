@@ -133,7 +133,7 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 			h.PrintFindingInstruction()
 		}
 
-		err := h.handleFinding(r.Finding, !h.PrintJSON)
+		err = h.handleFinding(r.Finding, !h.PrintJSON)
 		if err != nil {
 			return err
 		}
@@ -333,7 +333,7 @@ func (h *ReportHandler) PrintFinalMetrics() error {
 
 	w := tabwriter.NewWriter(log.NewPTermWriter(os.Stderr), 0, 0, 1, ' ', 0)
 	for _, line := range lines {
-		_, err := fmt.Fprintln(w, line)
+		_, err = fmt.Fprintln(w, line)
 		if err != nil {
 			return errors.WithStack(err)
 		}
