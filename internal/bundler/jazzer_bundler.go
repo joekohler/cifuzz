@@ -397,6 +397,12 @@ func (b *jazzerBundler) getTestDirs() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if b.opts.BuildSystem == config.BuildSystemMaven {
+		testDir, err := maven.GetTestDir(b.opts.ProjectDir)
+		if err != nil {
+			return nil, err
+		}
+		testDirs = append(testDirs, testDir)
 	} else {
 		testDirs = append(testDirs, filepath.Join(b.opts.ProjectDir, "src", "test"))
 	}

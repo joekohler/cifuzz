@@ -326,7 +326,7 @@ func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
 	opts := &Opts{
 		BuildSystem: config.BuildSystemMaven,
-		ProjectDir:  filepath.Join("testdata", "jazzer", "example"),
+		ProjectDir:  filepath.Join("testdata", "jazzer", "maven"),
 		FuzzTests:   nil,
 	}
 	bundler := newJazzerBundler(opts, nil)
