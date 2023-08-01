@@ -191,3 +191,17 @@ func GetTestDir(projectDir string) (string, error) {
 	log.Debugf("Found maven test source at: %s", project.Build.TestSourceDirectory)
 	return strings.TrimSpace(project.Build.TestSourceDirectory), nil
 }
+
+// GetSourceDir returns the value of <sourceDirectory> from the projects
+// pom.xml as an absolute path.
+// Note: If no tag is specified, the parser will return the
+// default value "projectDir/src/main/java".
+func GetSourceDir(projectDir string) (string, error) {
+	project, err := parsePomXML(projectDir)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to get source directory of project")
+	}
+
+	log.Debugf("Found maven source at: %s", project.Build.SourceDirectory)
+	return strings.TrimSpace(project.Build.SourceDirectory), nil
+}
