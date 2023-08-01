@@ -316,7 +316,11 @@ func (h *ReportHandler) PrintFinalMetrics() error {
 			execs := h.LastMetrics.TotalExecutions - h.FirstMetrics.TotalExecutions
 			averageExecs = uint64(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
 		}
-		averageExecsStr = metrics.NumberString("%d", averageExecs)
+		if averageExecs > 0 {
+			averageExecsStr = metrics.NumberString("%d", averageExecs)
+		} else {
+			averageExecsStr = metrics.NumberString("n/a")
+		}
 	}
 
 	// Round towards the next larger second to avoid that very short
