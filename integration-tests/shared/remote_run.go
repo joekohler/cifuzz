@@ -12,6 +12,7 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -69,7 +70,7 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	err = cmd.Run()
 	require.NoError(t, err)
 }
@@ -107,7 +108,7 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, ex
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	output, err := cmd.CombinedOutput()
 	require.Error(t, err)
 

@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -31,7 +32,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 
 	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
-	t.Logf("creating test bundle in %s", tempDir)
+	log.Printf("creating test bundle in %s", tempDir)
 
 	// Create a dictionary
 	dictPath := filepath.Join(tempDir, "some_dict")
@@ -145,7 +146,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(cifuzzEnv, "LLVM_PROFILE_FILE="+coverageProfile)
 	cmd.Env = append(cmd.Env, coverageMetadata.EngineOptions.Env...)
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	err = cmd.Run()
 	assert.NoError(t, err)
 	assert.FileExists(t, coverageProfile)
@@ -178,7 +179,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 		cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
 		require.NoError(t, err)
 
-		t.Logf("Command: %s", cmd.String())
+		log.Printf("Command: %s", cmd.String())
 
 		err = cmd.Run()
 		require.NoError(t, err)
@@ -193,7 +194,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	env, err := envutil.Setenv(cifuzzEnv, "BAR", "bar")
 	require.NoError(t, err)
 	cmd.Env = env
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 
 	// Terminate the cifuzz process when we receive a termination signal
 	// (else the test won't stop).
@@ -202,7 +203,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		// In case of an error print out the full output to help debug the process
-		t.Log(string(out))
+		log.Print(string(out))
 	}
 	require.NoError(t, err)
 	require.FileExists(t, bundlePath)
@@ -228,7 +229,7 @@ func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, c
 			}
 			return nil
 		})
-	t.Log(msg)
+	log.Print(msg)
 	require.NoError(t, err)
 
 	// Read the bundle.yaml

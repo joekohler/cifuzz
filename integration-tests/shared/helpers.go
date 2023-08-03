@@ -20,6 +20,7 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -248,7 +249,7 @@ func TerminateOnSignal(t *testing.T, cmd *executil.Cmd) {
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	go func() {
 		s := <-sigs
-		t.Logf("Received %s", s.String())
+		log.Printf("Received %s", s.String())
 
 		// Re-raise the signal for other handlers
 		signal.Stop(sigs)

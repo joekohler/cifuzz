@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
@@ -57,7 +58,7 @@ func (r *CIFuzzRunner) CommandOutput(t *testing.T, command string, opts *Command
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	err := cmd.Run()
 	require.NoError(t, err)
 
@@ -93,7 +94,7 @@ func (r *CIFuzzRunner) Command(t *testing.T, command string, opts *CommandOption
 		require.NoError(t, err)
 	}()
 
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	err = cmd.Run()
 	require.NoError(t, err)
 
@@ -185,7 +186,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	t.Logf("Command: %s", cmd.String())
+	log.Printf("Command: %s", cmd.String())
 	err = cmd.Start()
 	require.NoError(t, err)
 
