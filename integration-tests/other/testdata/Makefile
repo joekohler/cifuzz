@@ -1,4 +1,7 @@
 CXXFLAGS += -std=c++11
+# Disable optimizations to avoid that the compiler removes code which
+# affects the stack trace (e.g. inlining of functions).
+CXXFLAGS += -O0
 
 clean:
 	rm -rf build *.o *.a *.so.* *.so a.out
