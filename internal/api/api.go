@@ -167,7 +167,13 @@ func (client *APIClient) UploadBundle(path string, projectName string, token str
 	// cancels the operation.
 	var body []byte
 	routines.Go(func() error {
-		defer r.Close()
+		var err error
+		defer func() {
+			closeErr := r.CloseWithError(err)
+			if closeErr != nil {
+				log.Warnf("Failed to close pipe: %v", closeErr)
+			}
+		}()
 		defer cancelSignalHandler()
 		url, err := url.JoinPath(client.Server, "v2", projectName, "artifacts", "import")
 		if err != nil {
