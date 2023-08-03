@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/bundler"
+	"code-intelligence.com/cifuzz/internal/cmd/bundle"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
@@ -130,6 +131,11 @@ func (c *containerRunCmd) run() error {
 }
 
 func (c *containerRunCmd) buildContainerFromImage() (string, error) {
+	err := bundle.SetUpBundleLogging(c.Command, &c.opts.Opts)
+	if err != nil {
+		return "", err
+	}
+
 	b := bundler.New(&c.opts.Opts)
 	bundlePath, err := b.Bundle()
 	if err != nil {
