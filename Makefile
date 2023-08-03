@@ -219,6 +219,10 @@ test/e2e:
 test/race: deps build/$(current_os)
 	go test -v ./... -race
 
+.PHONY: test/maven
+test/maven:
+	cd tools/list-fuzz-tests && mvn test
+
 .PHONY: coverage
 coverage: export E2E_TESTS_MATRIX = V
 coverage: deps install/coverage
