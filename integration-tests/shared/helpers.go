@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -262,4 +264,28 @@ func TerminateOnSignal(t *testing.T, cmd *executil.Cmd) {
 		err = cmd.TerminateProcessGroup()
 		require.NoError(t, err)
 	}()
+}
+
+func BuildDockerImage(t *testing.T, tag, dir string) {
+	var err error
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	cmd := exec.Command("make", "build-container-image")
+	cmd.Dir = filepath.Join(cwd, "..", "..")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	cmd = exec.Command("docker", "build", "-t", tag, dir)
+	cmd.Env, err = envutil.Setenv(os.Environ(), "DOCKER_BUILDKIT", "1")
+	require.NoError(t, err)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
 }

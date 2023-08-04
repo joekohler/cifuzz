@@ -16,9 +16,11 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -86,6 +88,13 @@ func TestIntegration_Other(t *testing.T) {
 
 		// Run cifuzz bundle and verify the contents of the archive.
 		shared.TestBundleLibFuzzer(t, testdata, cifuzz, cifuzzEnv(testdata), args...)
+	})
+
+	t.Run("containerRun", func(t *testing.T) {
+		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+			t.Skip("Creating a bundle for other build systems (which is required by the container run command) is currently only supported on Linux")
+		}
+		testContainerRun(t, cifuzzRunner)
 	})
 }
 
@@ -282,6 +291,25 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 		21, 31, 41,
 	},
 		uncoveredLines)
+}
+
+func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	tag := "cifuzz-test-container-run-other:latest"
+
+	var err error
+	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
+	env := cifuzzEnv(cifuzzRunner.DefaultWorkDir)
+	env, err = envutil.Setenv(env, "CIFUZZ_PRERELEASE", "1")
+	require.NoError(t, err)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Command: []string{"container", "run"},
+		Args:    []string{"--docker-image", tag},
+		Env:     env,
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-buffer-overflow`),
+			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),
+		},
+	})
 }
 
 func cifuzzEnv(workDir string) []string {
