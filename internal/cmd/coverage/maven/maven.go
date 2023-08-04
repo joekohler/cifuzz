@@ -102,6 +102,19 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	reportPath := filepath.Join(cov.OutputPath, "jacoco.xml")
 	reportFile, err := os.Open(reportPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// Catch case where no jacoco.xml was produced, most likely caused by a faulty jacoco configuration
+			notExistErr := fmt.Errorf(`JaCoCo did not create a coverage report (jacoco.xml).
+Please check if you configured JaCoCo correctly in your project.
+
+If you use the maven-surefire-plugin: 
+Be aware that adding additional arguments in the plugin configuration in your 
+pom.xml can disrupt the JaCoCo execution and have to be prefixed with '@{argline}'.
+
+<argLine>@{argLine} -your -extra -arguments</argLine>
+`)
+			return "", notExistErr
+		}
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
