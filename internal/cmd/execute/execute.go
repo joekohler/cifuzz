@@ -172,6 +172,7 @@ func buildRunner(fuzzer *archive.Fuzzer) (runCmd.Runner, error) {
 		FuzzTarget:         fuzzer.Path,
 		ProjectDir:         fuzzer.ProjectDir,
 		UseMinijail:        false,
+		LibraryDirs:        fuzzer.LibraryPaths,
 		Verbose:            true, // Should this respect -v flag?
 		ReportHandler:      reportHandler,
 		GeneratedCorpusDir: corpusDirName,
