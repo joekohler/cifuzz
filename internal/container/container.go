@@ -113,16 +113,19 @@ func Run(id string, outW, errW io.Writer) error {
 
 	// Continuously print the container's stdout and stderr to the host's
 	// stdout and stderr.
+	outputErrCh := make(chan error)
 	go func() {
 		defer resp.Close()
 
 		_, err = stdcopy.StdCopy(outW, errW, resp.Reader)
-		if err != nil {
-			err := errors.Wrap(err, "error copying container logs")
-			log.Error(err)
-			return
-		}
+		outputErrCh <- errors.Wrap(err, "error copying container logs")
 	}()
+
+	// Wait until all output was printed
+	err = <-outputErrCh
+	if err != nil {
+		return err
+	}
 
 	// Wait for the result of the ContainerWait call.
 	exitCode := 0
