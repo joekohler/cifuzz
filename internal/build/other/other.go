@@ -444,7 +444,7 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 }
 
 func setEnvWithDebugMsg(env []string, key, value string) ([]string, error) {
-	log.Debugf("Setting ENV: %s = %s", key, value)
+	log.Debugf("Setting ENV: %s=%s", key, value)
 	env, err := envutil.Setenv(env, key, value)
 	if err != nil {
 		return nil, err
