@@ -39,7 +39,8 @@ func Create(fuzzTest string) (string, error) {
 	// This is useful for debugging, as it allows to exec into the container,
 	// run the command manually and debug things in the container.
 	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
-		containerConfig.Env = append(containerConfig.Env, "CMD="+strings.Join(containerConfig.Cmd, " "))
+		cmd := "cifuzz execute " + strings.Join(containerConfig.Cmd, " ")
+		containerConfig.Env = append(containerConfig.Env, "CMD="+cmd)
 		containerConfig.Entrypoint = []string{"sleep", "infinity"}
 		containerConfig.Cmd = []string{}
 		// When overwriting the command via Config.Cmd or Config.Entrypoint,
