@@ -90,6 +90,15 @@ func Run(id string, outW, errW io.Writer) error {
 	condition := container.WaitConditionNextExit
 	waitResultCh, waitErrCh := cli.ContainerWait(ctx, id, condition)
 
+	resp, err := cli.ContainerAttach(ctx, id, types.ContainerAttachOptions{
+		Stream: true,
+		Stdout: true,
+		Stderr: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error attaching to container")
+	}
+
 	err = cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
 	if err != nil {
 		return errors.WithStack(err)
@@ -100,15 +109,6 @@ func Run(id string, outW, errW io.Writer) error {
 		log.Infof("Attach to it with: docker exec -it %s /bin/bash", id)
 		log.Infof("Run the original command in the container with: eval $CMD")
 		log.Infof("Press Ctrl+C to stop the container.")
-	}
-
-	resp, err := cli.ContainerAttach(ctx, id, types.ContainerAttachOptions{
-		Stream: true,
-		Stdout: true,
-		Stderr: true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "error attaching to container")
 	}
 
 	// Continuously print the container's stdout and stderr to the host's
