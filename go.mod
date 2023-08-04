@@ -20,7 +20,7 @@ require (
 	github.com/otiai10/copy v1.9.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
-	github.com/pterm/pterm v0.12.63
+	github.com/pterm/pterm v0.12.64
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/u-root/u-root v0.11.1-0.20230701062237-921c08deecd7
@@ -33,7 +33,7 @@ require (
 replace github.com/otiai10/copy v1.9.0 => github.com/adombeck/copy v0.0.0-20221129184714-7b5f9872f143
 
 require (
-	atomicgo.dev/cursor v0.1.3 // indirect
+	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/schedule v0.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -50,7 +50,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
