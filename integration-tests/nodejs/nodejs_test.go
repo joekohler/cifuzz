@@ -23,8 +23,11 @@ import (
 )
 
 func TestIntegration_NodeJS_InitCreateRunCoverage(t *testing.T) {
-	if testing.Short() || os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip()
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
+		t.Skip("skipping because CIFUZZ_PRERELEASE is not set")
 	}
 
 	testutil.RegisterTestDepOnCIFuzz()
