@@ -255,8 +255,8 @@ github.com/pterm/pterm v0.12.31/go.mod h1:32ZAWZVXD7ZfG0s8qqHXePte42kdz8ECtRyEej
 github.com/pterm/pterm v0.12.33/go.mod h1:x+h2uL+n7CP/rel9+bImHD5lF3nM9vJj80k9ybiiTTE=
 github.com/pterm/pterm v0.12.36/go.mod h1:NjiL09hFhT/vWjQHSj1athJpx6H8cjpHXNAK5bUw8T8=
 github.com/pterm/pterm v0.12.40/go.mod h1:ffwPLwlbXxP+rxT0GsgDTzS3y3rmpAO1NMjUkGTYf8s=
-github.com/pterm/pterm v0.12.64 h1:Wb+SsOVl+rHJfz1Z4atQpN39AYbbRX9gC9bCyNf8WA8=
-github.com/pterm/pterm v0.12.64/go.mod h1:CpJq+fr0+xKGlPFDhKTkepte2fY3Ydr5bzSJ9di67uI=
+github.com/pterm/pterm v0.12.65 h1:HNMNCh2Zi6Lk+g5b8pORrFM9Ygz10GZUUcCFUkGpK2Q=
+github.com/pterm/pterm v0.12.65/go.mod h1:CpJq+fr0+xKGlPFDhKTkepte2fY3Ydr5bzSJ9di67uI=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.4 h1:8TfxU8dW6PdqD27gjM8MVNuicgxIjxpm4K7x4jp8sis=
 github.com/rivo/uniseg v0.4.4/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
