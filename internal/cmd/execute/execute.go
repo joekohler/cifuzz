@@ -9,6 +9,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
@@ -20,6 +21,8 @@ import (
 )
 
 type executeOpts struct {
+	SingleFuzzTest bool `mapstructure:"single-fuzz-test"`
+
 	name string
 }
 
@@ -29,17 +32,27 @@ type executeCmd struct {
 }
 
 func New() *cobra.Command {
+	opts := &executeOpts{}
 	cmd := &cobra.Command{
 		Use:   "execute",
 		Short: "Execute a fuzz test bundle locally",
 		Long: `This command executes a cifuzz fuzz test bundle locally.
 It can be used as an experimental alternative to cifuzz_runner.
-I is currently only intended for use with the 'cifuzz container' subcommand.`,
-		Example: "cifuzz execute <bundle.tar.gz>",
+It is currently only intended for use with the 'cifuzz container' subcommand.
+
+`,
+		Example: "cifuzz execute [fuzz test]",
 		Args:    cobra.MaximumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// Bind viper keys to flags. We can't do this in the New
+			// function, because that would re-bind viper keys which
+			// were bound to the flags of other commands before.
+			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
+			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			// If there are no arguments provided, provide a helpful message and list all available fuzzers.
-			if len(args) == 0 {
+			if len(args) == 0 && !opts.SingleFuzzTest {
 				metadata, err := getMetadata()
 				if err != nil {
 					return err
@@ -68,7 +81,15 @@ I is currently only intended for use with the 'cifuzz container' subcommand.`,
 				}
 				return nil
 			}
-			opts := &executeOpts{name: args[0]}
+
+			if opts.SingleFuzzTest && len(args) > 0 {
+				msg := "The <fuzz test> argument cannot be used with the --single-fuzz-test flag."
+				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
+			}
+
+			if !opts.SingleFuzzTest {
+				opts.name = args[0]
+			}
 
 			cmd := executeCmd{Command: c, opts: opts}
 			return cmd.run()
@@ -76,6 +97,8 @@ I is currently only intended for use with the 'cifuzz container' subcommand.`,
 	}
 
 	cmdutils.DisableConfigCheck(cmd)
+
+	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
 
 	return cmd
 }
@@ -132,12 +155,32 @@ func getFuzzerName(fuzzer *archive.Fuzzer) string {
 
 // findFuzzer returns the fuzzer with the given name in Fuzzers list in Bundle Metadata.
 func findFuzzer(nameToFind string, bundleMetadata *archive.Metadata) (*archive.Fuzzer, error) {
+	// libFuzzer fuzz tests contain two entries in the metadata file, one
+	// for fuzzing and one for coverage. We want the fuzzing entries, which
+	// are listed first.
+	fuzzers := make(map[string]*archive.Fuzzer)
 	for _, fuzzer := range bundleMetadata.Fuzzers {
-		if getFuzzerName(fuzzer) == nameToFind {
-			// TODO: is there a more validation we want to perform? If so, should it be part of the metadata parsing?
-			// TODO: is multiple matches a valid scenario?
-			return fuzzer, nil
+		name := getFuzzerName(fuzzer)
+		if _, ok := fuzzers[name]; !ok {
+			fuzzers[name] = fuzzer
 		}
+	}
+
+	if nameToFind == "" {
+		// Check if there is only one fuzzer in the bundle.
+		if len(fuzzers) == 1 {
+			// Return the only fuzzer in the bundle.
+			for _, fuzzer := range fuzzers {
+				return fuzzer, nil
+			}
+		}
+		return nil, errors.Errorf("no fuzzer name provided and more than one fuzzer found in a bundle metadata file")
+	}
+
+	if fuzzer, ok := fuzzers[nameToFind]; ok {
+		// TODO: is there a more validation we want to perform? If so, should it be part of the metadata parsing?
+		// TODO: is multiple matches a valid scenario?
+		return fuzzer, nil
 	}
 
 	return nil, errors.Errorf("fuzzer '%s' not found in a bundle metadata file", nameToFind)

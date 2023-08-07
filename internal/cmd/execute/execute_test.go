@@ -127,6 +127,39 @@ func Test_findFuzzer(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "return single fuzzer if name is empty",
+			args: args{
+				nameToFind: "",
+				bundleMetadata: &archive.Metadata{
+					Fuzzers: []*archive.Fuzzer{
+						{
+							Name: "0-fuzzer",
+						},
+					},
+				},
+			},
+			want: &archive.Fuzzer{
+				Name: "0-fuzzer",
+			},
+		},
+		{
+			name: "error if name is empty and there are multiple fuzzers",
+			args: args{
+				nameToFind: "",
+				bundleMetadata: &archive.Metadata{
+					Fuzzers: []*archive.Fuzzer{
+						{
+							Name: "0-fuzzer",
+						},
+						{
+							Name: "1-fuzzer",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
 			name: "error out if fuzzer not found",
 			args: args{
 				nameToFind: "a-fuzzer",

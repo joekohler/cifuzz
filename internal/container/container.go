@@ -17,7 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func Create(fuzzTest string) (string, error) {
+func Create() (string, error) {
 	cli, err := getDockerClient()
 	if err != nil {
 		return "", err
@@ -26,7 +26,7 @@ func Create(fuzzTest string) (string, error) {
 	hostConfig := &container.HostConfig{}
 	containerConfig := &container.Config{
 		Image:        "cifuzz",
-		Cmd:          []string{fuzzTest},
+		Cmd:          []string{"--single-fuzz-test"},
 		AttachStdout: true,
 		AttachStderr: true,
 	}

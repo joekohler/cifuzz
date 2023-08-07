@@ -147,5 +147,5 @@ func (c *containerRunCmd) buildContainerFromImage() (string, error) {
 		return "", errors.Wrapf(err, "Failed to build image from bundle %s", bundlePath)
 	}
 
-	return container.Create(c.opts.FuzzTests[0])
+	return container.Create()
 }
