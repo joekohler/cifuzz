@@ -121,7 +121,9 @@ func LibFuzzerCFlags() []string {
 func CoverageCFlags(clangVersion *semver.Version) []string {
 	cflags := append(commonCFlags, []string{
 		// ----- Flags used to build with code coverage -----
+		// Generate instrumented code to collect execution counts
 		"-fprofile-instr-generate",
+		// Generate coverage mapping to enable code coverage analysis
 		"-fcoverage-mapping",
 		// Disable source fortification to ensure that coverage builds
 		// reach all code reached by ASan builds.

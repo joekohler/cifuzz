@@ -291,6 +291,8 @@ func (b *Builder) setLibFuzzerEnv() error {
 	if err != nil {
 		return err
 	}
+	// -I adds the include directory to the list of directories
+	// to be searched for header files
 	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
 	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
@@ -309,9 +311,17 @@ func (b *Builder) setLibFuzzerEnv() error {
 	// See src/dumper.c for details.
 	var fuzzTestLdflags []string
 	if runtime.GOOS != "darwin" {
+		// Redirect calls to __sanitizer_set_death_callback to our implemented
+		// __wrap__sanitizer_set_death_callback (in dumper.c/.cpp) to modify
+		// the behavior of the original libfuzzer function
 		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
 	}
-	fuzzTestLdflags = append(fuzzTestLdflags, "-fsanitize=fuzzer", filepath.Join(b.buildDir, "dumper.o"))
+	fuzzTestLdflags = append(fuzzTestLdflags,
+		// Build with instrumentation for Fuzzing
+		"-fsanitize=fuzzer",
+		// Path to the dumper of CI Fuzz which ensures that non-fatal sanitizer
+		// findings still have an input attached
+		filepath.Join(b.buildDir, "dumper.o"))
 	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestLDFlags, strings.Join(fuzzTestLdflags, " "))
 	if err != nil {
 		return err
@@ -349,6 +359,7 @@ func (b *Builder) setCoverageEnv() error {
 
 	ldflags := []string{
 		// ----- Flags used to link in coverage runtime -----
+		// Generate instrumented code to collect execution counts
 		"-fprofile-instr-generate",
 	}
 	b.env, err = setEnvWithDebugMsg(b.env, "LDFLAGS", strings.Join(ldflags, " "))
@@ -362,6 +373,8 @@ func (b *Builder) setCoverageEnv() error {
 	if err != nil {
 		return err
 	}
+	// -I adds the include directory to the list of directories
+	// to be searched for header files
 	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
 	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
