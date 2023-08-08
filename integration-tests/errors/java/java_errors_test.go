@@ -119,6 +119,11 @@ func TestIntegration_JavaErrors(t *testing.T) {
 			fuzzTest: "com.collection.ExceptionFuzzTest::fuzzTestSecurityException",
 			workdir:  testdataTmp,
 		},
+		{
+			id:       "server_side_request_forgery",
+			fuzzTest: "com.collection.ServerSideRequestForgeryFuzzTest",
+			workdir:  testdataTmp,
+		},
 	}
 
 	for _, tc := range testCases {
