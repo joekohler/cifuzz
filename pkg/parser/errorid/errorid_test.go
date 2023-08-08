@@ -36,6 +36,7 @@ func TestForFinding(t *testing.T) {
 		{id: "File Path Injection", f: &finding.Finding{Details: "Path Traversal"}},
 		{id: "prototype_pollution", f: &finding.Finding{Details: "Prototype Pollution"}},
 		{id: "Crash", f: &finding.Finding{Details: "Crash"}},
+		{id: "server_side_request_forgery", f: &finding.Finding{Details: "Security Issue: Server Side Request Forgery"}},
 
 		{f: &finding.Finding{Details: "Security Issue: FooBar"}, id: "jazzer_security_issue"},
 	}

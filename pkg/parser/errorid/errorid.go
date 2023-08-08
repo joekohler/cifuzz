@@ -67,6 +67,7 @@ var matchers = []matcher{
 	{id: "xpath_injection", substrings: []string{"Security Issue: XPath Injection"}},
 	{id: "File Path Injection", substrings: []string{"Path Traversal"}},
 	{id: "prototype_pollution", substrings: []string{"Prototype Pollution"}},
+	{id: "server_side_request_forgery", substrings: []string{"Security Issue: Server Side Request Forgery"}},
 
 	// more global issues, should be at the end so they do not overwrite more explicit ones
 	{id: "java_exception", regexs: []*regexp.Regexp{regexp.MustCompile(`java\.lang.+|Exception|Error`)}},
