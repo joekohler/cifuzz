@@ -579,9 +579,11 @@ func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Command: []string{"container", "run"},
-		Args:    []string{"--docker-image", tag},
+		Args:    []string{"--docker-image", tag, "--json"},
 		Env:     env,
 		ExpectedOutputs: []*regexp.Regexp{
+			// Check that the bundle metadata is printed
+			regexp.MustCompile(`^\s*"Docker": ".*",`),
 			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
 			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),
 		},

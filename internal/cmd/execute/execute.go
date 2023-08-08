@@ -18,9 +18,11 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
+	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type executeOpts struct {
+	PrintJSON      bool `mapstructure:"print-json"`
 	SingleFuzzTest bool `mapstructure:"single-fuzz-test"`
 
 	name string
@@ -32,6 +34,8 @@ type executeCmd struct {
 }
 
 func New() *cobra.Command {
+	var bindFlags func()
+
 	opts := &executeOpts{}
 	cmd := &cobra.Command{
 		Use:   "execute",
@@ -47,17 +51,27 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			// Bind viper keys to flags. We can't do this in the New
 			// function, because that would re-bind viper keys which
 			// were bound to the flags of other commands before.
+			bindFlags()
 			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
+			opts.PrintJSON = viper.GetBool("print-json")
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			// If there are no arguments provided, provide a helpful message and list all available fuzzers.
-			if len(args) == 0 && !opts.SingleFuzzTest {
-				metadata, err := getMetadata()
+			metadata, err := getMetadata()
+			if err != nil {
+				return err
+			}
+
+			if opts.PrintJSON {
+				metadataJSON, err := stringutil.ToJSONString(metadata)
 				if err != nil {
 					return err
 				}
+				fmt.Println(metadataJSON)
+			}
 
+			// If there are no arguments provided, provide a helpful message and list all available fuzzers.
+			if len(args) == 0 && !opts.SingleFuzzTest {
 				_ = pterm.DefaultBigText.WithLetters(
 					putils.LettersFromStringWithStyle("Fuzz", pterm.FgCyan.ToStyle()),
 					putils.LettersFromString(" "),
@@ -92,7 +106,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			}
 
 			cmd := executeCmd{Command: c, opts: opts}
-			return cmd.run()
+			return cmd.run(metadata)
 		},
 	}
 
@@ -100,15 +114,17 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 
 	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
 
+	// Note: If a flag should be configurable via viper as well (i.e.
+	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
+	//       it to viper in the PreRun function.
+	bindFlags = cmdutils.AddFlags(cmd,
+		cmdutils.AddPrintJSONFlag,
+	)
+
 	return cmd
 }
 
-func (c *executeCmd) run() error {
-	metadata, err := getMetadata()
-	if err != nil {
-		return err
-	}
-
+func (c *executeCmd) run(metadata *archive.Metadata) error {
 	fuzzer, err := findFuzzer(c.opts.name, metadata)
 	if err != nil {
 		return err
@@ -131,13 +147,13 @@ func getMetadata() (*archive.Metadata, error) {
 		return nil, errors.Errorf("bundle metadata file '%s' does not exist. Execute command should be run in a folder with an unpacked cifuzz bundle.", archive.MetadataFileName)
 	}
 
-	metadataFile, err := os.ReadFile(archive.MetadataFileName)
+	metadataBytes, err := os.ReadFile(archive.MetadataFileName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	metadata := &archive.Metadata{}
-	err = metadata.FromYaml(metadataFile)
+	err = metadata.FromYaml(metadataBytes)
 	if err != nil {
 		return nil, err
 	}

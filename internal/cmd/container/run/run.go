@@ -19,6 +19,7 @@ import (
 
 type containerRunOpts struct {
 	bundler.Opts  `mapstructure:",squash"`
+	PrintJSON     bool   `mapstructure:"print-json"`
 	Interactive   bool   `mapstructure:"interactive"`
 	Server        string `mapstructure:"server"`
 	ContainerPath string `mapstructure:"container"`
@@ -147,5 +148,5 @@ func (c *containerRunCmd) buildContainerFromImage() (string, error) {
 		return "", errors.Wrapf(err, "Failed to build image from bundle %s", bundlePath)
 	}
 
-	return container.Create()
+	return container.Create(c.opts.PrintJSON)
 }

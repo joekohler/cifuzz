@@ -17,7 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func Create() (string, error) {
+func Create(printJSON bool) (string, error) {
 	cli, err := getDockerClient()
 	if err != nil {
 		return "", err
@@ -33,6 +33,9 @@ func Create() (string, error) {
 
 	if viper.GetBool("verbose") {
 		containerConfig.Cmd = append(containerConfig.Cmd, "-v")
+	}
+	if printJSON {
+		containerConfig.Cmd = append(containerConfig.Cmd, "--json")
 	}
 
 	// Make the container sleep forever if the environment variable is set.
