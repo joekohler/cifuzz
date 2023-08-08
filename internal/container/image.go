@@ -187,7 +187,7 @@ func createDockerfile(path string, baseImage string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	dockerfile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0o655)
+	dockerfile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return errors.WithStack(err)
 	}
