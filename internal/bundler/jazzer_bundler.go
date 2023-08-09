@@ -2,6 +2,7 @@ package bundler
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -123,6 +124,9 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 			archiveManifestPath,
 		}
 
+		// this map is used to generate unique artifact names
+		artifactsMap := make(map[string]uint)
+
 		for _, runtimeDep := range buildResult.RuntimeDeps {
 			log.Debugf("runtime dept: %s", runtimeDep)
 
@@ -152,9 +156,10 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 					return nil, err
 				}
 			} else {
-				// if the current runtime dependency is a file we add it to the
-				// archive and add the runtime paths of the metadata
-				archivePath := filepath.Join(runtimeDepsPath, filepath.Base(runtimeDep))
+				// If the current runtime dependency is a file, we generate
+				// a unique artifact name and add it to the archive.
+				artifactName := getUniqueArtifactName(runtimeDep, artifactsMap)
+				archivePath := filepath.Join(runtimeDepsPath, artifactName)
 				err = b.archiveWriter.WriteFile(archivePath, runtimeDep)
 				if err != nil {
 					return nil, err
@@ -449,4 +454,26 @@ func (b *jazzerBundler) createSourceMap() (*SourceMap, error) {
 	}
 
 	return &sourceMap, nil
+}
+
+func getUniqueArtifactName(dependency string, artifactsMap map[string]uint) string {
+	baseName := filepath.Base(dependency)
+	count, found := artifactsMap[baseName]
+	// If the base name of the dependency hasn't been seen before, we add it to the map
+	// and return it.
+	if !found {
+		artifactsMap[baseName] = 1
+		return baseName
+	}
+
+	// If the base name of the dependency has been seen before, we increment its
+	// count in the map and append the count to the artifact base name.
+	artifactsMap[baseName]++
+	baseNameWithoutExt := strings.TrimSuffix(baseName, filepath.Ext(dependency))
+	newBaseName := fmt.Sprintf("%s-%d.jar", baseNameWithoutExt, count)
+
+	// Add the new base name to the map to prevent collisions
+	artifactsMap[newBaseName] = 1
+
+	return newBaseName
 }

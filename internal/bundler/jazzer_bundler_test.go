@@ -392,3 +392,32 @@ func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUniqueArtifactName(t *testing.T) {
+	basePath := filepath.Join("testdata", "jazzer", "project", "lib")
+
+	testCases := []struct {
+		dependency         string
+		uniqueArtifactName string
+	}{
+		{
+			dependency:         filepath.Join(basePath, "mylib.jar"),
+			uniqueArtifactName: "mylib.jar",
+		},
+		{
+			dependency:         filepath.Join(basePath, "other", "mylib.jar"),
+			uniqueArtifactName: "mylib-1.jar",
+		},
+		{
+			dependency:         filepath.Join(basePath, "testlib.jar"),
+			uniqueArtifactName: "testlib.jar",
+		},
+	}
+
+	artifactsMap := make(map[string]uint)
+
+	for _, tc := range testCases {
+		name := getUniqueArtifactName(tc.dependency, artifactsMap)
+		assert.Equal(t, tc.uniqueArtifactName, name)
+	}
+}
