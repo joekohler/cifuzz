@@ -32,6 +32,10 @@ func TestForFinding(t *testing.T) {
 		{id: "use_of_uninitialized_value", f: &finding.Finding{Details: "use-of-uninitialized-value"}},
 		{id: "java_exception", f: &finding.Finding{Details: "java.lang.Exception"}},
 		{id: "java_exception", f: &finding.Finding{Details: "java.lang.SecurityException"}},
+		{id: "os_command_injection", f: &finding.Finding{Details: "Command Injection"}},
+		{id: "File Path Injection", f: &finding.Finding{Details: "Path Traversal"}},
+		{id: "prototype_pollution", f: &finding.Finding{Details: "Prototype Pollution"}},
+		{id: "Crash", f: &finding.Finding{Details: "Crash"}},
 
 		{f: &finding.Finding{Details: "Security Issue: FooBar"}, id: "jazzer_security_issue"},
 	}

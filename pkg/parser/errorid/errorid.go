@@ -45,7 +45,7 @@ var matchers = []matcher{
 	{id: "negative_array_size", substrings: []string{"java.lang.NegativeArraySizeException"}},
 	{id: "null_pointer", substrings: []string{"java.lang.NullPointerException"}},
 	{id: "number_format", substrings: []string{"java.lang.NumberFormatException"}},
-	{id: "os_command_injection", substrings: []string{"Security Issue: OS Command Injection"}},
+	{id: "os_command_injection", substrings: []string{"Command Injection"}},
 	{id: "out_of_memory", substrings: []string{"out-of-memory"}},
 	{id: "regex_injection", substrings: []string{"Security Issue: Regular Expression Injection"}},
 	{id: "remote_code_execution", substrings: []string{"Security Issue: Remote Code Execution"}},
@@ -65,10 +65,13 @@ var matchers = []matcher{
 	{id: "use_after_scope", substrings: []string{"stack-use-after-scope on address"}},
 	{id: "use_of_uninitialized_value", substrings: []string{"use-of-uninitialized-value"}},
 	{id: "xpath_injection", substrings: []string{"Security Issue: XPath Injection"}},
+	{id: "File Path Injection", substrings: []string{"Path Traversal"}},
+	{id: "prototype_pollution", substrings: []string{"Prototype Pollution"}},
 
 	// more global issues, should be at the end so they do not overwrite more explicit ones
 	{id: "java_exception", regexs: []*regexp.Regexp{regexp.MustCompile(`java\.lang.+|Exception|Error`)}},
 	{id: "jazzer_security_issue", substrings: []string{"Security Issue:"}},
+	{id: "Crash", substrings: []string{"Crash"}},
 }
 
 func ForFinding(f *finding.Finding) string {
