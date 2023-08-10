@@ -19,6 +19,20 @@ var initTests = &[]e2e.TestCase{
 			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
 		},
 	},
+	{
+		Description:  "init command with a 'maven' argument should create a config file for java",
+		Command:      "init",
+		Args:         []string{"maven"},
+		SampleFolder: []string{"node-typescript", "nodejs", "cmake", "empty"},
+		Assert: func(t *testing.T, output e2e.CommandOutput) {
+			assert.EqualValues(t, 0, output.ExitCode)
+			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
+			assert.Contains(t, output.Stdall, "<artifactId>jazzer-junit</artifactId>")
+			assert.NotContains(t, output.Stdall, "Failed to create config")
+			matches, _ := fs.Glob(output.Workdir, "cifuzz.yaml")
+			assert.Len(t, matches, 1, "There should be a cifuzz.yaml config")
+		},
+	},
 }
 
 var nodeInitTests = &[]e2e.TestCase{
