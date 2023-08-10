@@ -223,6 +223,13 @@ func (p *parser) validateSourceFile(path string) string {
 		}
 	}
 
+	// Ignore files from node_modules
+	if p.SupportJazzerJS {
+		if strings.Contains(path, "node_modules") {
+			return ""
+		}
+	}
+
 	return path
 }
 
