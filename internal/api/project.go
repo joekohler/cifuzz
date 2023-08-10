@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/url"
@@ -94,7 +93,7 @@ func (client *APIClient) CreateProject(name string, token string) (*Project, err
 		},
 	}
 
-	body, err := json.Marshal(projectBody)
+	body, err := json.MarshalIndent(projectBody, "", "  ")
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -103,7 +102,7 @@ func (client *APIClient) CreateProject(name string, token string) (*Project, err
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
+	resp, err := client.sendRequest("POST", url, body, token)
 	if err != nil {
 		return nil, err
 	}

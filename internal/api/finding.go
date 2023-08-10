@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/url"
@@ -10,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
-	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 type Findings struct {
@@ -143,18 +141,16 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 		},
 	}
 
-	body, err := json.Marshal(findings)
+	body, err := json.MarshalIndent(findings, "", "  ")
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	log.Debugf("Uploading finding: %s\n", string(body))
 
 	url, err := url.JoinPath("/v1", project, "findings")
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
+	resp, err := client.sendRequest("POST", url, body, token)
 	if err != nil {
 		return err
 	}

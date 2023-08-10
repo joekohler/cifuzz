@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -266,7 +267,7 @@ func (client *APIClient) StartRemoteFuzzingRun(artifact *Artifact, token string)
 }
 
 // sendRequest sends a request to the API server with a default timeout of 30 seconds.
-func (client *APIClient) sendRequest(method string, endpoint string, body io.Reader, token string) (*http.Response, error) {
+func (client *APIClient) sendRequest(method string, endpoint string, body []byte, token string) (*http.Response, error) {
 	// we use 30 seconds as a conservative timeout for the API server to
 	// respond to a request. We might have to revisit this value in the future
 	// after the rollout of our API features.
@@ -275,12 +276,13 @@ func (client *APIClient) sendRequest(method string, endpoint string, body io.Rea
 }
 
 // sendRequestWithTimeout sends a request to the API server with a timeout.
-func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, body io.Reader, token string, timeout time.Duration) (*http.Response, error) {
+func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, body []byte, token string, timeout time.Duration) (*http.Response, error) {
 	url, err := url.JoinPath(client.Server, endpoint)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	req, err := http.NewRequestWithContext(context.Background(), method, url, body)
+
+	req, err := http.NewRequestWithContext(context.Background(), method, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -288,11 +290,14 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 	req.Header.Set("User-Agent", client.UserAgent)
 	req.Header.Add("Authorization", "Bearer "+token)
 
+	log.Debugf("Sending HTTP request: %s %s\n%s", method, endpoint, body)
 	httpClient := &http.Client{Transport: getCustomTransport(), Timeout: timeout}
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, WrapConnectionError(errors.WithStack(err))
 	}
+
+	log.Debugf("Received response for HTTP request: %d %s", resp.StatusCode, endpoint)
 
 	return resp, nil
 }

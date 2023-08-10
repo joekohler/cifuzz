@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -13,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/config"
-	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
 )
 
@@ -111,18 +109,16 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		CampaignRun: campaignRun,
 	}
 
-	body, err := json.Marshal(campaignRunBody)
+	body, err := json.MarshalIndent(campaignRunBody, "", "  ")
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
-
-	log.Debugf("Creating campaign run: %s\n", string(body))
 
 	url, err := url.JoinPath("/v1", project, "campaign_runs")
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
-	resp, err := client.sendRequest("POST", url, bytes.NewReader(body), token)
+	resp, err := client.sendRequest("POST", url, body, token)
 	if err != nil {
 		return "", "", err
 	}
