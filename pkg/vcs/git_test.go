@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/testutil"
@@ -68,6 +69,27 @@ func TestGitIsDirty(t *testing.T) {
 	err = fileutil.Touch("third_file")
 	require.NoError(t, err)
 	require.True(t, vcs.GitIsDirty())
+}
+
+func TestCodeRevision(t *testing.T) {
+	repo := createGitRepoWithCommits(t)
+	err := os.Chdir(repo)
+	require.NoError(t, err)
+
+	revision := vcs.CodeRevision()
+	require.NotNil(t, revision)
+	require.NotNil(t, revision.Git)
+	assert.Lenf(t, revision.Git.Commit, 40, "Expected full commit SHA")
+	assert.Equal(t, "main", revision.Git.Branch)
+}
+
+func TestCodeRevision_NoRepo(t *testing.T) {
+	testDir := testutil.MkdirTemp(t, "", "git-revision")
+	err := os.Chdir(testDir)
+	require.NoError(t, err)
+
+	revision := vcs.CodeRevision()
+	require.Nil(t, revision)
 }
 
 func createGitRepoWithCommits(t *testing.T) string {
