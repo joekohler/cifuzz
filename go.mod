@@ -1,6 +1,6 @@
 module code-intelligence.com/cifuzz
 
-go 1.20
+go 1.21
 
 // TODO: Revert when https://github.com/pterm/pterm/issues/562 is fixed
 replace github.com/pterm/pterm v0.12.66 => github.com/adombeck/pterm v0.0.0-20230828123446-b137b9b68d82
