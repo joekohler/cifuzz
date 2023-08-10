@@ -142,9 +142,15 @@ func createMetricsForCampaignRun(firstMetrics *report.FuzzingMetric, lastMetrics
 	var metricsList []*Metrics
 	// add metrics if available
 	if firstMetrics != nil && lastMetrics != nil {
+		var performance int32
 		metricsDuration := lastMetrics.Timestamp.Sub(firstMetrics.Timestamp)
-		execs := lastMetrics.TotalExecutions - firstMetrics.TotalExecutions
-		performance := int32(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
+		// This if prevents a case where duration is 0 and we divide by 0 a few lines below
+		if metricsDuration.Milliseconds() > 0 {
+			execs := lastMetrics.TotalExecutions - firstMetrics.TotalExecutions
+			performance = int32(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
+		} else {
+			performance = 0
+		}
 
 		metricsList = []*Metrics{
 			{
