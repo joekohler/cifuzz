@@ -57,39 +57,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", errors.WithStack(err)
 	}
 
-	// FIXME: We don't have metrics except for the first run. Successive runs
-	// will reuse the corpus and inputs from the previous run and thus will not
-	// generate new metrics
-	var metricsList []*Metrics
-	// add metrics if available
-	if firstMetrics != nil && lastMetrics != nil {
-		metricsDuration := lastMetrics.Timestamp.Sub(firstMetrics.Timestamp)
-		execs := lastMetrics.TotalExecutions - firstMetrics.TotalExecutions
-		performance := int32(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
-
-		metricsList = []*Metrics{
-			{
-				Timestamp:                lastMetrics.Timestamp.Format(time.RFC3339),
-				ExecutionsPerSecond:      performance,
-				Features:                 lastMetrics.Features,
-				CorpusSize:               lastMetrics.CorpusSize,
-				SecondsSinceLastCoverage: fmt.Sprintf("%d", lastMetrics.SecondsSinceLastFeature),
-				TotalExecutions:          fmt.Sprintf("%d", lastMetrics.TotalExecutions),
-				Edges:                    lastMetrics.Edges,
-				SecondsSinceLastEdge:     fmt.Sprintf("%d", lastMetrics.SecondsSinceLastEdge),
-			},
-			{
-				Timestamp:                firstMetrics.Timestamp.Format(time.RFC3339),
-				ExecutionsPerSecond:      performance,
-				Features:                 firstMetrics.Features,
-				CorpusSize:               firstMetrics.CorpusSize,
-				SecondsSinceLastCoverage: fmt.Sprintf("%d", firstMetrics.SecondsSinceLastFeature),
-				TotalExecutions:          fmt.Sprintf("%d", firstMetrics.TotalExecutions),
-				Edges:                    firstMetrics.Edges,
-				SecondsSinceLastEdge:     fmt.Sprintf("%d", firstMetrics.SecondsSinceLastEdge),
-			},
-		}
-	}
+	metricsList := createMetricsForCampaignRun(firstMetrics, lastMetrics)
 
 	apiFuzzTarget := APIFuzzTarget{
 		RelativePath: fuzzTarget,
@@ -165,4 +133,42 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 	}
 
 	return campaignRun.Name, fuzzingRun.Name, nil
+}
+
+func createMetricsForCampaignRun(firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) []*Metrics {
+	// FIXME: We don't have metrics except for the first run. Successive runs
+	// will reuse the corpus and inputs from the previous run and thus will not
+	// generate new metrics
+	var metricsList []*Metrics
+	// add metrics if available
+	if firstMetrics != nil && lastMetrics != nil {
+		metricsDuration := lastMetrics.Timestamp.Sub(firstMetrics.Timestamp)
+		execs := lastMetrics.TotalExecutions - firstMetrics.TotalExecutions
+		performance := int32(float64(execs) / (float64(metricsDuration.Milliseconds()) / 1000))
+
+		metricsList = []*Metrics{
+			{
+				Timestamp:                lastMetrics.Timestamp.Format(time.RFC3339),
+				ExecutionsPerSecond:      performance,
+				Features:                 lastMetrics.Features,
+				CorpusSize:               lastMetrics.CorpusSize,
+				SecondsSinceLastCoverage: fmt.Sprintf("%d", lastMetrics.SecondsSinceLastFeature),
+				TotalExecutions:          fmt.Sprintf("%d", lastMetrics.TotalExecutions),
+				Edges:                    lastMetrics.Edges,
+				SecondsSinceLastEdge:     fmt.Sprintf("%d", lastMetrics.SecondsSinceLastEdge),
+			},
+			{
+				Timestamp:                firstMetrics.Timestamp.Format(time.RFC3339),
+				ExecutionsPerSecond:      performance,
+				Features:                 firstMetrics.Features,
+				CorpusSize:               firstMetrics.CorpusSize,
+				SecondsSinceLastCoverage: fmt.Sprintf("%d", firstMetrics.SecondsSinceLastFeature),
+				TotalExecutions:          fmt.Sprintf("%d", firstMetrics.TotalExecutions),
+				Edges:                    firstMetrics.Edges,
+				SecondsSinceLastEdge:     fmt.Sprintf("%d", firstMetrics.SecondsSinceLastEdge),
+			},
+		}
+	}
+
+	return metricsList
 }
