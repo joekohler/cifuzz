@@ -46,10 +46,11 @@ var (
 		`== Java Assertion Error`)
 	jazzerInputPathPatter = regexp.MustCompile(`INFO: using inputs from: (?P<input_path>.*)$`)
 
-	jestFindingBeginningPattern = regexp.MustCompile(
-		`^\s*●`)
-	jestFindingSourceCodePattern = regexp.MustCompile(
-		`^\s*\>?\s\d*\s+\|`)
+	jestCommandInjectionPattern   = regexp.MustCompile(`Command Injection in`)
+	jestPathTraveralPattern       = regexp.MustCompile(`Path Traversal in`)
+	jestPrototypePollutionPattern = regexp.MustCompile(`Prototype Pollution: Prototype of`)
+	// A filled circle marks the beginning of the jest test report
+	jestFindingBeginningPattern = regexp.MustCompile(`^\s*●`)
 
 	// Examples for matching strings:
 	// #2	INITED cov: 10 ft: 11 corp: 1/1b exec/s: 0 rss: 30Mb
@@ -85,8 +86,7 @@ type parser struct {
 	pendingFinding                       *finding.Finding
 	numMetricsLinesSinceFindingIsPending int
 
-	foundJestFinding      bool
-	foundJestErrorDetails bool
+	foundJestFinding bool
 
 	lastNewFeatureTime time.Time // Timestamp representing the point when the last new feature was reported
 	lastFeatures       int       // Last features reported by Libfuzzer
@@ -261,12 +261,8 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	if p.pendingFinding != nil {
-		if p.SupportJazzerJS && !p.foundJestErrorDetails {
-			_, found := regexutil.FindNamedGroupsMatch(jestFindingSourceCodePattern, line)
-			if found {
-				p.pendingFinding.Details = strings.TrimSpace(strings.Join(p.pendingFinding.Logs[1:], "\n"))
-				p.foundJestErrorDetails = true
-			}
+		if p.SupportJazzerJS {
+			p.determineJestErrorDetails()
 		}
 		// The line is not a metrics line and doesn't mark a new finding,
 		// so we append it to the pending finding (unless it's filtered)
@@ -448,6 +444,30 @@ func (p *parser) parseAsJestFinding(line string) *finding.Finding {
 	}
 
 	return nil
+}
+
+func (p *parser) determineJestErrorDetails() {
+	logs := strings.Join(p.pendingFinding.Logs, "\n")
+	_, found := regexutil.FindNamedGroupsMatch(jestPathTraveralPattern, logs)
+	if found {
+		p.pendingFinding.Details = "Path Traversal"
+		return
+	}
+
+	_, found = regexutil.FindNamedGroupsMatch(jestCommandInjectionPattern, logs)
+	if found {
+		p.pendingFinding.Details = "Command Injection"
+		return
+	}
+
+	_, found = regexutil.FindNamedGroupsMatch(jestPrototypePollutionPattern, logs)
+	if found {
+		p.pendingFinding.Details = "Prototype Pollution"
+		return
+	}
+
+	// If no other details are found, use crash as a fallback value
+	p.pendingFinding.Details = "Crash"
 }
 
 func (p *parser) parseAsFuzzingMetric(line string) *report.FuzzingMetric {

@@ -186,7 +186,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	// Check that the findings command lists the finding
 	findings := shared.GetFindings(t, cifuzzRunner.CIFuzzPath, cifuzzRunner.DefaultWorkDir)
 	require.Len(t, findings, 1)
-	assert.Contains(t, findings[0].Details, "Crash!")
+	assert.Contains(t, findings[0].Details, "Crash")
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
