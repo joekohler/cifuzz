@@ -1,0 +1,32 @@
+Date: 2023-08-09 12:29:26.854001904 +0200 CEST
+
+    ● Test command injection
+
+      Command Injection in exec(): called with 'jaz_zer�'
+
+        3 | test.fuzz("Test command injection", jazzerBuffer => {
+        4 | 	try {
+      > 5 | 		child_process.exec(jazzerBuffer.toString());
+          | 		              ^
+        6 | 	} catch (e) {
+        7 | 		// ignore
+        8 | 	}
+
+        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
+        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/command-injection.ts:49:17)
+        at Object.exec (node_modules/@jazzer.js/hooking/manager.ts:261:10)
+        at command-injection/CommandInjection.fuzz.js:5:17
+        at result (node_modules/@jazzer.js/core/core.ts:357:15)
+
+  Test Suites: 1 failed, 1 total
+  Tests:       1 failed, 1 total
+  Snapshots:   0 total
+  Time:        2.432 s
+  Ran all test suites matching /command-injection/i.
+  ==49482== ERROR: libFuzzer: fuzz target exited
+  SUMMARY: libFuzzer: fuzz target exited
+  MS: 5 InsertRepeatedBytes-ChangeBit-ShuffleBytes-ChangeBit-CMP- DE: "jaz_zer"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0xff,
+  jaz_zer\377
+  artifact_prefix='/tmp/cifuzz-nodejs-testdata-1743235893/command-injection/CommandInjection.fuzz/Test_command_injection/'; Test unit written to .cifuzz-findings/unruly_escargot/crashing-input
+  Base64: amF6X3plcv8=

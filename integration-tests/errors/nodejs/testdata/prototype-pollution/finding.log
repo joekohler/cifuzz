@@ -1,0 +1,23 @@
+Date: 2023-08-09 12:27:04.099451278 +0200 CEST
+
+    ● Test prototype pollution
+
+      Prototype Pollution: Prototype of Object changed. Additional properties in object1: { 'polluted': true }
+
+        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
+        at detectPrototypePollutionOfBasicObjects (node_modules/@jazzer.js/bug-detectors/internal/prototype-pollution.ts:318:18)
+        at Callbacks.runAfterEachCallbacks (node_modules/@jazzer.js/core/callback.ts:37:4)
+        at result (node_modules/@jazzer.js/core/core.ts:377:15)
+
+  Test Suites: 1 failed, 1 total
+  Tests:       1 failed, 1 total
+  Snapshots:   0 total
+  Time:        0.518 s
+  Ran all test suites matching /prototype-pollution/i.
+  ==48348== ERROR: libFuzzer: fuzz target exited
+  SUMMARY: libFuzzer: fuzz target exited
+  MS: 4 InsertByte-CrossOver-CrossOver-CMP- DE: "Fuzz"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+  0x46,0x75,0x7a,0x7a,
+  Fuzz
+  artifact_prefix='/tmp/cifuzz-nodejs-testdata-1192295254/prototype-pollution/PrototypePollution.fuzz/Test_prototype_pollution/'; Test unit written to .cifuzz-findings/leaping_raven/crashing-input
+  Base64: RnV6eg==
