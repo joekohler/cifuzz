@@ -12,8 +12,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/report"
+	"code-intelligence.com/cifuzz/pkg/vcs"
 )
 
 type CampaignRunBody struct {
@@ -21,12 +23,13 @@ type CampaignRunBody struct {
 }
 
 type CampaignRun struct {
-	Name        string        `json:"name"`
-	DisplayName string        `json:"display_name"`
-	Campaign    *Campaign     `json:"campaign"`
-	Runs        []*FuzzingRun `json:"runs"`
-	Status      string        `json:"status"`
-	Timestamp   string        `json:"timestamp"`
+	Name        string                `json:"name"`
+	DisplayName string                `json:"display_name"`
+	Campaign    *Campaign             `json:"campaign"`
+	Runs        []*FuzzingRun         `json:"runs"`
+	Status      string                `json:"status"`
+	Timestamp   string                `json:"timestamp"`
+	Revision    *archive.CodeRevision `json:"revision,omitempty"`
 }
 
 type Campaign struct {
@@ -86,7 +89,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", errors.Errorf("Unsupported build system: %s", buildSystem)
 	}
 
-	fuzzingRun := FuzzingRun{
+	fuzzingRun := &FuzzingRun{
 		Name:        fuzzingRunName,
 		DisplayName: "cifuzz-fuzzing-run",
 		Status:      "SUCCEEDED",
@@ -102,18 +105,19 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
-	campaignRun := &CampaignRun{
-		Name:        campaignRunName,
-		DisplayName: "cifuzz-campaign-run",
-		Campaign: &Campaign{
-			MaxRunTime: "120s",
-		},
-		Runs:      []*FuzzingRun{&fuzzingRun},
-		Status:    "SUCCEEDED",
-		Timestamp: time.Now().Format("2006-01-02T15:04:05.999999999Z07:00"),
-	}
+
 	campaignRunBody := &CampaignRunBody{
-		CampaignRun: campaignRun,
+		CampaignRun: &CampaignRun{
+			Name:        campaignRunName,
+			DisplayName: "cifuzz-campaign-run",
+			Campaign: &Campaign{
+				MaxRunTime: "120s",
+			},
+			Runs:      []*FuzzingRun{fuzzingRun},
+			Status:    "SUCCEEDED",
+			Timestamp: time.Now().Format("2006-01-02T15:04:05.999999999Z07:00"),
+			Revision:  vcs.CodeRevision(),
+		},
 	}
 
 	body, err := json.MarshalIndent(campaignRunBody, "", "  ")
@@ -135,7 +139,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", responseToAPIError(resp)
 	}
 
-	return campaignRun.Name, fuzzingRun.Name, nil
+	return campaignRunBody.CampaignRun.Name, fuzzingRun.Name, nil
 }
 
 func createMetricsForCampaignRun(firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) []*Metrics {
