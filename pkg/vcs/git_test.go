@@ -17,7 +17,6 @@ import (
 
 func TestGitBranch(t *testing.T) {
 	repo := createGitRepoWithCommits(t)
-	defer os.RemoveAll(repo)
 	err := os.Chdir(repo)
 	require.NoError(t, err)
 
@@ -33,7 +32,6 @@ func TestGitBranch(t *testing.T) {
 
 func TestGitCommit(t *testing.T) {
 	repo := createGitRepoWithCommits(t)
-	defer os.RemoveAll(repo)
 	err := os.Chdir(repo)
 	require.NoError(t, err)
 
@@ -52,7 +50,6 @@ func TestGitCommit(t *testing.T) {
 
 func TestGitIsDirty(t *testing.T) {
 	repo := createGitRepoWithCommits(t)
-	defer os.RemoveAll(repo)
 	err := os.Chdir(repo)
 	require.NoError(t, err)
 
