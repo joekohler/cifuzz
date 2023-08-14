@@ -23,6 +23,7 @@ var (
 	classpathRegex         = regexp.MustCompile("(?m)^cifuzz.test.classpath=(?P<classpath>.*)$")
 	buildDirRegex          = regexp.MustCompile("(?m)^cifuzz.buildDir=(?P<buildDir>.*)$")
 	testSourceFoldersRegex = regexp.MustCompile("(?m)^cifuzz.test.source-folders=(?P<testSourceFolders>.*)$")
+	mainSourceFoldersRegex = regexp.MustCompile("(?m)^cifuzz.main.source-folders=(?P<mainSourceFolders>.*)$")
 )
 
 func FindGradleWrapper(projectDir string) (string, error) {
@@ -202,10 +203,55 @@ func GetTestSourceSets(projectDir string) ([]string, error) {
 	}
 	result := testSourceFoldersRegex.FindStringSubmatch(string(output))
 	if result == nil {
-		return nil, errors.New("Unable to parse gradle build directory from init script.")
+		return nil, errors.New("Unable to parse gradle test sources.")
 	}
 	paths := strings.Split(strings.TrimSpace(result[1]), string(os.PathListSeparator))
 
-	log.Debugf("Found gradle test sources at: %s", paths)
-	return paths, nil
+	// only return valid paths
+	var sourceSets []string
+	for _, path := range paths {
+		exists, err := fileutil.Exists(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error checking if Gradle test source path %s exists", path)
+		}
+		if exists {
+			sourceSets = append(sourceSets, path)
+		}
+	}
+
+	log.Debugf("Found gradle test sources at: %s", sourceSets)
+	return sourceSets, nil
+}
+
+func GetMainSourceSets(projectDir string) ([]string, error) {
+	cmd, err := buildGradleCommand(projectDir, []string{"cifuzzPrintMainSourceFolders", "-q"})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+	result := mainSourceFoldersRegex.FindStringSubmatch(string(output))
+	if result == nil {
+		return nil, errors.New("Unable to parse gradle main sources.")
+	}
+	paths := strings.Split(strings.TrimSpace(result[1]), string(os.PathListSeparator))
+
+	// only return valid paths
+	var sourceSets []string
+	for _, path := range paths {
+		exists, err := fileutil.Exists(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error checking if Gradle main source path %s exists", path)
+		}
+		if exists {
+			sourceSets = append(sourceSets, path)
+		}
+	}
+
+	log.Debugf("Found gradle main sources at: %s", sourceSets)
+	return sourceSets, nil
 }
