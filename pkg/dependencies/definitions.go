@@ -67,7 +67,7 @@ var deps = Dependencies{
 	},
 	LLVMCov: {
 		Key:        LLVMCov,
-		MinVersion: *semver.MustParse("11.0.0"),
+		MinVersion: *semver.MustParse("12.0.0"),
 		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
 			path, err := dep.finder.LLVMCovPath()
 			if err != nil {
