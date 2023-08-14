@@ -110,7 +110,7 @@ different prerequisites:
  <summary>C/C++ with CMake</summary>
 
 - [CMake >= 3.16](https://cmake.org/)
-- [LLVM >= 11](https://clang.llvm.org/get_started.html)
+- [LLVM >= 12](https://clang.llvm.org/get_started.html)
 
 **Ubuntu / Debian**
 
@@ -164,7 +164,7 @@ You may have to add %ChocolateyInstall%\lib\lcov\tools\bin to your PATH variable
 - Java JDK >= 8 (1.8) (e.g. [OpenJDK](https://openjdk.java.net/install/) or
   [Zulu](https://www.azul.com/downloads/zulu-community/))
   is needed for Bazel's coverage feature.
-- [LLVM >= 11](https://clang.llvm.org/get_started.html)
+- [LLVM >= 12](https://clang.llvm.org/get_started.html)
 - [lcov](https://github.com/linux-test-project/lcov)
 
 **Ubuntu / Debian**
