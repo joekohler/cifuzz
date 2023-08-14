@@ -38,8 +38,8 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 		// A library in the project's build directory.
 		filepath.Join(projectDir, "lib", "mylib.jar"),
 		// a directory structure of class files
-		filepath.Join(projectDir, "classes"),
-		filepath.Join(projectDir, "test-classes"),
+		filepath.Join(projectDir, "src", "main"),
+		filepath.Join(projectDir, "src", "test"),
 	}
 
 	buildResults := []*build.Result{}
@@ -83,8 +83,8 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 		// manifest.jar should always be first element in runtime paths
 		fmt.Sprintf("%s/manifest.jar", fuzzTest),
 		"runtime_deps/mylib.jar",
-		"runtime_deps/classes",
-		"runtime_deps/test-classes",
+		"runtime_deps/src/main",
+		"runtime_deps/src/test",
 	}
 	expectedFuzzer := &archive.Fuzzer{
 		Name:         buildResult.Name,
@@ -211,7 +211,7 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 	}
 
 	buildResults := []*build.Result{
-		&build.Result{
+		{
 			Name:        "com.example.FuzzTest",
 			BuildDir:    filepath.Join(projectDir, "target"),
 			RuntimeDeps: runtimeDeps,
@@ -232,7 +232,8 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	b := newJazzerBundler(&Opts{
-		tempDir: tempDir,
+		tempDir:    tempDir,
+		ProjectDir: projectDir,
 	}, archiveWriter)
 
 	fuzzers, err := b.assembleArtifacts(buildResults)
@@ -301,6 +302,7 @@ func TestCreateManifestJar_TargetMethod(t *testing.T) {
 }
 
 func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
+	projectDir := filepath.Join("testdata", "jazzer", "project")
 	buildResults := []*build.Result{
 		{
 			Name:         "com.example.FuzzTest",
@@ -311,7 +313,8 @@ func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
 	b := newJazzerBundler(&Opts{
-		tempDir: tempDir,
+		tempDir:    tempDir,
+		ProjectDir: projectDir,
 	}, &archive.NullArchiveWriter{})
 
 	fuzzers, err := b.assembleArtifacts(buildResults)

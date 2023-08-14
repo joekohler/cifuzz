@@ -391,10 +391,6 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 }
 
 func (b *jazzerBundler) getTestDirs() ([]string, error) {
-	// For gradle we can get the test src directory by gradle itself
-	// If we don't have this information we have to assume that
-	// the tests are located under src/test, which is a common place for
-	// java projects
 	var testDirs []string
 	var err error
 	if b.opts.BuildSystem == config.BuildSystemGradle {
@@ -415,20 +411,50 @@ func (b *jazzerBundler) getTestDirs() ([]string, error) {
 	return testDirs, nil
 }
 
-func (b *jazzerBundler) createSourceMap() (*SourceMap, error) {
-	sourceMap := SourceMap{
-		JavaPackages: make(map[string][]string),
+func (b *jazzerBundler) getSourceDirs() ([]string, error) {
+	var sourceDirs []string
+	var err error
+	if b.opts.BuildSystem == config.BuildSystemGradle {
+		sourceDirs, err = gradle.GetMainSourceSets(b.opts.ProjectDir)
+		if err != nil {
+			return nil, err
+		}
+	} else if b.opts.BuildSystem == config.BuildSystemMaven {
+		sourceDir, err := maven.GetSourceDir(b.opts.ProjectDir)
+		if err != nil {
+			return nil, err
+		}
+		sourceDirs = append(sourceDirs, sourceDir)
+	} else {
+		sourceDirs = append(sourceDirs, filepath.Join(b.opts.ProjectDir, "src", "main"))
 	}
 
-	// Use zglob to find all java or kotlin files in the project dir.
-	// TODO: Searching the whole project dir is a temporary solution
-	// until the source and test locations provided by maven/gradle
-	// can be used.
-	sourceFiles, err := zglob.Glob(filepath.Join(b.opts.ProjectDir, "**", "*.{java,kt}"))
+	return sourceDirs, nil
+}
+
+func (b *jazzerBundler) createSourceMap() (*SourceMap, error) {
+	var sourceFiles []string
+
+	sourceDirs, err := b.getSourceDirs()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	testDirs, err := b.getTestDirs()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	dirs := append(sourceDirs, testDirs...)
+	for _, dir := range dirs {
+		files, err := zglob.Glob(filepath.Join(dir, "**", "*.{java,kt}"))
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		sourceFiles = append(sourceFiles, files...)
+	}
 
+	sourceMap := SourceMap{
+		JavaPackages: make(map[string][]string),
+	}
 	for _, file := range sourceFiles {
 		packageName, err := func() (string, error) {
 			fd, err := os.Open(file)
