@@ -3,7 +3,6 @@ package coverage
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -159,18 +158,6 @@ or a lcov trace file.
 				return err
 			}
 
-			if opts.BuildSystem == config.BuildSystemNodeJS {
-				if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-					fmt.Println("cifuzz does not support Node.js projects yet.")
-					os.Exit(0)
-				}
-				// Check if the fuzz test contains a filter for the test name
-				if strings.Contains(args[0], ":") {
-					split := strings.Split(args[0], ":")
-					args[0], opts.testNamePattern = split[0], strings.ReplaceAll(split[1], "\"", "")
-				}
-			}
-
 			if sliceutil.Contains(
 				[]string{config.BuildSystemMaven, config.BuildSystemGradle},
 				opts.BuildSystem,
@@ -180,6 +167,12 @@ or a lcov trace file.
 				if strings.Contains(args[0], "::") {
 					split := strings.Split(args[0], "::")
 					args[0], opts.targetMethod = split[0], split[1]
+				}
+			} else if opts.BuildSystem == config.BuildSystemNodeJS {
+				// Check if the fuzz test contains a filter for the test name
+				if strings.Contains(args[0], ":") {
+					split := strings.Split(args[0], ":")
+					args[0], opts.testNamePattern = split[0], strings.ReplaceAll(split[1], "\"", "")
 				}
 			}
 

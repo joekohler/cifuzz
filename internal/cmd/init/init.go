@@ -158,23 +158,18 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, test
 		// directory is only searched in step 7.
 		log.Print(messaging.Instructions(buildSystem))
 	case config.BuildSystemNodeJS:
-		if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-			if testLang == "" {
-				lang, err := getNodeProjectLang()
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				testLang = lang
+		if testLang == "" {
+			lang, err := getNodeProjectLang()
+			if err != nil {
+				log.Error(err)
+				return
 			}
-			if testLang == "ts" {
-				log.Print(messaging.Instructions("nodets"))
-			} else {
-				log.Print(messaging.Instructions(buildSystem))
-			}
+			testLang = lang
+		}
+		if testLang == "ts" {
+			log.Print(messaging.Instructions("nodets"))
 		} else {
-			log.Print("cifuzz does not support Node.js projects yet.")
-			os.Exit(1)
+			log.Print(messaging.Instructions(buildSystem))
 		}
 	case config.BuildSystemMaven:
 		log.Print(messaging.Instructions(buildSystem))

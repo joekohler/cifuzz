@@ -96,10 +96,6 @@ func TestLlvmCovVersion(t *testing.T) {
 }
 
 func TestNodeMissing(t *testing.T) {
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip()
-	}
-
 	dependencies.TestMockAllDeps(t)
 	dependencies.OverwriteUninstalled(dependencies.GetDep(dependencies.Node))
 

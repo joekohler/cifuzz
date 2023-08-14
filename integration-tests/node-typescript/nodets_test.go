@@ -26,9 +26,6 @@ func TestIntegration_NodeTS_InitCreateRunCoverage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip("skipping because CIFUZZ_PRERELEASE is not set")
-	}
 
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
@@ -47,7 +44,6 @@ func TestIntegration_NodeTS_InitCreateRunCoverage(t *testing.T) {
 
 	// Execute the init command
 	instructions := cifuzzRunner.CommandWithFilterForInstructions(t, "init", &shared.CommandOptions{
-		Env:  append(os.Environ(), "CIFUZZ_PRERELEASE=1"),
 		Args: []string{"ts"},
 	})
 	require.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
@@ -74,7 +70,6 @@ func TestIntegration_NodeTS_InitCreateRunCoverage(t *testing.T) {
 	// Execute the create command
 	fuzzTestPath := filepath.Join(projectDir, "FuzzTestCase.fuzz.ts")
 	cifuzzRunner.CommandWithFilterForInstructions(t, "create", &shared.CommandOptions{
-		Env:  append(os.Environ(), "CIFUZZ_PRERELEASE=1"),
 		Args: []string{"ts", "--output", fuzzTestPath},
 	},
 	)

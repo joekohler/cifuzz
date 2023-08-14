@@ -38,9 +38,6 @@ func TestInitCmd(t *testing.T) {
 
 // TestInitCmdForNode tests the init command for Node.js projects (both JavaScript and TypeScript).
 func TestInitCmdForNodeWithLanguageArg(t *testing.T) {
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip("skipping test for non-prerelease")
-	}
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemNodeJS)
 	defer cleanup()
 

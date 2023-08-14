@@ -14,9 +14,11 @@ const (
 
 // map of supported test types -> label:value
 var supportedTestTypes = map[string]string{
-	"C/C++":  string(CPP),
-	"Java":   string(Java),
-	"Kotlin": string(Kotlin),
+	"C/C++":      string(CPP),
+	"Java":       string(Java),
+	"Kotlin":     string(Kotlin),
+	"JavaScript": string(JavaScript),
+	"TypeScript": string(TypeScript),
 }
 
 type GradleBuildLanguage string
@@ -36,8 +38,7 @@ const (
 // environment variable CIFUZZ_PRERELEASE.
 func SupportedTestTypes() map[string]string {
 	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		supportedTestTypes["JavaScript"] = string(JavaScript)
-		supportedTestTypes["TypeScript"] = string(TypeScript)
+		// e.g. supportedTestTypes["Rust"] = string(Rust)
 	}
 	return supportedTestTypes
 }

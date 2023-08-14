@@ -11,21 +11,9 @@ import (
 
 var nodeInitTests = &[]e2e.TestCase{
 	{
-		Description:  "init command in Node.js project without prerelease flag prints error",
+		Description:  "init command in Node.js (JS) project succeeds and creates a config file",
 		Command:      "init",
 		Args:         []string{"js"},
-		SampleFolder: []string{"nodejs"},
-		Assert: func(t *testing.T, output e2e.CommandOutput) {
-			assert.EqualValues(t, 1, output.ExitCode)
-			matches, _ := fs.Glob(output.Workdir, "cifuzz.yaml")
-			assert.Len(t, matches, 0, "There shouldn't be a cifuzz.yaml config")
-		},
-	},
-	{
-		Description:  "init command in Node.js (JS) project with prerelease flag succeeds and creates a config file",
-		Command:      "init",
-		Args:         []string{"js"},
-		Environment:  []string{"CIFUZZ_PRERELEASE=true"},
 		SampleFolder: []string{"nodejs"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
@@ -37,10 +25,9 @@ var nodeInitTests = &[]e2e.TestCase{
 		},
 	},
 	{
-		Description:  "init command in Node.js (TS) project with prerelease flag succeeds and creates a config file",
+		Description:  "init command in Node.js (TS) project succeeds and creates a config file",
 		Command:      "init",
 		Args:         []string{"ts"},
-		Environment:  []string{"CIFUZZ_PRERELEASE=true"},
 		SampleFolder: []string{"node-typescript"},
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)

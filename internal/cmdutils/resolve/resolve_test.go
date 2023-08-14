@@ -194,10 +194,6 @@ func testResolveMavenWindowsPaths(t *testing.T, pwd string) {
 }
 
 func testResolveNodeJS(t *testing.T, pwd string) {
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip()
-	}
-
 	fuzzTestName := "FuzzTestCase"
 
 	// relative path

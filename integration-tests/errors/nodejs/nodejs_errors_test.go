@@ -2,7 +2,6 @@ package nodejs
 
 import (
 	"encoding/json"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestIntegration_NodeJSErrors(t *testing.T) {
-	if testing.Short() || os.Getenv("CIFUZZ_PRERELEASE") == "" {
+	if testing.Short() {
 		t.Skip()
 	}
 

@@ -295,13 +295,6 @@ repository.
 <details>
  <summary>Node.js</summary>
 
-**Info:** Support for Node.js projects is still experimental and
-hidden behind a feature flag. You can try it out by running:
-
-```bash
-export CIFUZZ_PRERELEASE=1
-```
-
 - [Node.js](https://nodejs.org) >= 16.0
 
 **Ubuntu / Debian**

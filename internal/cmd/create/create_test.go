@@ -65,10 +65,6 @@ func TestOkGradle(t *testing.T) {
 }
 
 func TestOkJavaScript(t *testing.T) {
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
-	}
-
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "nodejs")
 	t.Cleanup(cleanup)
 
@@ -83,10 +79,6 @@ func TestOkJavaScript(t *testing.T) {
 }
 
 func TestOkTypeScript(t *testing.T) {
-	if os.Getenv("CIFUZZ_PRERELEASE") == "" {
-		t.Skip("Skipping test because CIFUZZ_PRERELEASE is not set.")
-	}
-
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("create-cmd-test", "nodejs-typescript")
 	t.Cleanup(cleanup)
 
