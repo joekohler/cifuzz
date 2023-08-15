@@ -27,8 +27,6 @@ var cmakeFuzzTestFileNamePattern = regexp.MustCompile(`add_fuzz_test\((?P<fuzzTe
 // resolve determines the corresponding fuzz test name to a given source file.
 // The path has to be relative to the project directory.
 func resolve(path, buildSystem, projectDir string) (string, error) {
-	errNoFuzzTest := errors.New("no fuzz test found")
-
 	switch buildSystem {
 	case config.BuildSystemCMake:
 		cmakeLists, err := findAllCMakeLists(projectDir)
@@ -55,7 +53,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 				}
 			}
 		}
-		return "", errNoFuzzTest
+		return "", errors.New("no fuzz test found")
 
 	case config.BuildSystemBazel:
 		var err error
@@ -80,7 +78,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 			// if a bazel query fails it is because no target could be found but it would
 			// only return "exit status 7" as error which is no useful information for
 			// the user, so instead we return the custom error
-			return "", errNoFuzzTest
+			return "", errors.New("no fuzz test found")
 		}
 
 		fuzzTest := strings.TrimSpace(string(out))
@@ -151,7 +149,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 			break
 		}
 		if !found {
-			return "", errNoFuzzTest
+			return "", errors.New("no fuzz test found")
 		}
 		return fuzzTest, nil
 
