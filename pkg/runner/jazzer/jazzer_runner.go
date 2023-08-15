@@ -121,6 +121,13 @@ func (r *Runner) Run(ctx context.Context) error {
 	// Add user-specified Jazzer/libfuzzer options
 	args = append(args, r.EngineArgs...)
 
+	// Tell Jazzer which corpus directory it should use, if specified.
+	// By default, Jazzer stores the generated corpus in
+	// .cifuzz-corpus/<test class name>/<test method name>.
+	if r.GeneratedCorpusDir != "" {
+		args = append(args, r.GeneratedCorpusDir)
+	}
+
 	// Add any additional corpus directories as further positional arguments
 	args = append(args, r.SeedCorpusDirs...)
 
