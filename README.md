@@ -61,6 +61,9 @@ based tests into your project.
 ![gradle](/docs/assets/tools/gradle.png)
 ![Maven](/docs/assets/tools/maven.png)
 ![Bazel](/docs/assets/tools/bazel.png)
+![JavaScript](/docs/assets/tools/javascript.png)
+![TypeScript](/docs/assets/tools/typescript.png)
+![Node.js](/docs/assets/tools/nodejs.png)
 
 ## Getting started
 
