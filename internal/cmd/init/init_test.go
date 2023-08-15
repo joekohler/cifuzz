@@ -36,8 +36,8 @@ func TestInitCmd(t *testing.T) {
 	assert.ErrorIs(t, err, cmdutils.ErrSilent)
 }
 
-// TestInitCmdForNode tests the init command for Node.js projects (both JavaScript and TypeScript).
-func TestInitCmdForNodeWithLanguageArg(t *testing.T) {
+// TestInitCmdForNodeWithJSLanguageArg tests the init command for Node.js projects (JS).
+func TestInitCmdForNodeWithJSLanguageArg(t *testing.T) {
 	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemNodeJS)
 	defer cleanup()
 
@@ -45,19 +45,22 @@ func TestInitCmdForNodeWithLanguageArg(t *testing.T) {
 	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
 	require.NoError(t, err)
 
-	// test for JavaScript
 	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "js")
 	assert.NoError(t, err)
 	assert.Contains(t, stdErr, "jest.config.js")
 	assert.FileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
+}
 
-	// remove cifuzz.yaml again
-	err = os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
+// TestInitCmdForNodeWithTSLanguageArg tests the init command for Node.js projects (TS).
+func TestInitCmdForNodeWithTSLanguageArg(t *testing.T) {
+	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemNodeJS)
+	defer cleanup()
+
+	// remove cifuzz.yaml from example project
+	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
 	require.NoError(t, err)
-	assert.NoFileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
 
-	// test for TypeScript
-	_, stdErr, err = cmdutils.ExecuteCommand(t, New(), os.Stdin, "ts")
+	_, stdErr, err := cmdutils.ExecuteCommand(t, New(), os.Stdin, "ts")
 	assert.NoError(t, err)
 	assert.Contains(t, stdErr, "jest.config.ts")
 	assert.Contains(t, stdErr, "To introduce the fuzz function types globally, add the following import to globals.d.ts:")
