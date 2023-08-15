@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,8 +18,8 @@ import (
 )
 
 func TestIntegration_NodeJSErrors(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
+	if testing.Short() || runtime.GOOS == "windows" {
+		t.Skip("skipping integration test in short mode")
 	}
 
 	testdataTmp := shared.CopyTestdataDir(t, "nodejs")
