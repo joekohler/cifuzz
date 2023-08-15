@@ -73,6 +73,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 		}
 		arg := fmt.Sprintf(`attr(generator_function, cc_fuzz_test, same_pkg_direct_rdeps(%q))`, path)
 		cmd := exec.Command("bazel", "query", arg)
+		cmd.Stderr = os.Stderr
 		out, err := cmd.Output()
 		if err != nil {
 			// if a bazel query fails it is because no target could be found but it would
