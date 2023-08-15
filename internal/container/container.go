@@ -109,10 +109,16 @@ func Run(id string, outW, errW io.Writer) error {
 	}
 	log.Debugf("started container %s", id)
 	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
-		log.Infof("Container %s is running.", id)
-		log.Infof("Attach to it with: docker exec -it %s /bin/bash", id)
-		log.Infof("Run the original command in the container with: eval $CMD")
-		log.Infof("Press Ctrl+C to stop the container.")
+		log.Printf(`Container %[1]s is running.
+Attach to it with:
+
+    docker exec -it %[1]s /bin/bash
+
+Run the original command in the container with:
+
+   eval $CMD
+
+Press Ctrl+C to stop the container.`, id)
 	}
 
 	// Continuously print the container's stdout and stderr to the host's
