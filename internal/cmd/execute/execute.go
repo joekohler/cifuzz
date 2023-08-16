@@ -134,10 +134,64 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		return err
 	}
 
-	runner, err := buildRunner(fuzzer)
+	// TODO: create or get real directory for seed corpus
+	corpusDirName := "corpus"
+	seedDirName := "seed"
+	err = os.MkdirAll(seedDirName, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = os.MkdirAll(corpusDirName, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	reportHandler, err := reporthandler.NewReportHandler(
+		getFuzzerName(fuzzer),
+		&reporthandler.ReportHandlerOptions{
+			ProjectDir:           fuzzer.ProjectDir,
+			PrintJSON:            false,
+			ManagedSeedCorpusDir: seedDirName,
+		})
 	if err != nil {
 		return err
 	}
+
+	runnerOpts := &libfuzzer.RunnerOptions{
+		FuzzTarget:         fuzzer.Path,
+		ProjectDir:         fuzzer.ProjectDir,
+		UseMinijail:        false,
+		LibraryDirs:        fuzzer.LibraryPaths,
+		Verbose:            true, // Should this respect -v flag?
+		ReportHandler:      reportHandler,
+		GeneratedCorpusDir: corpusDirName,
+		EnvVars:            []string{"NO_CIFUZZ=1"},
+	}
+
+	var runner runCmd.Runner
+
+	switch fuzzer.Engine {
+	case "JAVA_LIBFUZZER":
+
+		name := fuzzer.Name
+		method := ""
+		if strings.Contains(fuzzer.Name, "::") {
+			split := strings.Split(fuzzer.Name, "::")
+			name = split[0]
+			method = split[1]
+		}
+		runnerOpts := &jazzer.RunnerOptions{
+			TargetClass:      name,
+			TargetMethod:     method,
+			ClassPaths:       fuzzer.RuntimePaths,
+			LibfuzzerOptions: runnerOpts,
+		}
+		runner = jazzer.NewRunner(runnerOpts)
+	default:
+		runner = libfuzzer.NewRunner(runnerOpts)
+	}
+
 	return runCmd.ExecuteRunner(runner)
 }
 
@@ -204,66 +258,4 @@ func findFuzzer(nameToFind string, bundleMetadata *archive.Metadata) (*archive.F
 	}
 
 	return nil, errors.Errorf("fuzzer '%s' not found in a bundle metadata file", nameToFind)
-}
-
-func buildRunner(fuzzer *archive.Fuzzer) (runCmd.Runner, error) {
-	// TODO: create or get real directory for seed corpus
-	corpusDirName := "corpus"
-	seedDirName := "seed"
-	err := os.MkdirAll(seedDirName, 0o755)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = os.MkdirAll(corpusDirName, 0o755)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	reportHandler, err := reporthandler.NewReportHandler(
-		getFuzzerName(fuzzer),
-		&reporthandler.ReportHandlerOptions{
-			ProjectDir:           fuzzer.ProjectDir,
-			PrintJSON:            false,
-			ManagedSeedCorpusDir: seedDirName,
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	runnerOpts := &libfuzzer.RunnerOptions{
-		FuzzTarget:         fuzzer.Path,
-		ProjectDir:         fuzzer.ProjectDir,
-		UseMinijail:        false,
-		LibraryDirs:        fuzzer.LibraryPaths,
-		Verbose:            true, // Should this respect -v flag?
-		ReportHandler:      reportHandler,
-		GeneratedCorpusDir: corpusDirName,
-		EnvVars:            []string{"NO_CIFUZZ=1"},
-	}
-
-	var runner runCmd.Runner
-
-	switch fuzzer.Engine {
-	case "JAVA_LIBFUZZER":
-
-		name := fuzzer.Name
-		method := ""
-		if strings.Contains(fuzzer.Name, "::") {
-			split := strings.Split(fuzzer.Name, "::")
-			name = split[0]
-			method = split[1]
-		}
-		runnerOpts := &jazzer.RunnerOptions{
-			TargetClass:      name,
-			TargetMethod:     method,
-			ClassPaths:       fuzzer.RuntimePaths,
-			LibfuzzerOptions: runnerOpts,
-		}
-		runner = jazzer.NewRunner(runnerOpts)
-	default:
-		runner = libfuzzer.NewRunner(runnerOpts)
-	}
-
-	return runner, nil
 }

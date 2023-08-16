@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
-	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
-	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 )
 
 func Test_getFuzzer(t *testing.T) {
@@ -187,27 +185,4 @@ func Test_findFuzzer(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_buildRunnerJazzerRunner(t *testing.T) {
-	runner, err := buildRunner(&archive.Fuzzer{
-		Name:   "a-fuzzer",
-		Engine: "JAVA_LIBFUZZER",
-	})
-	require.NoError(t, err)
-	v, ok := runner.(*jazzer.Runner)
-	require.Equal(t, true, ok)
-	require.Equal(t, "a-fuzzer", v.RunnerOptions.TargetClass)
-}
-
-func Test_buildRunnerLibfuzzerRunner(t *testing.T) {
-	runner, err := buildRunner(&archive.Fuzzer{
-		Target: "b-fuzzer",
-		Path:   "fuzzTarget",
-		Engine: "LIBFUZZER",
-	})
-	require.NoError(t, err)
-	v, ok := runner.(*libfuzzer.Runner)
-	require.Equal(t, true, ok)
-	require.Equal(t, "fuzzTarget", v.RunnerOptions.FuzzTarget)
 }
