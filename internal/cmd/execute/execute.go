@@ -151,7 +151,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		getFuzzerName(fuzzer),
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           fuzzer.ProjectDir,
-			PrintJSON:            false,
+			PrintJSON:            c.opts.PrintJSON,
 			ManagedSeedCorpusDir: seedDirName,
 		})
 	if err != nil {
