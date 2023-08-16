@@ -121,6 +121,10 @@ func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
 	return f.findFollowSymlinks("src/dumper.c")
 }
 
+func (f RunfilesFinderImpl) ListFuzzTestsJarPath() (string, error) {
+	return f.findFollowSymlinks("share/java/list-fuzz-tests.jar")
+}
+
 func (f RunfilesFinderImpl) VisualStudioPath() (string, error) {
 	path, found := os.LookupEnv("VSINSTALLDIR")
 	if !found {
