@@ -49,9 +49,6 @@ runs:
         # at some point we would like to remove these lines but we haven't found a way to fix this otherwise
         echo 'common --repo_env=BAZEL_CXXOPTS=-isysroot/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk' >> ~/.bazelrc
         echo 'common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk:-fuse-ld=lld' >> ~/.bazelrc
-        # we ran into an error using 6.1 so we fixed it to the last working version
-        # TODO: remove this as soon as possible
-        echo "USE_BAZEL_VERSION=6.0.0" >> $GITHUB_ENV
         # install lcov which is needed for coverage report generation
         brew install lcov
       shell: bash
