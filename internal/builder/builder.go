@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -192,6 +193,11 @@ func (i *CIFuzzBuilder) BuildCIFuzzAndDeps() error {
 		}
 	}
 
+	err = i.BuildListFuzzTestsTool()
+	if err != nil {
+		return err
+	}
+
 	err = i.BuildCIFuzz()
 	if err != nil {
 		return err
@@ -277,6 +283,47 @@ func (i *CIFuzzBuilder) BuildProcessWrapper() error {
 	cmd.Stdout = os.Stdout
 	log.Printf("Command: %s", cmd.String())
 	err = cmd.Run()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (i *CIFuzzBuilder) BuildListFuzzTestsTool() error {
+	var err error
+	err = i.Lock()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = i.Unlock()
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
+	}()
+
+	listFuzzTestsDir := filepath.Join(i.projectDir, "tools", "list-fuzz-tests")
+
+	mvn, err := runfiles.Finder.MavenPath()
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(mvn, "package")
+	cmd.Dir = listFuzzTestsDir
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	log.Printf("Command: %s", cmd.String())
+	err = cmd.Run()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = copy.Copy(
+		filepath.Join(listFuzzTestsDir, "target", "list-fuzz-tests.jar"),
+		filepath.Join(i.shareDir(), "java", "list-fuzz-tests.jar"),
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
