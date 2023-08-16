@@ -75,7 +75,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
 
 	// JVM tuning args
-	// https://github.com/CodeIntelligenceTesting/jazzer/blob/9879cfd3053d88169dad6d3ef241a4e113a651bb/launcher/jvm_tooling.cpp#L234-L244
+	// See https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/common.md#recommended-jvm-options
 	args = append(args,
 		// Preserve and emit stack trace information even on hot paths.
 		// This may hurt performance, but also helps find flaky bugs.
@@ -86,6 +86,8 @@ func (r *Runner) Run(ctx context.Context) error {
 		"-XX:+IgnoreUnrecognizedVMOptions",
 		// Improves the performance of Jazzer's tracing hooks.
 		"-XX:+CriticalJNINatives",
+		// Disable warnings caused by the use of Jazzer's Java agent on JDK 21+.
+		"-XX:+EnableDynamicAgentLoading",
 	)
 
 	// Jazzer main class
