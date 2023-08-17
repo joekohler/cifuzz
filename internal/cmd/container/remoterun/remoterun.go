@@ -1,6 +1,8 @@
 package remoterun
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -98,14 +100,14 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 func (c *containerRemoteRunCmd) run() error {
 	var err error
 
-	logging.StartBuildProgressSpinner(log.ContainerBuildInProgressMsg)
+	buildPrinter := logging.NewBuildPrinter(os.Stdout, log.ContainerBuildInProgressMsg)
 	imageID, err := c.buildImage()
 	if err != nil {
-		logging.StopBuildProgressSpinnerOnError(log.ContainerBuildInProgressErrorMsg)
+		buildPrinter.StopOnError(log.ContainerBuildInProgressErrorMsg)
 		return err
 	}
 
-	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
+	buildPrinter.StopOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
 	return container.UploadImage(imageID, c.opts.Registry)
 }

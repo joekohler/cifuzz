@@ -294,16 +294,20 @@ func (c *runRemoteCmd) run() error {
 		c.opts.BundlePath = bundlePath
 		c.opts.OutputPath = bundlePath
 
-		logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
+		buildPrinterOutput := os.Stdout
+		if c.opts.PrintJSON {
+			buildPrinterOutput = os.Stderr
+		}
+		buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BundleInProgressMsg)
 
 		b := bundler.New(&c.opts.Opts)
 		_, err = b.Bundle()
 		if err != nil {
-			logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
+			buildPrinter.StopOnError(log.BundleInProgressErrorMsg)
 			return err
 		}
 
-		logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg, true)
+		buildPrinter.StopOnSuccess(log.BundleInProgressSuccessMsg, true)
 	}
 
 	artifact, err := c.apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)

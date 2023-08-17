@@ -169,15 +169,15 @@ on the build system. This can be overridden with a docker-image flag.
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			logging.StartBuildProgressSpinner(log.BundleInProgressMsg)
+			buildPrinter := logging.NewBuildPrinter(os.Stdout, log.BundleInProgressMsg)
 
 			_, err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
-				logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
+				buildPrinter.StopOnError(log.BundleInProgressErrorMsg)
 				return err
 			}
 
-			logging.StopBuildProgressSpinnerOnSuccess(log.BundleInProgressSuccessMsg, true)
+			buildPrinter.StopOnSuccess(log.BundleInProgressSuccessMsg, true)
 			log.Successf("Successfully created bundle: %s", opts.OutputPath)
 
 			return nil

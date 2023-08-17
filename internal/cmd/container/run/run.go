@@ -1,6 +1,8 @@
 package run
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -120,14 +122,18 @@ func (c *containerRunCmd) run() error {
 		log.Infof(messaging.UsageWarning())
 	}
 
-	logging.StartBuildProgressSpinner(log.ContainerBuildInProgressMsg)
+	buildPrinterOutput := os.Stdout
+	if c.opts.PrintJSON {
+		buildPrinterOutput = os.Stderr
+	}
+	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.ContainerBuildInProgressMsg)
 	containerID, err := c.buildContainerFromImage()
 	if err != nil {
-		logging.StopBuildProgressSpinnerOnError(log.ContainerBuildInProgressErrorMsg)
+		buildPrinter.StopOnError(log.ContainerBuildInProgressErrorMsg)
 		return err
 	}
 
-	logging.StopBuildProgressSpinnerOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
+	buildPrinter.StopOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
 	err = container.Run(containerID, c.OutOrStdout(), c.ErrOrStderr())
 	if err != nil {

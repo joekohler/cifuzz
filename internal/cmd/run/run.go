@@ -448,12 +448,16 @@ func (c *runCmd) run() error {
 func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 	var err error
 
-	logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
+	buildPrinterOutput := os.Stdout
+	if c.opts.PrintJSON {
+		buildPrinterOutput = os.Stderr
+	}
+	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
 	defer func(err *error) {
 		if *err != nil {
-			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
+			buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
 		} else {
-			logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
+			buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
 		}
 	}(&err)
 

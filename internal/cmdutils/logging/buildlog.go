@@ -7,14 +7,79 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/pterm/pterm"
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-// region Log
-
 var buildLogPath string
+
+type BuildPrinter struct {
+	spinnerPrinter *log.SpinnerPrinter
+	output         io.Writer
+}
+
+func NewBuildPrinter(output io.Writer, msg string) *BuildPrinter {
+	if !ShouldLogBuildToFile() {
+		return nil
+	}
+
+	buildPrinter := &BuildPrinter{output: output}
+
+	if log.ShouldUseSpinnerPrinter() {
+		buildPrinter.spinnerPrinter = log.NewSpinnerPrinter(nil, output, msg)
+	}
+
+	return buildPrinter
+}
+
+func (p *BuildPrinter) StopOnSuccess(msg string, printPath bool) {
+	if p == nil {
+		return
+	}
+
+	if p.spinnerPrinter != nil {
+		p.spinnerPrinter.Style = ptermSuccessStyle()
+		p.spinnerPrinter.StopWithMessage(msg)
+	}
+
+	if printPath {
+		log.Info(fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath))
+	}
+}
+
+func (p *BuildPrinter) StopOnError(msg string) {
+	if p == nil {
+		return
+	}
+
+	if p.spinnerPrinter != nil {
+		p.spinnerPrinter.Style = ptermErrorStyle()
+		p.spinnerPrinter.StopWithMessage(msg)
+	}
+
+	printErr := p.printBuildLog()
+	if printErr != nil {
+		log.Error(printErr)
+	}
+}
+
+func (p *BuildPrinter) printBuildLog() error {
+	_, _ = fmt.Fprintln(p.output)
+
+	data, err := os.ReadFile(buildLogPath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	_, err = p.output.Write(data)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
 
 func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, error) {
 	logFile := fmt.Sprintf("build-%s.log", SuffixForLog(fuzzTestNames))
@@ -37,52 +102,10 @@ func ShouldLogBuildToFile() bool {
 	return !viper.GetBool("verbose")
 }
 
-func StartBuildProgressSpinner(msg string) {
-	if !ShouldLogBuildToFile() {
-		return
-	}
-
-	log.CreateCurrentProgressSpinner(nil, msg)
+func ptermErrorStyle() *pterm.Style {
+	return &pterm.Style{pterm.FgRed, pterm.Bold}
 }
 
-func StopBuildProgressSpinnerOnError(msg string) {
-	if !ShouldLogBuildToFile() {
-		return
-	}
-
-	log.StopCurrentProgressSpinner(log.GetPtermErrorStyle(), msg)
-	printErr := printBuildLogOnStdout()
-	if printErr != nil {
-		log.Error(printErr)
-	}
-}
-
-func StopBuildProgressSpinnerOnSuccess(msg string, printPath bool) {
-	if !ShouldLogBuildToFile() {
-		return
-	}
-
-	log.StopCurrentProgressSpinner(log.GetPtermSuccessStyle(), msg)
-
-	if printPath {
-		log.Info(fmt.Sprintf("Details of the building process can be found here:\n%s\n", buildLogPath))
-	}
-}
-
-// printBuildLogOnStdout reads the build log file and prints it
-// on stdout.
-func printBuildLogOnStdout() error {
-	fmt.Println()
-
-	data, err := os.ReadFile(buildLogPath)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	_, err = os.Stdout.Write(data)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func ptermSuccessStyle() *pterm.Style {
+	return &pterm.Style{pterm.FgGreen}
 }

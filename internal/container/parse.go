@@ -50,7 +50,7 @@ func parseImageBuildOutput(r io.Reader) (string, error) {
 			if stepRegex.MatchString(jsonMessage.Stream) {
 				matches := stepRegex.FindStringSubmatch(jsonMessage.Stream)
 				stepString := fmt.Sprintf("%s (Step %s/%s)", log.ContainerBuildInProgressMsg, matches[1], matches[2])
-				log.UpdateCurrentProgressSpinner(stepString)
+				log.UpdateCurrentSpinnerPrinter(stepString)
 			}
 		}
 		// extract the image ID from the Aux field

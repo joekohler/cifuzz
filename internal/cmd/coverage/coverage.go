@@ -3,6 +3,7 @@ package coverage
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -359,16 +360,16 @@ func (c *coverageCmd) run() error {
 	}
 
 	if c.opts.BuildSystem != config.BuildSystemNodeJS {
-		logging.StartBuildProgressSpinner(log.BuildInProgressMsg)
+		buildPrinter := logging.NewBuildPrinter(os.Stdout, log.BuildInProgressMsg)
 		log.Infof("Building %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(c.opts.fuzzTest))
 
 		err = gen.BuildFuzzTestForCoverage()
 		if err != nil {
-			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
+			buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
 			return err
 		}
 
-		logging.StopBuildProgressSpinnerOnSuccess(log.BuildInProgressSuccessMsg, true)
+		buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
 	}
 
 	reportPath, err := gen.GenerateCoverageReport()

@@ -71,15 +71,15 @@ func log(style pterm.Style, icon string, a ...any) {
 	// then print the log and start it again to have a clean output
 	// If we don't do this, the spinner will remain on the console
 	// between the logs
-	if currentProgressSpinner != nil {
+	if activeSpinnerPrinter != nil {
 		// We only need to set this if we have to restart the spinner
-		currentProgressSpinner.RemoveWhenDone = true
-		_ = currentProgressSpinner.Stop()
+		activeSpinnerPrinter.RemoveWhenDone = true
+		_ = activeSpinnerPrinter.SpinnerPrinter.Stop()
 
 		_, _ = fmt.Fprint(Output, s)
 		logToSecondaryOutput(a...)
 
-		currentProgressSpinner, _ = currentProgressSpinner.Start(currentProgressSpinner.Text)
+		activeSpinnerPrinter.SpinnerPrinter, _ = activeSpinnerPrinter.Start(activeSpinnerPrinter.Text)
 		return
 	}
 
