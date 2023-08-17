@@ -66,14 +66,17 @@ func (p *BuildPrinter) StopOnError(msg string) {
 }
 
 func (p *BuildPrinter) printBuildLog() error {
-	_, _ = fmt.Fprintln(p.output)
-
-	data, err := os.ReadFile(buildLogPath)
+	f, err := os.Open(buildLogPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	_, err = p.output.Write(data)
+	_, err = fmt.Fprintln(p.output)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	_, err = io.Copy(p.output, f)
 	if err != nil {
 		return errors.WithStack(err)
 	}
