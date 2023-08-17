@@ -22,8 +22,9 @@ import (
 )
 
 type executeOpts struct {
-	PrintJSON      bool `mapstructure:"print-json"`
-	SingleFuzzTest bool `mapstructure:"single-fuzz-test"`
+	PrintJSON           bool `mapstructure:"print-json"`
+	SingleFuzzTest      bool `mapstructure:"single-fuzz-test"`
+	PrintBundleMetadata bool `mapstructure:"print-bundle-metadata"`
 
 	name string
 }
@@ -53,7 +54,9 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			// were bound to the flags of other commands before.
 			bindFlags()
 			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
+			cmdutils.ViperMustBindPFlag("print-bundle-metadata", cmd.Flags().Lookup("print-bundle-metadata"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
+			opts.PrintBundleMetadata = viper.GetBool("print-bundle-metadata")
 			opts.PrintJSON = viper.GetBool("print-json")
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -62,7 +65,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 				return err
 			}
 
-			if opts.PrintJSON {
+			if opts.PrintBundleMetadata {
 				metadataJSON, err := stringutil.ToJSONString(metadata)
 				if err != nil {
 					return err
@@ -113,6 +116,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 	cmdutils.DisableConfigCheck(cmd)
 
 	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
+	cmd.Flags().Bool("print-bundle-metadata", false, "Print the bundle metadata as JSON.")
 
 	// Note: If a flag should be configurable via viper as well (i.e.
 	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
