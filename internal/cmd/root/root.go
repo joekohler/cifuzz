@@ -211,7 +211,7 @@ For more information on cifuzz sandboxing, see:
 }
 
 func rootFlagErrorFunc(cmd *cobra.Command, err error) error {
-	if err == pflag.ErrHelp {
+	if errors.Is(err, pflag.ErrHelp) {
 		return err
 	}
 	return cmdutils.WrapIncorrectUsageError(err)
