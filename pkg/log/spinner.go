@@ -19,10 +19,6 @@ const (
 	ContainerBuildInProgressMsg        string = "Building fuzz container..."
 	ContainerBuildInProgressSuccessMsg string = "Building fuzz container... Done."
 	ContainerBuildInProgressErrorMsg   string = "Building fuzz container... Error."
-
-	ContainerRunInProgressMsg        string = "Running fuzz container..."
-	ContainerRunInProgressSuccessMsg string = "Running fuzz container... Done."
-	ContainerRunInProgressErrorMsg   string = "Running fuzz container... Error."
 )
 
 func GetPtermErrorStyle() *pterm.Style {
