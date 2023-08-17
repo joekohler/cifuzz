@@ -53,7 +53,7 @@ func New() (*cobra.Command, error) {
 			if cmdutils.NeedsConfig(cmd) {
 				_, err = config.FindConfigDir()
 				if errors.Is(err, os.ErrNotExist) {
-					return cmdutils.WrapIncorrectUsageError(errors.Wrap(err, "Use 'cifuzz init' to set up a project for use with cifuzz"))
+					return fmt.Errorf("%v\n%s", err, "Use 'cifuzz init' to set up a project for use with cifuzz.")
 				}
 				if err != nil {
 					return err
