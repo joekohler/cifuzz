@@ -163,7 +163,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		ProjectDir:         fuzzer.ProjectDir,
 		UseMinijail:        false,
 		LibraryDirs:        fuzzer.LibraryPaths,
-		Verbose:            true, // Should this respect -v flag?
+		Verbose:            viper.GetBool("verbose"),
 		ReportHandler:      reportHandler,
 		GeneratedCorpusDir: corpusDirName,
 		EnvVars:            []string{"NO_CIFUZZ=1"},
