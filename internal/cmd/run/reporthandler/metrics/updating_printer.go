@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 
@@ -16,15 +15,11 @@ import (
 )
 
 func NewUpdatingPrinter(output io.Writer) (*UpdatingPrinter, error) {
-	// pterm.SpinnerPrinter doesn't support specifying the output, it
-	// always uses color.output, so we have to set that. Note that this
-	// affects the default output of all methods from the pterm and
-	// color packages.
-	color.SetOutput(output)
+	spinnerPrinter := pterm.DefaultSpinner.WithShowTimer(false).WithWriter(output)
 
 	var err error
 	p := &UpdatingPrinter{
-		SpinnerPrinter: pterm.DefaultSpinner.WithShowTimer(false),
+		SpinnerPrinter: spinnerPrinter,
 		startedAt:      time.Now(),
 		output:         output,
 		lastMetrics:    &atomic.Value{},
