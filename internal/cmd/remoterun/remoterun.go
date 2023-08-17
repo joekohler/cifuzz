@@ -300,14 +300,6 @@ func (c *runRemoteCmd) run() error {
 		_, err = b.Bundle()
 		if err != nil {
 			logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
-			var execErr *cmdutils.ExecError
-			if errors.As(err, &execErr) {
-				// It is expected that some commands might fail due to user
-				// configuration so we print the error without the stack trace
-				// (in non-verbose mode) and silence it
-				log.Error(err)
-				return cmdutils.ErrSilent
-			}
 			return err
 		}
 
@@ -316,14 +308,6 @@ func (c *runRemoteCmd) run() error {
 
 	artifact, err := c.apiClient.UploadBundle(c.opts.BundlePath, c.opts.ProjectName, token)
 	if err != nil {
-		var apiErr *api.APIError
-		if !errors.As(err, &apiErr) {
-			// API calls might fail due to network issues, invalid server
-			// responses or similar. We don't want to print a stack trace
-			// in those cases.
-			log.Error(err)
-			return cmdutils.WrapSilentError(err)
-		}
 		return err
 	}
 

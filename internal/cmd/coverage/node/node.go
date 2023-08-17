@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
-	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
@@ -101,8 +100,7 @@ func (cov *CoverageGenerator) validateFuzzTest() error {
 
 	// check if response is empty
 	if strings.TrimSpace(string(output)) == "" {
-		log.Error(errors.New("fuzz test not found"))
-		return cmdutils.ErrSilent
+		return errors.New("No fuzz test found")
 	}
 
 	return nil

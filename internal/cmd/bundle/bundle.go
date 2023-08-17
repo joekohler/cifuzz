@@ -174,15 +174,6 @@ on the build system. This can be overridden with a docker-image flag.
 			_, err := bundler.New(&opts.Opts).Bundle()
 			if err != nil {
 				logging.StopBuildProgressSpinnerOnError(log.BundleInProgressErrorMsg)
-				var execErr *cmdutils.ExecError
-				if errors.As(err, &execErr) {
-					// It is expected that some commands might fail due to user
-					// configuration so we print the error without the stack trace
-					// (in non-verbose mode) and silence it
-					log.Error(err)
-					return cmdutils.ErrSilent
-				}
-
 				return err
 			}
 

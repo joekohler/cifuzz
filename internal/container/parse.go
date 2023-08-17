@@ -57,7 +57,7 @@ func parseImageBuildOutput(r io.Reader) (string, error) {
 		if jsonMessage.Aux != nil {
 			var res types.BuildResult
 			if err := json.Unmarshal(*jsonMessage.Aux, &res); err != nil {
-				log.Errorf(err, "Failed to unmarshal Aux JSON message: %s", *jsonMessage.Aux)
+				log.Errorf(err, "Failed to unmarshal Aux JSON message: %s\n%v", *jsonMessage.Aux, err)
 			} else if strings.HasPrefix(res.ID, "sha256:") {
 				id = res.ID[7:]
 			}

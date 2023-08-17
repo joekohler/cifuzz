@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -128,25 +129,51 @@ func Note(a ...any) {
 	log(pterm.Style{pterm.FgLightYellow}, "", a...)
 }
 
-// Errorf highlights a message as an error and shows the stack strace if the --verbose flag is active
+// Errorf highlights and formats a message as an error and
+// shows the stack strace if the --verbose flag is active.
+// Note: `err.Error()` is not printed, so if you want to include it
+// in the output, make sure to include it in the other operands, for
+// example:
+//
+//	Errorf(err, "Operation XYZ failed: %v", err)
 func Errorf(err error, format string, a ...any) {
 	Error(err, fmt.Sprintf(format, a...))
 }
 
+// Error highlights a message as an error and
+// shows the stack strace if the --verbose flag is active.
+// Note: `err.Error()` is only printed if there are no other operands
+// than `err`. If you want to include it in the output, use `Errorf`
+// instead (see the note there).
 func Error(err error, a ...any) {
-	// If no message is provided, print the message of the error
+	// If no message is provided, print the error itself
 	if len(a) == 0 {
 		a = []any{err.Error()}
 	}
-	log(pterm.Style{pterm.Bold, pterm.FgRed}, "❌ ", a...)
+	ErrorMsg(a...)
 
 	type stackTracer interface {
 		StackTrace() errors.StackTrace
 	}
 	var st stackTracer
-	if errors.As(err, &st) {
-		Debugf("%+v", st)
+	if viper.GetBool("verbose") &&
+		errors.As(err, &st) {
+		s := fmt.Sprintf("%+v", st.StackTrace())
+		// Remove the leading newline to avoid an empty line between the
+		// error message and the stack trace
+		s = strings.TrimPrefix(s, "\n")
+		Info(s)
 	}
+}
+
+// ErrorMsgf highlights and formats a message as an error.
+func ErrorMsgf(format string, a ...any) {
+	ErrorMsg(fmt.Sprintf(format, a...))
+}
+
+// ErrorMsg highlights a message as an error.
+func ErrorMsg(a ...any) {
+	log(pterm.Style{pterm.Bold, pterm.FgRed}, "❌ ", a...)
 }
 
 // Infof outputs a regular user message without any highlighting

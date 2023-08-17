@@ -69,7 +69,7 @@ func ParseLcov(in io.Reader) *CoverageSummary {
 
 			value, err := strconv.Atoi(parts[1])
 			if err != nil {
-				log.Errorf(err, "Parsing lcov: unable to convert value %s to int", parts[1])
+				log.Errorf(err, "Parsing lcov: unable to convert value %s to int: %v", parts[1], err)
 				value = 0
 			}
 
@@ -93,7 +93,7 @@ func ParseLcov(in io.Reader) *CoverageSummary {
 
 	out, err := json.MarshalIndent(summary, "", "    ")
 	if err != nil {
-		log.Error(err, "Parsing lcov: Unable to convert coverage summary to json")
+		log.Errorf(err, "Parsing lcov: Unable to convert coverage summary to json: %v", err)
 	} else {
 		log.Debugf("Successfully parsed lcov report : %s", string(out))
 	}

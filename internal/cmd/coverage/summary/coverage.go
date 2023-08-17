@@ -65,7 +65,7 @@ func (cs *CoverageSummary) PrintTable(writer io.Writer) {
 	log.Print("\n")
 	log.Successf("Coverage Report:\n")
 	if err := table.Render(); err != nil {
-		log.Error(err, "Unable to print coverage table")
+		log.Errorf(err, "Unable to print coverage table: %v", err)
 	}
 	log.Print("\n")
 }

@@ -365,14 +365,6 @@ func (c *coverageCmd) run() error {
 		err = gen.BuildFuzzTestForCoverage()
 		if err != nil {
 			logging.StopBuildProgressSpinnerOnError(log.BuildInProgressErrorMsg)
-			var execErr *cmdutils.ExecError
-			if errors.As(err, &execErr) {
-				// It is expected that some commands might fail due to user
-				// configuration so we print the error without the stack trace
-				// (in non-verbose mode) and silence it
-				log.Error(err)
-				return cmdutils.ErrSilent
-			}
 			return err
 		}
 

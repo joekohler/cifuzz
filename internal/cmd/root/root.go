@@ -9,7 +9,6 @@ import (
 
 	"github.com/alessio/shellescape"
 	"github.com/pkg/errors"
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -125,36 +124,53 @@ func Execute() {
 
 	var cmd *cobra.Command
 	if cmd, err = rootCmd.ExecuteC(); err != nil {
-		// We only want to print the usage message if an ErrIncorrectUsage
-		// was returned or it's an error produced by cobra which was
-		// caused by incorrect usage
+		// Error types that need special handling
 		var usageErr *cmdutils.IncorrectUsageError
+		var couldBeSandboxError *cmdutils.CouldBeSandboxError
+		var signalErr *cmdutils.SignalError
+		var silentErr *cmdutils.SilentError
+
 		if errors.As(err, &usageErr) ||
 			strings.HasPrefix(err.Error(), "unknown command") ||
 			regexp.MustCompile(`(accepts|requires).*arg\(s\)`).MatchString(err.Error()) {
-
-			// Ensure that there is an extra newline between the error
-			// and the usage message
-			if !strings.HasSuffix(err.Error(), "\n") {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr())
-			}
-
 			// Make cmd.Help() print to stderr
 			cmd.SetOut(cmd.ErrOrStderr())
+
 			// Print the usage message of the command. We use cmd.Help()
 			// here instead of cmd.UsageString() because the latter
 			// doesn't include the long description.
 			_ = cmd.Help()
+
+			// Add "Invalid Usage" in front of error message
+			err = errors.WithMessage(err, "Invalid usage")
 		}
 
-		var couldBeSandboxError *cmdutils.CouldBeSandboxError
-		if errors.As(err, &couldBeSandboxError) {
-			// Ensure that there is an extra newline between the error
-			// and the following message
-			if !strings.HasSuffix(err.Error(), "\n") {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr())
+		if errors.As(err, &signalErr) {
+			// Print error message without stack trace
+			log.ErrorMsg(err.Error())
+
+			// Exit with the correct exit status
+			os.Exit(128 + int(signalErr.Signal))
+		}
+
+		if !errors.As(err, &silentErr) {
+			// For any other errors that are not silent (= not expected)
+			// we want to print the error and their stack trace in
+			// verbose mode (except IncorrectUsageError which should only
+			// print the message)
+			if errors.As(err, &usageErr) {
+				log.ErrorMsg(err.Error())
+			} else {
+				log.Error(err)
 			}
-			msg := `Note: If you don't expect this fuzz test to do any harm to the system
+		}
+
+		if errors.As(err, &couldBeSandboxError) {
+			// If the error could be caused by sandboxing/minijail we want to
+			// print a note after the error message
+			msg := `
+Note: This error could have occurred due to sandboxing.
+If you don't expect this fuzz test to do any harm to the system
 accidentally (like overwriting files), you might want to try
 running it without sandboxing:
 
@@ -163,47 +179,8 @@ running it without sandboxing:
 For more information on cifuzz sandboxing, see:
 
     https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Getting-Started.md#sandboxing
-
 `
 			log.Notef(msg, shellescape.QuoteCommand(os.Args))
-		}
-
-		var signalErr *cmdutils.SignalError
-		if errors.As(err, &signalErr) {
-			os.Exit(128 + int(signalErr.Signal))
-		}
-
-		// Any other errors that are not ErrSilent are not expected
-		// and we want to show the full stacktrace in verbose mode
-		var silentErr *cmdutils.SilentError
-		if !errors.As(err, &silentErr) {
-			icon := "❌ "
-			style := pterm.Style{pterm.Bold, pterm.FgRed}
-			if log.PlainStyle() {
-				icon = ""
-				style = pterm.Style{}
-			}
-
-			type stackTracer interface {
-				StackTrace() errors.StackTrace
-			}
-			var st stackTracer
-			// Print all error messages (in case of wrapping) but only print
-			// the stacktrace of the root error cause in verbose mode
-			// In non-verbose mode we print a message to point to verbose mode
-			// for more information
-			if errors.As(errors.Cause(err), &st) {
-				if viper.GetBool("verbose") {
-					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v%+v\n", icon, err, st.StackTrace()))
-				} else {
-					supportMsg := "More information can be acquired running the command in verbose mode (--verbose).\n"
-					_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("%s%s\n%s", icon, err, supportMsg))
-				}
-			} else {
-				// Catch cases where we either did not add any stacktrace/wrapped the error
-				// or the error does not implement the interface for the stacktracer e.g. os.ErrExist
-				_, _ = fmt.Fprint(cmd.ErrOrStderr(), style.Sprintf("\n%s%v\n", icon, err))
-			}
 		}
 
 		os.Exit(1)

@@ -379,14 +379,6 @@ func (c *runCmd) run() error {
 	var buildResult *build.Result
 	buildResult, err = c.buildFuzzTest()
 	if err != nil {
-		var execErr *cmdutils.ExecError
-		if errors.As(err, &execErr) {
-			// It is expected that some commands might fail due to user
-			// configuration so we print the error without the stack trace
-			// (in non-verbose mode) and silence it
-			log.Error(err)
-			return cmdutils.ErrSilent
-		}
 		return err
 	}
 
@@ -654,11 +646,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		cmd := exec.Command("bazel", "info", "install_base")
 		err = cmd.Run()
 		if err != nil {
-			// It's expected that bazel might fail due to user configuration,
-			// so we print the error without the stack trace.
-			err = cmdutils.WrapExecError(errors.WithStack(err), cmd)
-			log.Error(err)
-			return cmdutils.ErrSilent
+			return cmdutils.WrapExecError(errors.WithStack(err), cmd)
 		}
 	}
 
@@ -903,17 +891,14 @@ func ExecuteRunner(runner Runner) error {
 	// case, we always want to print the signal error, not the
 	// "Unexpected exit code" error from the runner.
 	if signalErr != nil {
-		// TODO: Only return signalErr instead of wrapping it in a SilentErr?
-		log.Error(signalErr, signalErr.Error())
-		return cmdutils.WrapSilentError(signalErr)
+		return signalErr
 	}
 
 	var execErr *cmdutils.ExecError
 	if errors.As(err, &execErr) {
-		// It's expected that libFuzzer might fail due to user
-		// configuration, so we print the error without the stack trace
-		log.Error(err)
-		return cmdutils.WrapSilentError(err)
+		// If the error is expected because libFuzzer might fail due to user
+		// configuration, we return the execErr directly
+		return execErr
 	}
 
 	return errors.Wrap(err, "Failed to execute runner")

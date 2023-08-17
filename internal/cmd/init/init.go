@@ -132,7 +132,7 @@ func run(opts *options) error {
 			log.Warnf("Config already exists in %s", configpath)
 			err = cmdutils.ErrSilent
 		}
-		log.Error(err, "Failed to create config")
+		log.Error(err, "Failed to create config: %v", err)
 		return err
 	}
 
