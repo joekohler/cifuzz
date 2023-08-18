@@ -86,8 +86,6 @@ type parser struct {
 	pendingFinding                       *finding.Finding
 	numMetricsLinesSinceFindingIsPending int
 
-	foundJestFinding bool
-
 	lastNewFeatureTime time.Time // Timestamp representing the point when the last new feature was reported
 	lastFeatures       int       // Last features reported by Libfuzzer
 	lastNewEdgeTime    time.Time // Timestamp representing the point when the last new edge was reported
@@ -301,7 +299,7 @@ func (p *parser) parseAsNewFinding(line string) *finding.Finding {
 		}
 	}
 
-	if p.SupportJazzerJS && !p.foundJestFinding {
+	if p.SupportJazzerJS {
 		finding := p.parseAsJestFinding(line)
 		if finding != nil {
 			return finding
@@ -314,9 +312,12 @@ func (p *parser) parseAsNewFinding(line string) *finding.Finding {
 	}
 
 	finding = p.parseAsLibfuzzerFinding(line)
-	// If JazzerJS is supported, the libfuzzer finding is part of a
-	// JazzerJS finding and should not be treated as a new finding
-	if finding != nil && !p.SupportJazzerJS {
+	if finding != nil {
+		// If JazzerJS is supported, the libfuzzer finding is part of a
+		// JazzerJS finding and should not be treated as a new finding
+		if p.SupportJazzerJS && p.pendingFinding != nil {
+			return nil
+		}
 		return finding
 	}
 
@@ -435,8 +436,6 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 func (p *parser) parseAsJestFinding(line string) *finding.Finding {
 	_, found := regexutil.FindNamedGroupsMatch(jestFindingBeginningPattern, line)
 	if found {
-		p.foundJestFinding = true
-
 		return &finding.Finding{
 			Type: finding.ErrorTypeWarning,
 			Logs: []string{line},
@@ -466,8 +465,16 @@ func (p *parser) determineJestErrorDetails() {
 		return
 	}
 
+	result, found := regexutil.FindNamedGroupsMatch(libfuzzerTimeoutErrorPattern, logs)
+	if found {
+		p.pendingFinding.Type = finding.ErrorTypeCrash
+		p.pendingFinding.Details = fmt.Sprintf("timeout after %s seconds", result["timeout_seconds"])
+	}
+
 	// If no other details are found, use crash as a fallback value
-	p.pendingFinding.Details = "Crash"
+	if p.pendingFinding.Details == "" {
+		p.pendingFinding.Details = "Crash"
+	}
 }
 
 func (p *parser) parseAsFuzzingMetric(line string) *report.FuzzingMetric {
