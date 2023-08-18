@@ -57,6 +57,10 @@ func TestIntegration_NodeJSErrors(t *testing.T) {
 			fuzzTest: "prototype-pollution",
 		},
 		{
+			id:       "timeout",
+			fuzzTest: "timeout",
+		},
+		{
 			id:       "Crash",
 			fuzzTest: "unhandled-exception",
 		},
