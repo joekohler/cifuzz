@@ -121,7 +121,7 @@ func TestIntegration_CMake(t *testing.T) {
 		})
 		t.Run("coverageWithAdditionalArgs", func(t *testing.T) {
 			// Run cifuzz coverage with additional args
-			testCoverageWithAdditionalArgs(t, cifuzz, dir)
+			testCoverageWithAdditionalArgs(t, cifuzzRunner)
 		})
 		t.Run("coverageVSCodePreset", func(t *testing.T) {
 			testCoverageVSCodePreset(t, cifuzz, dir)
@@ -178,20 +178,16 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 }
 
-func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
-	// Run cmake and expect it to fail because we passed it a non-existent flag
-	cmd := executil.Command(cifuzz, "coverage", "parser_fuzz_test", "--", "--non-existent-flag")
-	cmd.Dir = dir
-
-	// Terminate the cifuzz process when we receive a termination signal
-	// (else the test won't stop).
-	shared.TerminateOnSignal(t, cmd)
-
-	output, err := cmd.CombinedOutput()
-	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")
-	seenExpectedOutput := regexp.MatchString(string(output))
-	require.Error(t, err)
-	require.True(t, seenExpectedOutput)
+func testCoverageWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run the command and expect it to fail because we passed it a non-existent flag
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Command: []string{"coverage"},
+		Args:    []string{"--", "--non-existent-flag"},
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`Unknown argument --non-existent-flag`),
+		},
+		ExpectError: true,
+	})
 }
 
 func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

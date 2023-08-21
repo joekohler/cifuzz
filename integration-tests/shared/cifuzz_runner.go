@@ -15,6 +15,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
@@ -140,6 +141,7 @@ type RunOptions struct {
 
 func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	t.Helper()
+	var err error
 
 	if opts.Command == nil {
 		opts.Command = []string{"run"}
@@ -148,6 +150,10 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	if opts.Env == nil {
 		opts.Env = os.Environ()
 	}
+	opts.Env, err = envutil.Setenv(opts.Env, "CIFUZZ_INTERACTIVE", "false")
+	require.NoError(t, err)
+	opts.Env, err = envutil.Setenv(opts.Env, "CIFUZZ_NO_NOTIFICATIONS", "true")
+	require.NoError(t, err)
 
 	if opts.WorkDir == "" {
 		opts.WorkDir = r.DefaultWorkDir
@@ -162,10 +168,8 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	args := append(append(opts.Command,
 		[]string{
 			"-v", opts.FuzzTest,
-			"--no-notifications",
 			"--engine-arg=-seed=1",
 			"--engine-arg=-runs=1000000",
-			"--interactive=false",
 		}...),
 		opts.Args...,
 	)
