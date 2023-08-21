@@ -6,7 +6,7 @@ const goFileFilter = fileName =>
 	!fileName.includes("_test.go") &&
 	!fileName.includes("testutil") &&
 	!fileName.startsWith("integration-tests") &&
-	!fileName.startsWith("e2e-tests");
+	!fileName.startsWith("e2e");
 const testFileFilter = fileName => fileName.includes("_test.go");
 
 const createdGoFiles = danger.git.created_files.filter(goFileFilter);

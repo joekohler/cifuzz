@@ -1,9 +1,9 @@
-package e2e
+package container_test
 
 import (
 	"testing"
 
-	"code-intelligence.com/cifuzz/e2e-tests"
+	"code-intelligence.com/cifuzz/e2e"
 )
 
 var containerRunTests = &[]e2e.TestCase{
@@ -28,7 +28,7 @@ var containerRunTests = &[]e2e.TestCase{
 		Command:       "container run",
 		Args:          []string{"com.example.FuzzTestCase::myFuzzTest"},
 		Environment:   []string{"CIFUZZ_PRERELEASE=true"},
-		SampleFolder:  []string{"examples/maven", "examples/gradle"},
+		SampleFolder:  []string{"../../../examples/maven", "../../../examples/gradle"},
 		ToolsRequired: []string{"docker", "java", "maven"},
 		SkipOnOS:      "windows",
 		Assert: func(t *testing.T, output e2e.CommandOutput) {

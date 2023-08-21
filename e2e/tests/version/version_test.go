@@ -1,11 +1,11 @@
-package e2e
+package version_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"code-intelligence.com/cifuzz/e2e-tests"
+	"code-intelligence.com/cifuzz/e2e"
 )
 
 var versionTests = &[]e2e.TestCase{

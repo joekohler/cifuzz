@@ -56,7 +56,7 @@ linters-settings:
     ignorePackageGlobs:
       # ignoring test packages because we check for errors and don't need to wrap them
       - "integration-tests"
-      - "e2e-tests"
+      - "e2e"
       - "internal/testutil"
 
 run:

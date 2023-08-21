@@ -1,9 +1,9 @@
-package e2e
+package execute_test
 
 import (
 	"testing"
 
-	"code-intelligence.com/cifuzz/e2e-tests"
+	"code-intelligence.com/cifuzz/e2e"
 )
 
 var executeTests = &[]e2e.TestCase{

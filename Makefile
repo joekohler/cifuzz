@@ -213,7 +213,7 @@ test/integration: deps deps/test deps/integration-tests
 test/e2e: deps deps/test build/linux build/windows build-container-image start-container-registry
 test/e2e: export E2E_TESTS_MATRIX = 1
 test/e2e:
-	go test -json -v ./e2e-tests/... | tee gotest.log | gotestfmt
+	go test -json -v ./e2e/... | tee gotest.log | gotestfmt
 
 .PHONY: test/race
 test/race: deps build/$(current_os)
@@ -239,7 +239,7 @@ coverage/e2e: export E2E_TESTS_MATRIX = V
 coverage/e2e: deps build-coverage/$(current_os)
 	-$(RM) coverage/e2e
 	mkdir -p coverage/e2e
-	-go test ./e2e-tests/... -v
+	-go test ./e2e/... -v
 	go tool covdata func -i=./coverage/e2e
 
 .PHONY: coverage/integration
