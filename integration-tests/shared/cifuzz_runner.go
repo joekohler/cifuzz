@@ -201,7 +201,6 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	outputChecker := outputChecker{
 		mutex:                        &sync.Mutex{},
 		lenExpectedOutputs:           len(opts.ExpectedOutputs),
-		numSeenExpectedOutputs:       0,
 		expectedOutputs:              opts.ExpectedOutputs,
 		unexpectedOutput:             opts.UnexpectedOutput,
 		terminateAfterExpectedOutput: opts.TerminateAfterExpectedOutput,
@@ -252,13 +251,12 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		require.NoError(t, runCtx.Err())
 	}
 
-	require.True(t, outputChecker.hasSeenExpectedOutputs, "Did not see %q in fuzzer output", opts.ExpectedOutputs)
+	require.True(t, outputChecker.hasSeenExpectedOutputs, "Did not see %q in fuzzer output", outputChecker.expectedOutputs)
 }
 
 type outputChecker struct {
 	mutex                        *sync.Mutex
 	lenExpectedOutputs           int
-	numSeenExpectedOutputs       int
 	expectedOutputs              []*regexp.Regexp
 	unexpectedOutput             *regexp.Regexp
 	terminateAfterExpectedOutput bool
@@ -279,15 +277,13 @@ func (c *outputChecker) checkOutput(t *testing.T, line string) {
 
 	var remainingExpectedOutputs []*regexp.Regexp
 	for _, expectedOutput := range c.expectedOutputs {
-		if expectedOutput.MatchString(line) {
-			c.numSeenExpectedOutputs += 1
-		} else {
+		if !expectedOutput.MatchString(line) {
 			remainingExpectedOutputs = append(remainingExpectedOutputs, expectedOutput)
 		}
 	}
 	c.expectedOutputs = remainingExpectedOutputs
 
-	if c.numSeenExpectedOutputs == c.lenExpectedOutputs {
+	if len(remainingExpectedOutputs) == 0 {
 		c.hasSeenExpectedOutputs = true
 		if c.terminateAfterExpectedOutput {
 			c.hasCalledTerminationFunc = true
