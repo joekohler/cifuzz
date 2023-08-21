@@ -143,24 +143,22 @@ func TestIntegration_CMake(t *testing.T) {
 	})
 
 	t.Run("bundle", func(t *testing.T) {
-		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
-			t.Skip("Creating a bundle for CMake is currently only supported on Linux")
-		}
-		// Run cifuzz bundle and verify the contents of the archive.
-		shared.TestBundleLibFuzzer(t, dir, cifuzz, os.Environ(), "parser_fuzz_test")
+		testBundle(t, cifuzzRunner)
+	})
 
-		// Run cifuzz bundle with additional args
+	t.Run("bundleWithAdditionalArgs", func(t *testing.T) {
 		testBundleWithAdditionalArgs(t, cifuzz, dir)
+	})
 
+	t.Run("bundleWithAddArg", func(t *testing.T) {
 		testBundleWithAddArg(t, cifuzz, dir)
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
-		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
-			t.Skip("The remote-run command is currently only supported on Linux")
-		}
 		testRemoteRun(t, cifuzzRunner)
+	})
 
+	t.Run("remoteRunWithAdditionalArgs", func(t *testing.T) {
 		testRemoteRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
@@ -196,7 +194,22 @@ func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 	require.True(t, seenExpectedOutput)
 }
 
+func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip("Creating a bundle for CMake is currently only supported on Linux")
+	}
+
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testdata := cifuzzRunner.DefaultWorkDir
+	// Run cifuzz bundle and verify the contents of the archive.
+	shared.TestBundleLibFuzzer(t, testdata, cifuzz, os.Environ(), "parser_fuzz_test")
+}
+
 func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip("Creating a bundle for CMake is currently only supported on Linux")
+	}
+
 	viper.Set("verbose", true)
 
 	test := []struct {
@@ -236,6 +249,10 @@ func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip("Creating a bundle for CMake is currently only supported on Linux")
+	}
+
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cmd := executil.Command(cifuzz, "bundle", "parser_fuzz_test", "--", "--non-existent-flag")
 	cmd.Dir = dir
@@ -569,12 +586,20 @@ func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// The remote-run command is currently only supported on Linux
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip()
+	}
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz)
 }
 
 func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// The remote-run command is currently only supported on Linux
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip()
+	}
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")

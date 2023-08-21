@@ -110,17 +110,17 @@ func TestIntegration_Bazel(t *testing.T) {
 
 	t.Run("bundle", func(t *testing.T) {
 		testBundle(t, cifuzzRunner)
+	})
 
+	t.Run("bundleWithAdditionalArgs", func(t *testing.T) {
 		testBundleWithAdditionalArgs(t, cifuzz, testdata)
 	})
 
 	t.Run("remoteRun", func(t *testing.T) {
-		// The remote-run command is currently only supported on Linux
-		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
-			t.Skip()
-		}
 		testRemoteRun(t, cifuzzRunner)
+	})
 
+	t.Run("remoteRunWithAdditionalArgs", func(t *testing.T) {
 		testRemoteRunWithAdditionalArgs(t, cifuzzRunner)
 	})
 
@@ -302,12 +302,20 @@ func testBundle(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testRemoteRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// The remote-run command is currently only supported on Linux
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip()
+	}
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRemoteRun(t, testdata, cifuzz, "//src/parser:parser_fuzz_test")
 }
 
 func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// The remote-run command is currently only supported on Linux
+	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
+		t.Skip()
+	}
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	regexp := regexp.MustCompile("Unrecognized option: --non-existent-flag")
