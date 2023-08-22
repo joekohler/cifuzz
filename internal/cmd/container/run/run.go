@@ -1,7 +1,7 @@
 package run
 
 import (
-	"os"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -122,12 +122,14 @@ func (c *containerRunCmd) run() error {
 		log.Infof(messaging.UsageWarning())
 	}
 
-	buildPrinterOutput := os.Stdout
+	buildOutput := c.OutOrStdout()
 	if c.opts.PrintJSON {
-		buildPrinterOutput = os.Stderr
+		// We only want JSON output on stdout, so we print the build
+		// output to stderr.
+		buildOutput = c.ErrOrStderr()
 	}
-	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.ContainerBuildInProgressMsg)
-	containerID, err := c.buildContainerFromImage()
+	buildPrinter := logging.NewBuildPrinter(buildOutput, log.ContainerBuildInProgressMsg)
+	containerID, err := c.buildContainerFromImage(buildOutput)
 	if err != nil {
 		buildPrinter.StopOnError(log.ContainerBuildInProgressErrorMsg)
 		return err
@@ -143,8 +145,8 @@ func (c *containerRunCmd) run() error {
 	return nil
 }
 
-func (c *containerRunCmd) buildContainerFromImage() (string, error) {
-	err := bundle.SetUpBundleLogging(c.Command, &c.opts.Opts)
+func (c *containerRunCmd) buildContainerFromImage(buildOutput io.Writer) (string, error) {
+	err := bundle.SetUpBundleLogging(buildOutput, c.ErrOrStderr(), &c.opts.Opts)
 	if err != nil {
 		return "", err
 	}

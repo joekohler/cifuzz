@@ -109,7 +109,7 @@ variable or by running 'cifuzz login' first.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
-			err := bundle.SetUpBundleLogging(cmd, &opts.Opts)
+			err := bundle.SetUpBundleLogging(cmd.OutOrStdout(), cmd.ErrOrStderr(), &opts.Opts)
 			if err != nil {
 				return errors.Wrap(err, "Failed to setup logging")
 			}

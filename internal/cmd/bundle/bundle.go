@@ -126,7 +126,7 @@ on the build system. This can be overridden with a docker-image flag.
 			// were bound to the flags of other commands before.
 			bindFlags()
 
-			err := SetUpBundleLogging(cmd, &opts.Opts)
+			err := SetUpBundleLogging(cmd.OutOrStdout(), cmd.ErrOrStderr(), &opts.Opts)
 			if err != nil {
 				return errors.Wrap(err, "Failed to setup logging")
 			}
@@ -206,7 +206,7 @@ on the build system. This can be overridden with a docker-image flag.
 }
 
 // SetUpBundleLogging configures the verbose log and build log file for the bundle command.
-func SetUpBundleLogging(cmd *cobra.Command, opts *bundler.Opts) error {
+func SetUpBundleLogging(stdout, stderr io.Writer, opts *bundler.Opts) error {
 	var err error
 
 	logDir, err := logging.CreateLogDir(opts.ProjectDir)
@@ -233,7 +233,7 @@ func SetUpBundleLogging(cmd *cobra.Command, opts *bundler.Opts) error {
 		return nil
 	}
 
-	opts.BuildStdout = io.MultiWriter(cmd.OutOrStdout(), log.VerboseSecondaryOutput)
-	opts.BuildStderr = io.MultiWriter(cmd.OutOrStderr(), log.VerboseSecondaryOutput)
+	opts.BuildStdout = io.MultiWriter(stdout, log.VerboseSecondaryOutput)
+	opts.BuildStderr = io.MultiWriter(stderr, log.VerboseSecondaryOutput)
 	return nil
 }
