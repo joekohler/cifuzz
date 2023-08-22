@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmd/bundle"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -108,7 +109,12 @@ container is built and run locally instead of being pushed to a CI Sense server.
 func (c *containerRunCmd) run() error {
 	authenticated, err := auth.GetAuthStatus(c.opts.Server)
 	if err != nil {
-		return err
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return err
+		} else {
+			log.Debugf("Connection error: %v", connErr)
+		}
 	}
 	if !authenticated {
 		log.Infof(messaging.UsageWarning())

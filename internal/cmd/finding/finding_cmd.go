@@ -95,7 +95,12 @@ func newWithOptions(opts *options) *cobra.Command {
 func (cmd *findingCmd) run(args []string) error {
 	authenticated, err := auth.GetAuthStatus(cmd.opts.Server)
 	if err != nil {
-		return err
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return err
+		} else {
+			log.Debugf("Connection error: %v", connErr)
+		}
 	}
 	if !authenticated {
 		log.Infof(messaging.UsageWarning())

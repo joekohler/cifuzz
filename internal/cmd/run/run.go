@@ -344,7 +344,12 @@ depends on the build system configured for the project.
 func (c *runCmd) run() error {
 	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
 	if err != nil {
-		return err
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return err
+		} else {
+			log.Debugf("Connection error: %v", connErr)
+		}
 	}
 	if !authenticated {
 		log.Infof(messaging.UsageWarning())

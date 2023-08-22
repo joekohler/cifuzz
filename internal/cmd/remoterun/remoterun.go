@@ -23,7 +23,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -204,10 +203,16 @@ variable or by running 'cifuzz login' first.
 func (c *runRemoteCmd) run() error {
 	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
 	if err != nil {
-		return err
+		var connErr *api.ConnectionError
+		if !errors.As(err, &connErr) {
+			return err
+		} else {
+			log.Debugf("Connection error: %v", connErr)
+		}
 	}
 	if !authenticated {
-		log.Infof(messaging.UsageWarning())
+		log.Print("You need to authenticate to CI Sense to use this command.")
+		return cmdutils.ErrSilent
 	}
 
 	token := auth.GetToken(c.opts.Server)
