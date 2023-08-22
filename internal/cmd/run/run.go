@@ -293,7 +293,13 @@ depends on the build system configured for the project.
 
 			opts.argsToPass = argsToPass
 
-			opts.buildStdout = cmd.OutOrStdout()
+			if opts.PrintJSON {
+				// We only want JSON output on stdout, so we print the build
+				// output to stderr.
+				opts.buildStdout = cmd.ErrOrStderr()
+			} else {
+				opts.buildStdout = cmd.OutOrStdout()
+			}
 			opts.buildStderr = cmd.OutOrStderr()
 			if logging.ShouldLogBuildToFile() {
 				opts.buildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.fuzzTest})
@@ -448,11 +454,7 @@ func (c *runCmd) run() error {
 func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 	var err error
 
-	buildPrinterOutput := os.Stdout
-	if c.opts.PrintJSON {
-		buildPrinterOutput = os.Stderr
-	}
-	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
+	buildPrinter := logging.NewBuildPrinter(c.opts.buildStdout, log.BuildInProgressMsg)
 	defer func(err *error) {
 		if *err != nil {
 			buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
