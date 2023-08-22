@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -169,8 +170,17 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, build
 		return errors.WithStack(err)
 	}
 
+	originalPath := f.InputFile
 	// Actually copy the input file
 	err = f.copyInputFile(projectDir, seedCorpusDir, buildSystem)
+	// Rename the basename of the original input file so that it's easy to match
+	// to a cifuzz finding during IDE regression tests.
+	renameErr := f.renameInputFile(originalPath)
+	if renameErr != nil {
+		// Failing to rename the input file just means missing out on convenience
+		// and does not impact the finding functionality, so don't fail.
+		log.Debugf("Failed to rename input file: %v", renameErr)
+	}
 
 	// Release the file lock
 	unlockErr := mutex.Unlock()
@@ -236,6 +246,27 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) e
 		return errors.WithStack(err)
 	}
 	f.InputFile = pathRelativeToProjectDir
+	return nil
+}
+
+var expectedInputFileBasename = regexp.MustCompile("^(?:crash|oom|timeout)-([0-9a-f]{40})$")
+
+func (f *Finding) renameInputFile(originalPath string) error {
+	basename := filepath.Base(originalPath)
+	matches := expectedInputFileBasename.FindStringSubmatch(basename)
+	if matches == nil {
+		// An unexpected output file is not an error, we just don't rename it.
+		return nil
+	}
+	// Different inputs can result in the same finding, so we need to keep the hash to prevent
+	// basename collisions.
+	newBasename := f.Name + "-" + matches[1]
+	newPath := filepath.Join(filepath.Dir(originalPath), newBasename)
+	err := os.Rename(originalPath, newPath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	log.Debugf("Renamed input file from %s to %s", originalPath, newPath)
 	return nil
 }
 
