@@ -50,9 +50,11 @@ func TestLibFuzzerAdapter_ReportsParsing(t *testing.T) {
 	projectDir := filepath.Join("path", "to", "test-project")
 
 	tests := []struct {
-		name     string
-		logs     string
-		expected []*report.Report
+		name            string
+		supportJazzer   bool
+		supportJazzerJS bool
+		logs            string
+		expected        []*report.Report
 	}{
 		{
 			name:     "empty logs",
@@ -371,7 +373,8 @@ error info 2`,
 			},
 		},
 		{
-			name: "java libfuzzer driver crash",
+			name:          "java libfuzzer driver crash",
+			supportJazzer: true,
 			logs: `
 INFO: A corpus is not provided, starting from an empty corpus
 == Java Exception: java.lang.ArrayIndexOutOfBoundsException: Index 22 out of bounds for length 8
@@ -419,7 +422,8 @@ Base64: ZGVhZGJlZWY=`,
 			},
 		},
 		{
-			name: "jazzer FuzzerSecurityIssue output contains script",
+			name:          "jazzer FuzzerSecurityIssue output contains script",
+			supportJazzer: true,
 			logs: `
 INFO: A corpus is not provided, starting from an empty corpus
 == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Output contains </script
@@ -454,7 +458,8 @@ Base64: UVFcb1w8L1xzY3JpcHQt`,
 			},
 		},
 		{
-			name: "jazzer FuzzerSecurityIssue remote code execution",
+			name:          "jazzer FuzzerSecurityIssue remote code execution",
+			supportJazzer: true,
 			logs: `
 INFO: A corpus is not provided, starting from an empty corpus
 == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Remote Code Execution
@@ -518,7 +523,8 @@ Base64: QGphei5aZXIKLR8AACEAHw==`,
 			},
 		},
 		{
-			name: "java assertion error",
+			name:          "java assertion error",
+			supportJazzer: true,
 			logs: `
 INFO: A corpus is not provided, starting from an empty corpus
 == Java Assertion Error
@@ -684,7 +690,9 @@ Base64: i/SIw2hR3wI=`,
 			},
 		},
 		{
-			name: "timeout-error",
+			name:            "timeout-error",
+			supportJazzer:   true,
+			supportJazzerJS: true,
 			logs: `INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 3221175179
 INFO: Loaded 1 modules   (8 inline 8-bit counters): 8 [0x5acf93, 0x5acf9b),
@@ -742,7 +750,8 @@ SUMMARY: libFuzzer: timeout`,
 			},
 		},
 		{
-			name: "jazzer corpus dirs",
+			name:          "jazzer corpus dirs",
+			supportJazzer: true,
 			logs: fmt.Sprintf(`
 INFO: using inputs from: %s
 INFO: using inputs from: %s
@@ -759,12 +768,383 @@ INFO: using inputs from: /tmp/jazzer-java-seeds5643680988214732014`,
 				},
 			},
 		},
+		{
+			name:            "jazzer.js unhandled exception",
+			supportJazzerJS: true,
+			logs: `
+FAIL Jazzer.js unhandled-exception/UnhandledException.fuzz.js
+    ✕ Test unhandled exception
+
+    ● Test unhandled exception
+
+      Crash!
+
+        1 | test.fuzz("Test unhandled exception", jazzerBuffer => {
+        2 |       if (jazzerBuffer.toString() == "Fuzz") {
+      > 3 |               throw new Error("Crash!");
+          |                     ^
+        4 |       }
+        5 | });
+        6 |
+
+        at unhandled-exception/UnhandledException.fuzz.js:3:9
+        at result (node_modules/@jazzer.js/core/core.ts:357:15)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        0.315 s
+Ran all test suites matching /UnhandledException/i.
+==92601== ERROR: libFuzzer: fuzz target exited
+SUMMARY: libFuzzer: fuzz target exited
+MS: 4 InsertByte-InsertByte-InsertByte-CMP- DE: "Fuzz"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+0x46,0x75,0x7a,0x7a,
+Fuzz
+` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
+Base64: RnV6eg==`,
+			expected: []*report.Report{
+				{
+					Status: report.RunStatusRunning,
+					Finding: &finding.Finding{
+						Type:      finding.ErrorTypeWarning,
+						Details:   "Crash",
+						InputData: testInput,
+						InputFile: testInputFile.Name(),
+						Logs: []string{
+							"    ● Test unhandled exception",
+							"",
+							"      Crash!",
+							"",
+							`        1 | test.fuzz("Test unhandled exception", jazzerBuffer => {`,
+							`        2 |       if (jazzerBuffer.toString() == "Fuzz") {`,
+							`      > 3 |               throw new Error("Crash!");`,
+							"          |                     ^",
+							"        4 |       }",
+							"        5 | });",
+							"        6 |",
+							"",
+							"        at unhandled-exception/UnhandledException.fuzz.js:3:9",
+							"        at result (node_modules/@jazzer.js/core/core.ts:357:15)",
+							"",
+							"Test Suites: 1 failed, 1 total",
+							"Tests:       1 failed, 1 total",
+							"Snapshots:   0 total",
+							"Time:        0.315 s",
+							"Ran all test suites matching /UnhandledException/i.",
+							"==92601== ERROR: libFuzzer: fuzz target exited",
+							"SUMMARY: libFuzzer: fuzz target exited",
+							`MS: 4 InsertByte-InsertByte-InsertByte-CMP- DE: "Fuzz"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc`,
+							"0x46,0x75,0x7a,0x7a,",
+							"Fuzz",
+							fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()),
+							"Base64: RnV6eg==",
+						},
+						StackTrace: []*stacktrace.StackFrame{
+							{
+								SourceFile:  "unhandled-exception/UnhandledException.fuzz.js",
+								Line:        3,
+								Column:      9,
+								FrameNumber: 0,
+								Function:    "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "jazzer.js command injection",
+			supportJazzerJS: true,
+			logs: `
+FAIL Jazzer.js command-injection/CommandInjection.fuzz.js
+    ✕ Test command injection
+
+    ● Test command injection
+
+      Command Injection in exec(): called with 'jaz_zer'
+
+        3 | test.fuzz("Test command injection", jazzerBuffer => {
+        4 |       try {
+      > 5 |               child_process.exec(jazzerBuffer.toString());
+          |                             ^
+        6 |       } catch (e) {
+        7 |               // ignore
+        8 |       }
+
+        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
+        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/command-injection.ts:49:17)
+        at Object.exec (node_modules/@jazzer.js/hooking/manager.ts:261:10)
+        at command-injection/CommandInjection.fuzz.js:5:17
+        at result (node_modules/@jazzer.js/core/core.ts:357:15)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        2.053 s
+Ran all test suites matching /CommandInjection/i.
+==9958== ERROR: libFuzzer: fuzz target exited
+SUMMARY: libFuzzer: fuzz target exited
+MS: 5 InsertRepeatedBytes-CrossOver-ChangeBinInt-ChangeByte-CMP- DE: "jaz_zer"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+0xff,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0xff,0x21,0xa,
+\377jaz_zer\377!\012
+` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
+Base64: /2phel96ZXL/IQo=`,
+			expected: []*report.Report{
+				{
+					Status: report.RunStatusRunning,
+					Finding: &finding.Finding{
+						Type:      finding.ErrorTypeWarning,
+						Details:   "Command Injection",
+						InputData: testInput,
+						InputFile: testInputFile.Name(),
+						Logs: []string{
+							"    ● Test command injection",
+							"",
+							"      Command Injection in exec(): called with 'jaz_zer'",
+							"",
+							`        3 | test.fuzz("Test command injection", jazzerBuffer => {`,
+							"        4 |       try {",
+							"      > 5 |               child_process.exec(jazzerBuffer.toString());",
+							"          |                             ^",
+							"        6 |       } catch (e) {",
+							"        7 |               // ignore",
+							"        8 |       }",
+							"",
+							"        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)",
+							"        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/command-injection.ts:49:17)",
+							"        at Object.exec (node_modules/@jazzer.js/hooking/manager.ts:261:10)",
+							"        at command-injection/CommandInjection.fuzz.js:5:17",
+							"        at result (node_modules/@jazzer.js/core/core.ts:357:15)",
+							"",
+							"Test Suites: 1 failed, 1 total",
+							"Tests:       1 failed, 1 total",
+							"Snapshots:   0 total",
+							"Time:        2.053 s",
+							"Ran all test suites matching /CommandInjection/i.",
+							"==9958== ERROR: libFuzzer: fuzz target exited",
+							"SUMMARY: libFuzzer: fuzz target exited",
+							`MS: 5 InsertRepeatedBytes-CrossOver-ChangeBinInt-ChangeByte-CMP- DE: "jaz_zer"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc`,
+							"0xff,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0xff,0x21,0xa,",
+							`\377jaz_zer\377!\012`,
+							fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()),
+							"Base64: /2phel96ZXL/IQo=",
+						},
+						StackTrace: []*stacktrace.StackFrame{
+							{
+								SourceFile:  "command-injection/CommandInjection.fuzz.js",
+								Line:        5,
+								Column:      17,
+								FrameNumber: 0,
+								Function:    "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "jazzer.js path traversal",
+			supportJazzerJS: true,
+			logs: `
+FAIL Jazzer.js path-traversal/PathTraversal.fuzz.js
+    ✕ Test path traversal
+
+    ● Test path traversal
+
+      Path Traversal in openSync(): called with '../../jaz_zer'
+
+        3 | test.fuzz("Test path traversal", jazzerBuffer => {
+        4 |       try {
+      > 5 |               fs.openSync(jazzerBuffer.toString(), "r");
+          |                  ^
+        6 |       } catch (e) {
+        7 |               // ignore
+        8 |       }
+
+        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
+        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/path-traversal.ts:136:18)
+        at Object.openSync (node_modules/@jazzer.js/hooking/manager.ts:261:10)
+        at path-traversal/PathTraversal.fuzz.js:5:6
+        at result (node_modules/@jazzer.js/core/core.ts:357:15)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        0.308 s, estimated 1 s
+Ran all test suites matching /PathTraversal/i.
+==33685== ERROR: libFuzzer: fuzz target exited
+SUMMARY: libFuzzer: fuzz target exited
+MS: 0 ; base unit: 0000000000000000000000000000000000000000
+0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0xa,
+../../jaz_zer
+` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
+Base64: Li4vLi4vamF6X3plcgo=`,
+			expected: []*report.Report{
+				{
+					Status: report.RunStatusRunning,
+					Finding: &finding.Finding{
+						Type:      finding.ErrorTypeWarning,
+						Details:   "Path Traversal",
+						InputData: testInput,
+						InputFile: testInputFile.Name(),
+						Logs: []string{
+							"    ● Test path traversal",
+							"",
+							"      Path Traversal in openSync(): called with '../../jaz_zer'",
+							"",
+							`        3 | test.fuzz("Test path traversal", jazzerBuffer => {`,
+							"        4 |       try {",
+							`      > 5 |               fs.openSync(jazzerBuffer.toString(), "r");`,
+							"          |                  ^",
+							"        6 |       } catch (e) {",
+							"        7 |               // ignore",
+							"        8 |       }",
+							"",
+							"        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)",
+							"        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/path-traversal.ts:136:18)",
+							"        at Object.openSync (node_modules/@jazzer.js/hooking/manager.ts:261:10)",
+							"        at path-traversal/PathTraversal.fuzz.js:5:6",
+							"        at result (node_modules/@jazzer.js/core/core.ts:357:15)",
+							"",
+							"Test Suites: 1 failed, 1 total",
+							"Tests:       1 failed, 1 total",
+							"Snapshots:   0 total",
+							"Time:        0.308 s, estimated 1 s",
+							"Ran all test suites matching /PathTraversal/i.",
+							"==33685== ERROR: libFuzzer: fuzz target exited",
+							"SUMMARY: libFuzzer: fuzz target exited",
+							"MS: 0 ; base unit: 0000000000000000000000000000000000000000",
+							"0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0xa,",
+							"../../jaz_zer",
+							fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()),
+							"Base64: Li4vLi4vamF6X3plcgo=",
+						},
+						StackTrace: []*stacktrace.StackFrame{
+							{
+								SourceFile:  "path-traversal/PathTraversal.fuzz.js",
+								Line:        5,
+								Column:      6,
+								FrameNumber: 0,
+								Function:    "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "jazzer.js prototype pollution",
+			supportJazzerJS: true,
+			logs: `
+FAIL Jazzer.js prototype-pollution/PrototypePollution.fuzz.js
+    ✕ Test prototype pollution
+
+    ● Test prototype pollution
+
+      Prototype Pollution: Prototype of Object changed. Additional properties in object1: { 'polluted': true }
+
+        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
+        at detectPrototypePollutionOfBasicObjects (node_modules/@jazzer.js/bug-detectors/internal/prototype-pollution.ts:318:18)
+        at Callbacks.runAfterEachCallbacks (node_modules/@jazzer.js/core/callback.ts:37:4)
+        at result (node_modules/@jazzer.js/core/core.ts:377:15)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        0.878 s
+Ran all test suites matching /PrototypePollution/i.
+==43283== ERROR: libFuzzer: fuzz target exited
+SUMMARY: libFuzzer: fuzz target exited
+MS: 5 CMP-CMP-InsertByte-ChangeBinInt-CMP- DE: "\377\377"-"\377\377"-"Fuzz"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+0x46,0x75,0x7a,0x7a,
+Fuzz
+` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
+Base64: RnV6eg==`,
+			expected: []*report.Report{
+				{
+					Status: report.RunStatusRunning,
+					Finding: &finding.Finding{
+						Type:      finding.ErrorTypeWarning,
+						Details:   "Prototype Pollution",
+						InputData: testInput,
+						InputFile: testInputFile.Name(),
+						Logs: []string{
+							"    ● Test prototype pollution",
+							"",
+							"      Prototype Pollution: Prototype of Object changed. Additional properties in object1: { 'polluted': true }",
+							"",
+							"        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)",
+							"        at detectPrototypePollutionOfBasicObjects (node_modules/@jazzer.js/bug-detectors/internal/prototype-pollution.ts:318:18)",
+							"        at Callbacks.runAfterEachCallbacks (node_modules/@jazzer.js/core/callback.ts:37:4)",
+							"        at result (node_modules/@jazzer.js/core/core.ts:377:15)",
+							"",
+							"Test Suites: 1 failed, 1 total",
+							"Tests:       1 failed, 1 total",
+							"Snapshots:   0 total",
+							"Time:        0.878 s",
+							"Ran all test suites matching /PrototypePollution/i.",
+							"==43283== ERROR: libFuzzer: fuzz target exited",
+							"SUMMARY: libFuzzer: fuzz target exited",
+							`MS: 5 CMP-CMP-InsertByte-ChangeBinInt-CMP- DE: "\377\377"-"\377\377"-"Fuzz"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc`,
+							"0x46,0x75,0x7a,0x7a,",
+							"Fuzz",
+							fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()),
+							"Base64: RnV6eg==",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "jazzer.js jest timeout",
+			supportJazzerJS: true,
+			logs: `
+FAIL Jazzer.js test/service.fuzz.ts
+    ✕ Get session failure
+
+    ● Get session failure
+
+      GetSessionResponse {}
+
+ALARM: working on the last Unit for 5 seconds
+       and the timeout value is 5 (use -timeout=N to change)
+MS: 0 ; base unit: 0000000000000000000000000000000000000000
+` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
+Base64:
+==16756== ERROR: libFuzzer: timeout after 5 seconds
+SUMMARY: libFuzzer: timeout`,
+			expected: []*report.Report{
+				{
+					Status: report.RunStatusRunning,
+					Finding: &finding.Finding{
+						Type:      finding.ErrorTypeCrash,
+						Details:   "timeout after 5 seconds",
+						InputData: testInput,
+						InputFile: testInputFile.Name(),
+						Logs: []string{
+							"    ● Get session failure",
+							"",
+							"      GetSessionResponse {}",
+							"",
+							"ALARM: working on the last Unit for 5 seconds",
+							"       and the timeout value is 5 (use -timeout=N to change)",
+							"MS: 0 ; base unit: 0000000000000000000000000000000000000000",
+							fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()),
+							"Base64:",
+							"==16756== ERROR: libFuzzer: timeout after 5 seconds",
+							"SUMMARY: libFuzzer: timeout",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r, w := io.Pipe()
 
-			reporter := NewLibfuzzerOutputParser(&Options{SupportJazzer: true, ProjectDir: projectDir})
+			options := &Options{SupportJazzer: tt.supportJazzer, SupportJazzerJS: tt.supportJazzerJS, ProjectDir: projectDir}
+			reporter := NewLibfuzzerOutputParser(options)
 			reportsCh := make(chan *report.Report, maxBufferedReports)
 			reporterErrCh := make(chan error)
 
