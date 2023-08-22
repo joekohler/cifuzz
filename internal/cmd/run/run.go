@@ -182,7 +182,10 @@ depends on the build system configured for the project.
   are used as a starting point for the fuzzing run.
 
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Maven/Gradle") + `
-  <fuzz test> is the name of the class containing the fuzz test.
+  <fuzz test> is the name of the class containing the fuzz test(s).
+  If the fuzz test class contains multiple fuzz tests,
+  you can use <fuzz test>::<method name> to specify a single fuzz
+  test.
 
   Command completion for the <fuzz test> argument is supported.
 
@@ -191,6 +194,23 @@ depends on the build system configured for the project.
   The inputs found in the directory
 
     src/test/resources/.../<fuzz test>Inputs
+
+  are used as a starting point for the fuzzing run.
+
+` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Node.js") + `
+  <fuzz test> is a regex pattern that matches against all paths
+  containing fuzz test files.
+  If the matched fuzz test file contains multiple fuzz tests,
+  you can use <fuzz test>:<test name>
+  to specify a regex that matches the fuzz test name.
+
+  Command completion for the <fuzz test> argument is supported.
+
+  The --build-command flag is ignored.
+
+  The inputs found in the directory
+
+    <fuzz test>.fuzz
 
   are used as a starting point for the fuzzing run.
 
