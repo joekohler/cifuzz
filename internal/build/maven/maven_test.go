@@ -16,7 +16,7 @@ func Test_GetTestDir(t *testing.T) {
 
 	testDir, err := GetTestDir(projectDir)
 	require.NoError(t, err)
-	assert.Equal(t, testDir, filepath.Join(projectDir, "src", "test", "java"))
+	assert.Equal(t, filepath.Join(projectDir, "src", "test", "java"), testDir)
 
 	// adjust pom.xml to include tag <testSourceDirectory>
 	newTestDir := "fuzztests"
@@ -28,7 +28,7 @@ func Test_GetTestDir(t *testing.T) {
 	)
 	testDir, err = GetTestDir(projectDir)
 	require.NoError(t, err)
-	assert.Equal(t, testDir, filepath.Join(projectDir, newTestDir))
+	assert.Equal(t, filepath.Join(projectDir, newTestDir), testDir)
 }
 
 func Test_GetSourceDir(t *testing.T) {
@@ -36,7 +36,7 @@ func Test_GetSourceDir(t *testing.T) {
 
 	sourceDir, err := GetSourceDir(projectDir)
 	require.NoError(t, err)
-	assert.Equal(t, sourceDir, filepath.Join(projectDir, "src", "main", "java"))
+	assert.Equal(t, filepath.Join(projectDir, "src", "main", "java"), sourceDir)
 
 	// adjust pom.xml to include tag <sourceDirectory>
 	newSourceDir := "example"
@@ -48,5 +48,5 @@ func Test_GetSourceDir(t *testing.T) {
 	)
 	sourceDir, err = GetSourceDir(projectDir)
 	require.NoError(t, err)
-	assert.Equal(t, sourceDir, filepath.Join(projectDir, newSourceDir))
+	assert.Equal(t, filepath.Join(projectDir, newSourceDir), sourceDir)
 }

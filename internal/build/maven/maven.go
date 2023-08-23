@@ -185,11 +185,22 @@ func parsePomXML(projectDir string) (*Project, error) {
 func GetTestDir(projectDir string) (string, error) {
 	project, err := parsePomXML(projectDir)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get test directory of project")
+		return "", errors.WithMessagef(err, "Failed to get test directory of project")
 	}
 
-	log.Debugf("Found maven test source at: %s", project.Build.TestSourceDirectory)
-	return strings.TrimSpace(project.Build.TestSourceDirectory), nil
+	testDir := strings.TrimSpace(project.Build.TestSourceDirectory)
+	log.Debugf("Found Maven test source at: %s", testDir)
+
+	exists, err := fileutil.Exists(testDir)
+	if err != nil {
+		return "", errors.WithMessagef(err, "Error checking if Maven test directory %s exists", testDir)
+	}
+	if exists {
+		return testDir, nil
+	}
+	log.Debugf("Ignoring Maven test source directory %s: directory does not exist", testDir)
+
+	return "", nil
 }
 
 // GetSourceDir returns the value of <sourceDirectory> from the projects
@@ -199,9 +210,20 @@ func GetTestDir(projectDir string) (string, error) {
 func GetSourceDir(projectDir string) (string, error) {
 	project, err := parsePomXML(projectDir)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get source directory of project")
+		return "", errors.WithMessagef(err, "Failed to get source directory of project")
 	}
 
-	log.Debugf("Found maven source at: %s", project.Build.SourceDirectory)
-	return strings.TrimSpace(project.Build.SourceDirectory), nil
+	sourceDir := strings.TrimSpace(project.Build.SourceDirectory)
+	log.Debugf("Found Maven source at: %s", sourceDir)
+
+	exists, err := fileutil.Exists(sourceDir)
+	if err != nil {
+		return "", errors.WithMessagef(err, "Error checking if Maven source directory %s exists", sourceDir)
+	}
+	if exists {
+		return sourceDir, nil
+	}
+	log.Debugf("Ignoring Maven source directory %s: directory does not exist", sourceDir)
+
+	return "", nil
 }
