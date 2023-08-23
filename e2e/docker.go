@@ -93,15 +93,17 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 		testCaseRun.args = "--server=" + ciServerToUseForE2ETests + " " + testCaseRun.args
 	}
 
-	cifuzzTargetMount := "/usr/bin/cifuzz"
+	installDir := shared.InstallCIFuzzInTemp(t)
+
+	cifuzzTargetMount := "/cifuzz-install"
 	coverageDirectoryPath := "/coverage/e2e"
 	if runtime.GOOS == "windows" {
-		cifuzzTargetMount = "C:\\cifuzz"
+		cifuzzTargetMount = "C:\\cifuzz-install"
 		coverageDirectoryPath = "C:\\coverage\\e2e"
 	}
-	cifuzzExecutablePath := cifuzzTargetMount
+	cifuzzExecutablePath := filepath.Join(cifuzzTargetMount, "bin", "cifuzz")
 	if runtime.GOOS == "windows" {
-		cifuzzExecutablePath = cifuzzTargetMount + "\\cifuzz_windows.exe"
+		cifuzzExecutablePath += ".exe"
 	}
 
 	fmt.Println("Running test:", testCase.Description)
@@ -135,19 +137,8 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 
 	containerConfig.Cmd = deleteEmptyStringsFromSlice(containerConfig.Cmd)
 
-	cwd := testutil.RepoRoot(t)
-	var cifuzzExecutableFile string
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		cifuzzExecutableFile = filepath.Join(cwd, "build", "bin", "cifuzz_linux")
-	case "windows":
-		cifuzzExecutableFile = filepath.Join(cwd, "build", "bin")
-	default:
-		t.Fatal("Unsupported OS")
-	}
-
 	containerBinds := []string{
-		cifuzzExecutableFile + ":" + cifuzzTargetMount,
+		installDir + ":" + cifuzzTargetMount,
 		contextFolder + ":" + targetMount,
 		hostCoverageDirectoryPath + ":" + coverageDirectoryPath,
 	}
