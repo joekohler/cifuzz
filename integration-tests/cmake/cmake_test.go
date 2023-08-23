@@ -177,13 +177,6 @@ func TestIntegration_CMake(t *testing.T) {
 }
 
 func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
-	// Skip this test if we're running on a PRERELEASE pipeline, because
-	// we might append additional arguments to the command, which might
-	// cause this test to fail.
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		t.Skip("skipping testRunWithAdditionalArgs")
-	}
-
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cmd := executil.Command(cifuzz, "coverage", "parser_fuzz_test", "--", "--non-existent-flag")
 	cmd.Dir = dir
@@ -239,13 +232,6 @@ func testBundleWithAddArg(t *testing.T, cifuzz string, dir string) {
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
-	// Skip this test if we're running on a PRERELEASE pipeline, because
-	// we might append additional arguments to the command, which might
-	// cause this test to fail.
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		t.Skip("skipping testRunWithAdditionalArgs")
-	}
-
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cmd := executil.Command(cifuzz, "bundle", "parser_fuzz_test", "--", "--non-existent-flag")
 	cmd.Dir = dir
@@ -262,13 +248,6 @@ func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 }
 
 func testRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	// Skip this test if we're running on a PRERELEASE pipeline, because
-	// we might append additional arguments to the command, which might
-	// cause this test to fail.
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		t.Skip("skipping testRunWithAdditionalArgs")
-	}
-
 	// Run cmake and expect it to fail because we passed it a non-existent flag
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Args: []string{"--", "--non-existent-flag"},
@@ -575,12 +554,9 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	tag := "cifuzz-test-container-run-cmake:latest"
 	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
-	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_PRERELEASE", "1")
-	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Command: []string{"container", "run"},
 		Args:    []string{"--docker-image", tag},
-		Env:     env,
 		ExpectedOutputs: []*regexp.Regexp{
 			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
 			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),

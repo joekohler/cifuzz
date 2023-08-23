@@ -38,7 +38,7 @@ func New() *cobra.Command {
 	var bindFlags func()
 	opts := &options{}
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("init [%s]", strings.Join(maps.Values(config.SupportedTestTypes()), "|")),
+		Use:   fmt.Sprintf("init [%s]", strings.Join(maps.Values(config.SupportedTestTypes), "|")),
 		Short: "Set up a project for use with cifuzz",
 		Long: `This command sets up a project for use with cifuzz, creating a
 'cifuzz.yaml' config file.`,
@@ -92,7 +92,7 @@ func New() *cobra.Command {
 			return run(opts)
 		},
 		Args:      cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: maps.Values(config.SupportedTestTypes()),
+		ValidArgs: maps.Values(config.SupportedTestTypes),
 	}
 
 	cmdutils.DisableConfigCheck(cmd)

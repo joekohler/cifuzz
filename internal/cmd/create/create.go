@@ -39,7 +39,7 @@ func (opts *createOpts) Validate() error {
 	}
 
 	if !opts.Interactive && opts.testType == "" {
-		err := errors.New(fmt.Sprintf("Missing argument [%s]", strings.Join(maps.Values(config.SupportedTestTypes()), "|")))
+		err := errors.New(fmt.Sprintf("Missing argument [%s]", strings.Join(maps.Values(config.SupportedTestTypes), "|")))
 		return cmdutils.WrapIncorrectUsageError(err)
 	}
 
@@ -60,7 +60,7 @@ func newWithOptions(opts *createOpts) *cobra.Command {
 	var bindFlags func()
 
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(config.SupportedTestTypes()), "|")),
+		Use:   fmt.Sprintf("create [%s]", strings.Join(maps.Values(config.SupportedTestTypes), "|")),
 		Short: "Create a new fuzz test",
 		Long: `This command creates a new templated fuzz test source file in the current directory.
 After running this command, you should edit the created file in order to
@@ -91,7 +91,7 @@ fuzz test via 'cifuzz run'.`,
 			return cmd.run()
 		},
 		Args:      cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: maps.Values(config.SupportedTestTypes()),
+		ValidArgs: maps.Values(config.SupportedTestTypes),
 	}
 
 	bindFlags = cmdutils.AddFlags(cmd,
@@ -142,7 +142,7 @@ to keep them close to the tested code - just like regular unit tests.`)
 
 // getTestType returns the test type (selected by argument or input dialog)
 func (c *createCmd) getTestType() (config.FuzzTestType, error) {
-	userSelectedType, err := dialog.Select("Select type of the fuzz test", config.SupportedTestTypes(), true)
+	userSelectedType, err := dialog.Select("Select type of the fuzz test", config.SupportedTestTypes, true)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

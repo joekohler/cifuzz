@@ -100,7 +100,9 @@ func New() (*cobra.Command, error) {
 	cobra.EnableCommandSorting = false
 	rootCmd.AddCommand(loginCmd.New())
 	rootCmd.AddCommand(initCmd.New())
+	rootCmd.AddCommand(containerCmd.New())
 	rootCmd.AddCommand(createCmd.New())
+	rootCmd.AddCommand(executeCmd.New())
 	rootCmd.AddCommand(runCmd.New())
 	rootCmd.AddCommand(remoteRunCmd.New())
 	rootCmd.AddCommand(reloadCmd.New())
@@ -108,12 +110,6 @@ func New() (*cobra.Command, error) {
 	rootCmd.AddCommand(coverageCmd.New())
 	rootCmd.AddCommand(findingCmd.New())
 	rootCmd.AddCommand(integrateCmd.New())
-
-	// Only add containers command if envvar CIFUZZ_PRERELEASE is set
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		rootCmd.AddCommand(executeCmd.New())
-		rootCmd.AddCommand(containerCmd.New())
-	}
 
 	return rootCmd, nil
 }

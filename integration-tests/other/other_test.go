@@ -20,7 +20,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
-	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -296,11 +295,8 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	tag := "cifuzz-test-container-run-other:latest"
 
-	var err error
 	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
 	env := cifuzzEnv(cifuzzRunner.DefaultWorkDir)
-	env, err = envutil.Setenv(env, "CIFUZZ_PRERELEASE", "1")
-	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Command: []string{"container", "run"},
 		Args:    []string{"--docker-image", tag},

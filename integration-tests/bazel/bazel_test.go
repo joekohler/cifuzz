@@ -429,14 +429,10 @@ func testLCOVCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	tag := "cifuzz-test-container-run-bazel:latest"
 
-	var err error
 	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
-	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_PRERELEASE", "1")
-	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Command: []string{"container", "run"},
 		Args:    []string{"--docker-image", tag},
-		Env:     env,
 		ExpectedOutputs: []*regexp.Regexp{
 			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-use-after-free`),
 			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),

@@ -5,7 +5,7 @@ Cifuzz supports a growing list of behaviors. Multiplied by the number of support
 - Command
 - Arguments and their combinations
 - Operating system
-- Environment and its setup. E.g., `CIFUZZ_PRERELEASE=true`, tooling flags or config files and their state.
+- Environment and its setup, e.g., tooling flags or config files and their state.
 - Tooling versions. E.g., Gradle versions we rely on. Or Jazzer version.
 - State of SaaS Auth
 - [...]

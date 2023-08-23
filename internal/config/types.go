@@ -1,7 +1,5 @@
 package config
 
-import "os"
-
 type FuzzTestType string
 
 const (
@@ -13,7 +11,7 @@ const (
 )
 
 // map of supported test types -> label:value
-var supportedTestTypes = map[string]string{
+var SupportedTestTypes = map[string]string{
 	"C/C++":      string(CPP),
 	"Java":       string(Java),
 	"Kotlin":     string(Kotlin),
@@ -33,12 +31,3 @@ type Engine string
 const (
 	Libfuzzer Engine = "libfuzzer"
 )
-
-// SupportedTestTypes returns the supported test types depending on the
-// environment variable CIFUZZ_PRERELEASE.
-func SupportedTestTypes() map[string]string {
-	if os.Getenv("CIFUZZ_PRERELEASE") != "" {
-		// e.g. supportedTestTypes["Rust"] = string(Rust)
-	}
-	return supportedTestTypes
-}
