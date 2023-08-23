@@ -40,7 +40,7 @@ func New() *cobra.Command {
 	opts := &executeOpts{}
 	cmd := &cobra.Command{
 		Use:   "execute",
-		Short: "Execute a fuzz test bundle locally",
+		Short: "Execute a fuzz test bundle locally (experimental)",
 		Long: `This command executes a cifuzz fuzz test bundle locally.
 It can be used as an experimental alternative to cifuzz_runner.
 It is currently only intended for use with the 'cifuzz container' subcommand.
