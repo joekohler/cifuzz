@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -22,6 +23,8 @@ import (
 	"code-intelligence.com/cifuzz/pkg/java"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
+	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
@@ -55,17 +58,22 @@ func (b *jazzerBundler) bundle() ([]*archive.Fuzzer, error) {
 		return nil, err
 	}
 
-	buildResults, err := b.runBuild()
+	buildResult, err := b.runBuild()
+	if err != nil {
+		return nil, err
+	}
+
+	fuzzTests, targetMethods, err := b.fuzzTestIdentifier(buildResult.RuntimeDeps)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info("Creating bundle...")
 
-	return b.assembleArtifacts(buildResults)
+	return b.assembleArtifacts(fuzzTests, targetMethods, buildResult.RuntimeDeps)
 }
 
-func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*archive.Fuzzer, error) {
+func (b *jazzerBundler) assembleArtifacts(fuzzTests []string, targetMethods []string, runtimeDeps []string) ([]*archive.Fuzzer, error) {
 	var fuzzers []*archive.Fuzzer
 
 	var archiveDict string
@@ -100,13 +108,12 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 	}
 
 	// Iterate over build results to fill archive and create fuzzers
-	for _, buildResult := range buildResults {
-		fuzzTestName := buildResult.Name
-		if buildResult.TargetMethod != "" {
-			fuzzTestName = fuzzTestName + "::" + buildResult.TargetMethod
+	for i := range fuzzTests {
+		fuzzTestName := fuzzTests[i]
+		if targetMethods[i] != "" {
+			fuzzTestName = fuzzTestName + "::" + targetMethods[i]
 		}
 
-		log.Debugf("build dir: %s\n", buildResult.BuildDir)
 		// copy seeds for every fuzz test
 		archiveSeedsDir, err := b.copySeeds()
 		if err != nil {
@@ -115,7 +122,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 
 		// creating a manifest.jar for every fuzz test to configure
 		// jazzer via MANIFEST.MF
-		manifestJar, err := b.createManifestJar(buildResult.Name, buildResult.TargetMethod)
+		manifestJar, err := b.createManifestJar(fuzzTests[i], targetMethods[i])
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +142,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 		// this map is used to generate unique artifact names
 		artifactsMap := make(map[string]uint)
 
-		for _, runtimeDep := range buildResult.RuntimeDeps {
+		for _, runtimeDep := range runtimeDeps {
 			log.Debugf("runtime dept: %s", runtimeDep)
 
 			// check if the file exists
@@ -152,7 +159,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 				// the archive but add just the directory path to the runtime
 				// paths. Hence, there will be a single entry for the runtime
 				// path but multiple entries in the archive.
-				relPath, err := filepath.Rel(buildResult.ProjectDir, runtimeDep)
+				relPath, err := filepath.Rel(b.opts.ProjectDir, runtimeDep)
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
@@ -191,7 +198,7 @@ func (b *jazzerBundler) assembleArtifacts(buildResults []*build.Result) ([]*arch
 		fuzzer := &archive.Fuzzer{
 			Name:         fuzzTestName,
 			Engine:       "JAVA_LIBFUZZER",
-			ProjectDir:   buildResult.ProjectDir,
+			ProjectDir:   b.opts.ProjectDir,
 			Dictionary:   archiveDict,
 			Seeds:        archiveSeedsDir,
 			RuntimePaths: runtimePaths,
@@ -238,17 +245,8 @@ func (b *jazzerBundler) checkDependencies() error {
 	return nil
 }
 
-func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
-	var fuzzTests []string
-	var targetMethods []string
-	var err error
-
-	fuzzTests, targetMethods, err = b.fuzzTestIdentifier()
-	if err != nil {
-		return nil, err
-	}
-
-	var buildResults []*build.Result
+func (b *jazzerBundler) runBuild() (*build.Result, error) {
+	var buildResult *build.Result
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
 		if len(b.opts.BuildSystemArgs) > 0 {
@@ -269,12 +267,9 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 			return nil, err
 		}
 
-		for i := range fuzzTests {
-			buildResult, err := builder.Build(fuzzTests[i], targetMethods[i])
-			if err != nil {
-				return nil, err
-			}
-			buildResults = append(buildResults, buildResult)
+		buildResult, err = builder.Build("", "")
+		if err != nil {
+			return nil, err
 		}
 	case config.BuildSystemGradle:
 		if len(b.opts.BuildSystemArgs) > 0 {
@@ -294,16 +289,14 @@ func (b *jazzerBundler) runBuild() ([]*build.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		for i := range fuzzTests {
-			buildResult, err := builder.Build(fuzzTests[i], targetMethods[i])
-			if err != nil {
-				return nil, err
-			}
-			buildResults = append(buildResults, buildResult)
+
+		buildResult, err = builder.Build("", "")
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return buildResults, nil
+	return buildResult, nil
 }
 
 // create a manifest.jar to configure jazzer
@@ -337,15 +330,10 @@ func (b *jazzerBundler) createManifestJar(targetClass string, targetMethod strin
 
 // fuzzTestIdentifier extracts all fuzz tests and their target
 // methods from the fuzz tests given to the bundler.
-func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
+func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []string, error) {
 	var err error
 
-	testDirs, err := b.getTestDirs()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	allValidFuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
+	allValidFuzzTests, err := listFuzzTests(nil, runtimeDeps)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -378,7 +366,7 @@ func (b *jazzerBundler) fuzzTestIdentifier() ([]string, []string, error) {
 				targetMethods = append(targetMethods, targetMethod)
 			} else {
 				// Find all valid fuzz tests for the given class
-				fuzzTestsInClass, err := cmdutils.ListJVMFuzzTests(testDirs, fuzzTest)
+				fuzzTestsInClass, err := listFuzzTests([]string{fuzzTest}, runtimeDeps)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -411,9 +399,18 @@ func (b *jazzerBundler) getTestDirs() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		testDirs = append(testDirs, testDir)
+		if testDir != "" {
+			testDirs = append(testDirs, testDir)
+		}
 	} else {
-		testDirs = append(testDirs, filepath.Join(b.opts.ProjectDir, "src", "test"))
+		defaultTestDir := filepath.Join(b.opts.ProjectDir, "src", "test")
+		exists, err := fileutil.Exists(defaultTestDir)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Error checking if default test dir %s exists", defaultTestDir)
+		}
+		if exists {
+			testDirs = append(testDirs, defaultTestDir)
+		}
 	}
 
 	return testDirs, nil
@@ -432,9 +429,18 @@ func (b *jazzerBundler) getSourceDirs() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		sourceDirs = append(sourceDirs, sourceDir)
+		if sourceDir != "" {
+			sourceDirs = append(sourceDirs, sourceDir)
+		}
 	} else {
-		sourceDirs = append(sourceDirs, filepath.Join(b.opts.ProjectDir, "src", "main"))
+		defaultSourceDir := filepath.Join(b.opts.ProjectDir, "src", "main")
+		exists, err := fileutil.Exists(defaultSourceDir)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Error checking if default source dir %s exists", defaultSourceDir)
+		}
+		if exists {
+			sourceDirs = append(sourceDirs, defaultSourceDir)
+		}
 	}
 
 	return sourceDirs, nil
@@ -510,4 +516,38 @@ func getUniqueArtifactName(dependency string, artifactsMap map[string]uint) stri
 	artifactsMap[newBaseName] = 1
 
 	return newBaseName
+}
+
+func listFuzzTests(classNames []string, runtimeDeps []string) ([]string, error) {
+	listFuzzTestsJar, err := runfiles.Finder.ListFuzzTestsJarPath()
+	if err != nil {
+		return nil, err
+	}
+	classPath := strings.Join(append(runtimeDeps, listFuzzTestsJar), string(os.PathListSeparator))
+
+	args := []string{
+		"-cp",
+		classPath,
+		"com.code_intelligence.cifuzz.helper.ListFuzzTests",
+	}
+	if len(classNames) > 0 {
+		args = append(args, strings.Join(classNames, " "))
+	}
+
+	javaBin, err := runfiles.Finder.JavaPath()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(javaBin, args...)
+	cmd.Stderr = os.Stderr
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+
+	fuzzTests := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	return fuzzTests, nil
 }

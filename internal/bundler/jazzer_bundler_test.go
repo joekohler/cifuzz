@@ -14,10 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
-	"code-intelligence.com/cifuzz/internal/build"
+	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
@@ -30,9 +29,8 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 
 	projectDir := filepath.Join("testdata", "jazzer", "project")
 
-	fuzzTest := "com.example.FuzzTest"
-	anotherFuzzTest := "com.example.AnotherFuzzTest"
-	buildDir := filepath.Join(projectDir, "target")
+	fuzzTests := []string{"com.example.FuzzTest", "com.example.AnotherFuzzTest"}
+	targetMethods := []string{"FuzzTestCase", "AnotherFuzzTestCase"}
 
 	runtimeDeps := []string{
 		// A library in the project's build directory.
@@ -41,21 +39,6 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 		filepath.Join(projectDir, "src", "main"),
 		filepath.Join(projectDir, "src", "test"),
 	}
-
-	buildResults := []*build.Result{}
-	buildResult := &build.Result{
-		Name:        fuzzTest,
-		BuildDir:    buildDir,
-		RuntimeDeps: runtimeDeps,
-		ProjectDir:  projectDir,
-	}
-	anotherBuildResult := &build.Result{
-		Name:        anotherFuzzTest,
-		BuildDir:    buildDir,
-		RuntimeDeps: runtimeDeps,
-		ProjectDir:  projectDir,
-	}
-	buildResults = append(buildResults, buildResult, anotherBuildResult)
 
 	bundle, err := os.CreateTemp("", "bundle-archive-")
 	require.NoError(t, err)
@@ -67,7 +50,7 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 		ProjectDir: projectDir,
 		tempDir:    tempDir,
 	}, archiveWriter)
-	fuzzers, err := b.assembleArtifacts(buildResults)
+	fuzzers, err := b.assembleArtifacts(fuzzTests, targetMethods, runtimeDeps)
 	require.NoError(t, err)
 
 	err = archiveWriter.Close()
@@ -81,15 +64,15 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	// TestAssembleArtifactsJava_WindowsForwardSlashes
 	expectedDeps := []string{
 		// manifest.jar should always be first element in runtime paths
-		fmt.Sprintf("%s/manifest.jar", fuzzTest),
+		"com.example.FuzzTest_FuzzTestCase/manifest.jar",
 		"runtime_deps/mylib.jar",
 		"runtime_deps/src/main",
 		"runtime_deps/src/test",
 	}
 	expectedFuzzer := &archive.Fuzzer{
-		Name:         buildResult.Name,
+		Name:         "com.example.FuzzTest::FuzzTestCase",
 		Engine:       "JAVA_LIBFUZZER",
-		ProjectDir:   buildResult.ProjectDir,
+		ProjectDir:   b.opts.ProjectDir,
 		RuntimePaths: expectedDeps,
 		EngineOptions: archive.EngineOptions{
 			Env:   b.opts.Env,
@@ -209,15 +192,8 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 	runtimeDeps := []string{
 		filepath.Join(projectDir, "lib", "mylib.jar"),
 	}
-
-	buildResults := []*build.Result{
-		{
-			Name:        "com.example.FuzzTest",
-			BuildDir:    filepath.Join(projectDir, "target"),
-			RuntimeDeps: runtimeDeps,
-			ProjectDir:  projectDir,
-		},
-	}
+	fuzzTests := []string{"com.example.FuzzTest"}
+	targetMethods := []string{"FuzzTestCase"}
 
 	bundle, err := os.CreateTemp("", "bundle-archive-")
 	require.NoError(t, err)
@@ -236,7 +212,7 @@ func TestAssembleArtifactsJava_WindowsForwardSlashes(t *testing.T) {
 		ProjectDir: projectDir,
 	}, archiveWriter)
 
-	fuzzers, err := b.assembleArtifacts(buildResults)
+	fuzzers, err := b.assembleArtifacts(fuzzTests, targetMethods, runtimeDeps)
 	require.NoError(t, err)
 
 	for _, fuzzer := range fuzzers {
@@ -253,29 +229,30 @@ func TestIntegration_GradleCustomSrcMultipeTests(t *testing.T) {
 		t.Skip()
 	}
 
-	// create temp dir for the bundler
-	tempDir, err := os.MkdirTemp("", "bundler-temp-dir*")
-	require.NoError(t, err)
-	t.Cleanup(func() { fileutil.Cleanup(tempDir) })
-
 	// copy test data project to temp dir
 	testProject := filepath.Join("testdata", "jazzer", "gradle", "multi-custom")
 	projectDir := shared.CopyCustomTestdataDir(t, testProject, "gradle")
 	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
 
-	b := newJazzerBundler(&Opts{
-		BuildSystem: config.BuildSystemGradle,
-		ProjectDir:  projectDir,
-		tempDir:     tempDir,
-	}, &archive.NullArchiveWriter{})
-	fuzzers, err := b.bundle()
-	require.NoError(t, err)
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
+	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
+
+	testutil.RegisterTestDepOnCIFuzz()
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
+	args := []string{
+		"bundle",
+		"-o", bundlePath,
+	}
+	metadata, _ := shared.TestRunBundle(t, filepath.Join(projectDir, "testsuite"), cifuzz, bundlePath, os.Environ(), args...)
 
 	// result should contain two fuzz tests from one class
-	assert.Len(t, fuzzers, 2)
+	// Verify that the metadata contains one fuzzer
+	require.Equal(t, 2, len(metadata.Fuzzers))
 	// result should contain fuzz tests with fully qualified names
-	assert.Equal(t, "com.example.TestCases::myFuzzTest1", fuzzers[0].Name)
-	assert.Equal(t, "com.example.TestCases::myFuzzTest2", fuzzers[1].Name)
+	assert.Equal(t, "com.example.TestCases::myFuzzTest1", metadata.Fuzzers[0].Name)
+	assert.Equal(t, "com.example.TestCases::myFuzzTest2", metadata.Fuzzers[1].Name)
 }
 
 func TestCreateManifestJar_TargetMethod(t *testing.T) {
@@ -303,12 +280,8 @@ func TestCreateManifestJar_TargetMethod(t *testing.T) {
 
 func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 	projectDir := filepath.Join("testdata", "jazzer", "project")
-	buildResults := []*build.Result{
-		{
-			Name:         "com.example.FuzzTest",
-			TargetMethod: "myFuzzTest",
-		},
-	}
+	fuzzTests := []string{"com.example.FuzzTest"}
+	targetMethods := []string{"myFuzzTest"}
 
 	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
 
@@ -317,7 +290,7 @@ func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 		ProjectDir: projectDir,
 	}, &archive.NullArchiveWriter{})
 
-	fuzzers, err := b.assembleArtifacts(buildResults)
+	fuzzers, err := b.assembleArtifacts(fuzzTests, targetMethods, nil)
 	require.NoError(t, err)
 
 	require.Len(t, fuzzers, 1)
@@ -326,72 +299,77 @@ func TestAssembleArtifacts_TargetMethodValidPath(t *testing.T) {
 	assert.Equal(t, fuzzers[0].Name, "com.example.FuzzTest::myFuzzTest")
 }
 
-func TestGetAllFuzzTestsAndTargetMethodsForBuild(t *testing.T) {
-	opts := &Opts{
-		BuildSystem: config.BuildSystemMaven,
-		ProjectDir:  filepath.Join("testdata", "jazzer", "maven"),
-		FuzzTests:   nil,
+func TestBundleAllFuzzTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
-	bundler := newJazzerBundler(opts, nil)
 
 	testCases := []struct {
-		fuzzTestInBundler     []string
-		expectedFuzzTests     []string
-		expectedTargetMethods []string
+		fuzzTargets       []string
+		expectedFuzzTests []string
 	}{
 		{ // No fuzz tests specified
-			fuzzTestInBundler: []string{""},
+			fuzzTargets: nil,
 			expectedFuzzTests: []string{
-				"com.example.FuzzTestCase1",
-				"com.example.FuzzTestCase2",
-				"com.example.FuzzTestCase2",
-			},
-			expectedTargetMethods: []string{
-				"myFuzzTest",
-				"oneFuzzTest",
-				"anotherFuzzTest",
+				"com.example.FuzzTestCase1::myFuzzTest",
+				"com.example.FuzzTestCase2::oneFuzzTest",
+				"com.example.FuzzTestCase2::anotherFuzzTest",
 			},
 		},
 		{ // One class specified that only has one method
-			fuzzTestInBundler:     []string{"com.example.FuzzTestCase1"},
-			expectedFuzzTests:     []string{"com.example.FuzzTestCase1"},
-			expectedTargetMethods: []string{"myFuzzTest"},
+			fuzzTargets:       []string{"com.example.FuzzTestCase1"},
+			expectedFuzzTests: []string{"com.example.FuzzTestCase1::myFuzzTest"},
 		},
 		{ // One class specified that has two methods
-			fuzzTestInBundler: []string{"com.example.FuzzTestCase2"},
+			fuzzTargets: []string{"com.example.FuzzTestCase2"},
 			expectedFuzzTests: []string{
-				"com.example.FuzzTestCase2",
-				"com.example.FuzzTestCase2"},
-			expectedTargetMethods: []string{
-				"oneFuzzTest",
-				"anotherFuzzTest"},
+				"com.example.FuzzTestCase2::oneFuzzTest",
+				"com.example.FuzzTestCase2::anotherFuzzTest"},
 		},
 		{ // One class with target method specified
-			fuzzTestInBundler:     []string{"com.example.FuzzTestCase2::anotherFuzzTest"},
-			expectedFuzzTests:     []string{"com.example.FuzzTestCase2"},
-			expectedTargetMethods: []string{"anotherFuzzTest"},
+			fuzzTargets:       []string{"com.example.FuzzTestCase2::anotherFuzzTest"},
+			expectedFuzzTests: []string{"com.example.FuzzTestCase2::anotherFuzzTest"},
 		},
-
 		{ // Two classes specified, one with target method one without
-			fuzzTestInBundler: []string{"" +
+			fuzzTargets: []string{"" +
 				"com.example.FuzzTestCase1",
 				"com.example.FuzzTestCase2::anotherFuzzTest"},
 			expectedFuzzTests: []string{
-				"com.example.FuzzTestCase1",
-				"com.example.FuzzTestCase2"},
-			expectedTargetMethods: []string{
-				"myFuzzTest",
-				"anotherFuzzTest"},
+				"com.example.FuzzTestCase1::myFuzzTest",
+				"com.example.FuzzTestCase2::anotherFuzzTest"},
 		},
 	}
 
+	// copy test data project to temp dir
+	testProject := filepath.Join("testdata", "jazzer", "maven")
+	projectDir := shared.CopyCustomTestdataDir(t, testProject, "maven")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
+
+	// create temp for bundle output
+	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
+	bundlePath := filepath.Join(tempDir, "fuzz_tests.tar.gz")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
+
+	testutil.RegisterTestDepOnCIFuzz()
+	installDir := shared.InstallCIFuzzInTemp(t)
+	cifuzz := builderPkg.CIFuzzExecutablePath(filepath.Join(installDir, "bin"))
+
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("testCase %d", i), func(t *testing.T) {
-			bundler.opts.FuzzTests = tc.fuzzTestInBundler
-			fuzzTests, targetMethods, err := bundler.fuzzTestIdentifier()
-			require.NoError(t, err)
+			args := []string{
+				"bundle",
+				"-o", bundlePath,
+			}
+			args = append(args, tc.fuzzTargets...)
+			metadata, _ := shared.TestRunBundle(t, projectDir, cifuzz, bundlePath, os.Environ(), args...)
+
+			// collect fuzz tests from metadata
+			var fuzzTests []string
+			for _, fuzzer := range metadata.Fuzzers {
+				fuzzTests = append(fuzzTests, fuzzer.Name)
+			}
+
 			assert.ElementsMatch(t, tc.expectedFuzzTests, fuzzTests)
-			assert.ElementsMatch(t, tc.expectedTargetMethods, targetMethods)
 		})
 	}
 }
