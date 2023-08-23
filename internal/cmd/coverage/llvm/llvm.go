@@ -3,6 +3,7 @@ package llvm
 import (
 	"bytes"
 	"debug/macho"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -296,7 +297,7 @@ func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []str
 		// Add stderr output of the fuzzer to provide users with
 		// the context of this error even without verbose mode.
 		if !viper.GetBool("verbose") {
-			err = errors.Errorf("%v\n %s", err, errStream.String())
+			err = fmt.Errorf("%w\n%s", err, errStream.String())
 		}
 		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
 	}
