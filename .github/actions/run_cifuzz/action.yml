@@ -22,7 +22,7 @@ runs:
         make build-container-image
         cd examples/cmake
         DOCKER_BUILDKIT=1 docker build -t cmake-runner .
-        CIFUZZ_PRERELEASE=1 cifuzz container run -v --docker-image cmake-runner my_fuzz_test 2>&1 | tee fuzzing.log
+        cifuzz container run -v --docker-image cmake-runner my_fuzz_test 2>&1 | tee fuzzing.log
         cat fuzzing.log | grep "heap buffer overflow"
         cat fuzzing.log | grep "undefined behavior"
       shell: bash
