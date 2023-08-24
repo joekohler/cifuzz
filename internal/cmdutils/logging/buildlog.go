@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/viper"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -102,7 +103,23 @@ func BuildOutputToFile(projectDir string, fuzzTestNames []string) (io.Writer, er
 }
 
 func ShouldLogBuildToFile() bool {
-	return !viper.GetBool("verbose")
+	// Don't redirect the build output to a file if the output is not a terminal.
+	// The reason for redirecting the build output in the first place is to
+	// avoid spamming the user's terminal with too verbose output. This is not
+	// necessary if the output is not a terminal.
+	//
+	// This also has the effect that the build output is printed when cifuzz is
+	// running in a CI environment, which makes it easier to retrieve the output
+	// than if it was redirected to a file.
+	if !term.IsTerminal(int(os.Stderr.Fd())) && !term.IsTerminal(int(os.Stdout.Fd())) {
+		return false
+	}
+
+	if viper.GetBool("verbose") {
+		return false
+	}
+
+	return true
 }
 
 func ptermErrorStyle() *pterm.Style {
