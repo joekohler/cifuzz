@@ -1,4 +1,4 @@
-name: Release Pipeline
+name: Post Release Pipeline
 
 on:
   release:
@@ -26,3 +26,14 @@ jobs:
     uses: ./.github/workflows/workflow_container_image.yml
     with:
       version: ${{ needs.version.outputs.version }}
+
+  slack_notification:
+    steps:
+      - name: Send notification to slack release channel
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: "C03RCP31BML"
+          # For posting a simple plain text message
+          slack-message: ":tada: **cifuzz release ${{ github.event.release.tag_name }}**: {{ github.event.release.html_url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
