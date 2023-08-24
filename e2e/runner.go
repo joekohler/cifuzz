@@ -81,7 +81,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 	dockerClient, err := getDockerClient()
 	require.NoError(t, err)
 
-	buildImageFromDockerFile(t, ctx, dockerClient, testCase)
+	imageTag := buildImageFromDockerFile(t, ctx, dockerClient, testCase)
 
 	// Set defaults
 	if len(testCase.Args) == 0 {
@@ -121,7 +121,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 
 	for index, testCaseRun := range testCaseRuns {
 		t.Run(fmt.Sprintf("[%d of %d] cifuzz %s %s", index+1, len(testCaseRuns), testCaseRun.command, testCaseRun.args), func(t *testing.T) {
-			commandOutput := runTestCaseInContainer(t, ctx, dockerClient, testCase, testCaseRun)
+			commandOutput := runTestCaseInContainer(t, ctx, dockerClient, testCase, testCaseRun, imageTag)
 			fmt.Println(commandOutput.Stdout)
 
 			fmt.Println("")

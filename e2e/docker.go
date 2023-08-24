@@ -63,7 +63,11 @@ func prepareDockerfile(t *testing.T, testCase *TestCase) string {
 	return dockerfile
 }
 
-func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase) {
+func toDockerImageTag(s string) string {
+	return strings.ToLower(strings.ReplaceAll(s, "/", "-"))
+}
+
+func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase) string {
 	t.Helper()
 	dockerfile := prepareDockerfile(t, testCase)
 	dockerFolder := shared.CopyTestDockerDirForE2E(t, dockerfile)
@@ -71,11 +75,12 @@ func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *c
 	imageTar, err := container.CreateImageTar(dockerFolder)
 	require.NoError(t, err)
 
+	tag := fmt.Sprintf("cifuzz-e2e-test-%s:latest", toDockerImageTag(t.Name()))
 	opts := types.ImageBuildOptions{
 		Dockerfile:  "Dockerfile",
 		Remove:      true,
 		ForceRemove: true,
-		Tags:        []string{"cifuzz-e2e-test:latest"},
+		Tags:        []string{tag},
 	}
 
 	res, err := dockerClient.ImageBuild(ctx, imageTar, opts)
@@ -85,9 +90,12 @@ func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *c
 		fmt.Println(scanner.Text())
 	}
 	t.Cleanup(func() { res.Body.Close() })
+	return tag
 }
 
-func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase, testCaseRun testCaseRunOptions) CommandOutput {
+func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase,
+	testCaseRun testCaseRunOptions, imageTag string) CommandOutput {
+
 	t.Helper()
 	if testCase.CIUser != AnonymousCIUser {
 		testCaseRun.args = "--server=" + ciServerToUseForE2ETests + " " + testCaseRun.args
@@ -123,7 +131,7 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 		fileutil.Cleanup(contextFolder)
 	})
 	containerConfig := &dockerContainer.Config{
-		Image:      "cifuzz-e2e-test:latest",
+		Image:      imageTag,
 		Tty:        false,
 		Env:        testCase.Environment,
 		Cmd:        []string{cifuzzExecutablePath},
