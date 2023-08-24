@@ -596,10 +596,8 @@ func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRu
 	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 		t.Skip()
 	}
-	cifuzz := cifuzzRunner.CIFuzzPath
-	testdata := cifuzzRunner.DefaultWorkDir
-	regexp := regexp.MustCompile("Unknown argument --non-existent-flag")
-	shared.TestRemoteRunWithAdditionalArgs(t, testdata, cifuzz, regexp)
+	regex := regexp.MustCompile("Unknown argument --non-existent-flag")
+	shared.TestRemoteRunWithAdditionalArgs(t, cifuzzRunner, regex)
 }
 
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

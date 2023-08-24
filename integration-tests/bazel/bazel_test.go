@@ -316,10 +316,8 @@ func testRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *shared.CIFuzzRu
 	if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 		t.Skip()
 	}
-	cifuzz := cifuzzRunner.CIFuzzPath
-	testdata := cifuzzRunner.DefaultWorkDir
-	regexp := regexp.MustCompile("Unrecognized option: --non-existent-flag")
-	shared.TestRemoteRunWithAdditionalArgs(t, testdata, cifuzz, regexp, "//src/parser:parser_fuzz_test")
+	regex := regexp.MustCompile("Unrecognized option: --non-existent-flag")
+	shared.TestRemoteRunWithAdditionalArgs(t, cifuzzRunner, regex, "//src/parser:parser_fuzz_test")
 }
 
 func testCoverage(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {

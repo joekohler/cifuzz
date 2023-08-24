@@ -75,43 +75,20 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 	require.NoError(t, err)
 }
 
-func TestRemoteRunWithAdditionalArgs(t *testing.T, dir string, cifuzz string, expectedErrorExp *regexp.Regexp, args ...string) {
-	var err error
-	projectName := "test-project"
-	artifactsName := "test-artifacts-123"
-
-	server := mockserver.New(t)
-
-	// define handlers
-	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
-	server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
-		fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
-	)
-	server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
-
-	// start the server
-	server.Start(t)
-
-	args = append(
-		[]string{
-			"remote-run",
-			"--project", projectName,
-			"--server", server.Address,
-		}, args...)
-	args = append(args, "--", "--non-existent-flag")
-	cmd := executil.Command(cifuzz, args...)
-	cmd.Dir = dir
-	cmd.Env, err = envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
+func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, expectedErrorExp *regexp.Regexp, args ...string) {
+	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
 	require.NoError(t, err)
 
-	// Terminate the cifuzz process when we receive a termination signal
-	// (else the test won't stop).
-	TerminateOnSignal(t, cmd)
+	args = append([]string{"--project", "test-project", "--", "--non-existent-flag"}, args...)
 
-	log.Printf("Command: %s", cmd.String())
-	output, err := cmd.CombinedOutput()
-	require.Error(t, err)
-
-	seenExpectedOutput := expectedErrorExp.MatchString(string(output))
-	require.True(t, seenExpectedOutput)
+	// Run the command and expect it to fail because we passed it a non-existent flag
+	cifuzzRunner.Run(t, &RunOptions{
+		Command: []string{"remote-run"},
+		Args:    args,
+		Env:     env,
+		ExpectedOutputs: []*regexp.Regexp{
+			expectedErrorExp,
+		},
+		ExpectError: true,
+	})
 }
