@@ -72,6 +72,7 @@ func (dep *Dependency) checkVersion(projectDir string) bool {
 // helper to easily check against functions from the runfiles.RunfilesFinder interface
 func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 	if _, err := finderFunc(); err != nil {
+		log.Debug(err)
 		return false
 	}
 	return true
