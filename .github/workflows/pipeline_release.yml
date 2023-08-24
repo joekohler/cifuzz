@@ -50,6 +50,5 @@ jobs:
           tag_name: ${{ github.ref }}
           body_path: ./.github/release_template.md
           generate_release_notes: true
-          draft: true
           files: cifuzz_installer_*
           fail_on_unmatched_files: true
