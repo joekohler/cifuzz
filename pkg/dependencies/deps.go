@@ -36,7 +36,7 @@ const (
 
 	VisualStudio Key = "Visual Studio"
 
-	MessageVersion = "cifuzz requires %s %s or higher, have %s"
+	MessageVersion = "cifuzz requires %s %s or higher, found %s"
 	MessageMissing = "cifuzz requires %s, but it is not installed"
 )
 
