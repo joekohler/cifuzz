@@ -40,6 +40,12 @@ type jazzerBundler struct {
 }
 
 func newJazzerBundler(opts *Opts, archiveWriter archive.ArchiveWriter) *jazzerBundler {
+	if opts.BuildStderr == nil {
+		opts.BuildStderr = os.Stderr
+	}
+	if opts.BuildStdout == nil {
+		opts.BuildStdout = os.Stdout
+	}
 	return &jazzerBundler{opts, archiveWriter}
 }
 

@@ -55,6 +55,12 @@ type libfuzzerBundler struct {
 }
 
 func newLibfuzzerBundler(opts *Opts, archiveWriter archive.ArchiveWriter) *libfuzzerBundler {
+	if opts.BuildStderr == nil {
+		opts.BuildStderr = os.Stderr
+	}
+	if opts.BuildStdout == nil {
+		opts.BuildStdout = os.Stdout
+	}
 	return &libfuzzerBundler{opts, archiveWriter}
 }
 
