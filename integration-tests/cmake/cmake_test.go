@@ -31,6 +31,10 @@ func TestIntegration_CMake(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	if runtime.GOOS == "windows" && !config.AllowUnsupportedPlatforms() {
+		// TODO: Remove this once https://github.com/microsoft/STL/issues/3568 is fixed.
+		t.Skip("This test is broken with Visual Studio 2022")
+	}
 
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
