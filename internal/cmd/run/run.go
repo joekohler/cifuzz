@@ -907,7 +907,10 @@ func ExecuteRunner(runner Runner) error {
 		return execErr
 	}
 
-	return errors.Wrap(err, "Failed to execute runner")
+	// Routines.Wait() returns an error created by us so it already has a
+	// stack trace and we don't want to add another one here
+	// nolint: wrapcheck
+	return err
 }
 
 func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
