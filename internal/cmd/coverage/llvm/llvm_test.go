@@ -88,6 +88,7 @@ func TestIntegration_LLVM(t *testing.T) {
 				FuzzTest:       "my_fuzz_test",
 				ProjectDir:     tmpDir,
 				BuildStdout:    outBuf,
+				BuildStderr:    os.Stderr,
 				Stderr:         os.Stderr,
 				runfilesFinder: finderMock,
 			}
