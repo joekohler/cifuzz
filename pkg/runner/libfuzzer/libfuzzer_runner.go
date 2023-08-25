@@ -353,7 +353,10 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 		}
 	})
 
-	return errors.WithStack(routines.Wait())
+	// Routines.Wait() returns an error created by us so it already has a
+	// stack trace and we don't want to add another one here
+	// nolint: wrapcheck
+	return routines.Wait()
 }
 
 func (r *Runner) FuzzerEnvironment() ([]string, error) {
