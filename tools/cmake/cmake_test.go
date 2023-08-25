@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -117,6 +118,11 @@ func TestIntegration_Ctest_WithUndefinedBehaviorSanitizer(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	if runtime.GOOS == "windows" && !config.AllowUnsupportedPlatforms() {
+		// TODO: Remove this once https://github.com/microsoft/STL/issues/3568 is fixed.
+		t.Skip("Linking UBSan is broken with Visual Studio 2022")
+	}
+
 	t.Parallel()
 	testutil.RegisterTestDeps("testdata", "modules")
 
