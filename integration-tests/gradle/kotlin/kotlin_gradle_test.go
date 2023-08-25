@@ -17,6 +17,7 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
 )
@@ -31,8 +32,9 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "gradlekotlin")
+	log.Infof("Project dir: %s", projectDir)
 
-	cifuzzRunner := shared.CIFuzzRunner{
+	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  projectDir,
 		DefaultFuzzTest: "com.example.FuzzTestCase",
@@ -69,14 +71,50 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	findings := shared.GetFindings(t, cifuzz, projectDir)
 	require.Empty(t, findings)
 
-	// Run the (empty) fuzz test
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
-		TerminateAfterExpectedOutput: true,
+	t.Run("runEmptyFuzzTest", func(t *testing.T) {
+		// Run the (empty) fuzz test
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
+			TerminateAfterExpectedOutput: true,
+		})
 	})
 
 	// Make the fuzz test call a function
 	modifyFuzzTestToCallFunction(t, fuzzTestPath)
+
+	t.Run("run", func(t *testing.T) {
+		testRun(t, cifuzzRunner)
+
+		t.Run("jacocoCoverageReport", func(t *testing.T) {
+			// Produce a jacoco xml coverage report
+			testJacocoXMLCoverageReport(t, cifuzz, projectDir)
+		})
+	})
+
+	t.Run("runWithAdditionalArgs", func(t *testing.T) {
+		// Check if adding additional jazzer parameters via flags is respected
+		shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
+	})
+
+	t.Run("runWithConfigFile", func(t *testing.T) {
+		// Check that options set via the config file are respected
+		testRunWithConfigFile(t, cifuzzRunner)
+	})
+
+	t.Run("bundle", func(t *testing.T) {
+		// Run cifuzz bundle and verify the contents of the archive.
+		gradle.TestBundleGradle(t, "kotlin", projectDir, cifuzz, "com.example.FuzzTestCase")
+	})
+
+	t.Run("runWithUpload", func(t *testing.T) {
+		testRunWithUpload(t, cifuzzRunner)
+	})
+}
+
+func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	projectDir := cifuzzRunner.DefaultWorkDir
+
 	// Run the fuzz test
 	expectedOutputExp := regexp.MustCompile(`High: Remote Code Execution`)
 	cifuzzRunner.Run(t, &shared.RunOptions{
@@ -84,7 +122,7 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	})
 
 	// Check that the findings command lists the finding
-	findings = shared.GetFindings(t, cifuzz, projectDir)
+	findings := shared.GetFindings(t, cifuzz, projectDir)
 	require.Len(t, findings, 1)
 	require.Contains(t, findings[0].Details, "Remote Code Execution")
 
@@ -98,43 +136,38 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 		},
 	}
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
+}
+
+func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	projectDir := cifuzzRunner.DefaultWorkDir
 
 	// Check that options set via the config file are respected
 	configFileContent := "print-json: true"
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0o644)
+	err := os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0o644)
 	require.NoError(t, err)
-	expectedOutputExp = regexp.MustCompile(`"finding": {`)
+
+	t.Cleanup(func() {
+		// Clear cifuzz.yml so that subsequent tests run with defaults
+		err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0o644)
+		assert.NoError(t, err)
+	})
+
+	expectedOutputExp := regexp.MustCompile(`"finding": {`)
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
 	})
 
-	// Check that command-line flags take precedence over config file
-	// settings (only on Linux because we only support Minijail on
-	// Linux).
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		Args:             []string{"--json=false"},
-		UnexpectedOutput: expectedOutputExp,
-	})
-
-	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0o644)
-	require.NoError(t, err)
-
-	// Produce a jacoco xml coverage report
-	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
-
-	// Run cifuzz bundle and verify the contents of the archive.
-	gradle.TestBundleGradle(t, "kotlin", projectDir, cifuzz, "com.example.FuzzTestCase")
-
-	// Check if adding additional jazzer parameters via flags is respected
-	shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
-
-	t.Run("runWithUpload", func(t *testing.T) {
-		testRunWithUpload(t, &cifuzzRunner)
+	t.Run("WithFlags", func(t *testing.T) {
+		// Check that command-line flags take precedence over config file
+		// settings
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			Args:             []string{"--json=false"},
+			UnexpectedOutput: expectedOutputExp,
+		})
 	})
 }
 
-func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
+func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	t.Helper()
 
 	cmd := executil.Command(cifuzz, "coverage", "-v",
