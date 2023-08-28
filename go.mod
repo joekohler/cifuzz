@@ -2,6 +2,9 @@ module code-intelligence.com/cifuzz
 
 go 1.20
 
+// TODO: Revert when https://github.com/pterm/pterm/issues/562 is fixed
+replace github.com/pterm/pterm v0.12.66 => github.com/adombeck/pterm v0.0.0-20230828123446-b137b9b68d82
+
 require (
 	atomicgo.dev/keyboard v0.2.9
 	github.com/Masterminds/semver v1.5.0
