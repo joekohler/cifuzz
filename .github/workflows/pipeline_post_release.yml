@@ -37,3 +37,22 @@ jobs:
           slack-message: ":tada: **cifuzz release ${{ github.event.release.tag_name }}**: {{ github.event.release.html_url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  send-release-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Release Event to datadog
+        run: |
+          curl -sX POST "https://api.datadoghq.eu/api/v1/events" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+            --data-raw '{
+              "title": "cifuzz has been released",
+              "text": "%%% \ncifuzz has been released with version **${{ github.event.release.tag_name }}**\n %%%",
+              "tags": [
+                "repo:${{ github.repository }}",
+                "project:cifuzz",
+                "version:${{ github.event.release.tag_name }}"
+              ]
+            }'

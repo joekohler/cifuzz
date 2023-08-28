@@ -28,7 +28,7 @@ jobs:
       compatibility_check: ${{ vars.RELEASE_COMPATIBILITY_CHECK }}
 
   create_release:
-    name: Create draft release
+    name: Create release
     runs-on: ubuntu-22.04
     needs: [version, installer]
     permissions:
