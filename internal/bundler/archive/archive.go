@@ -22,6 +22,7 @@ type ArchiveWriter interface {
 	WriteHardLink(string, string) error
 	GetSourcePath(string) string
 	HasFileEntry(string) bool
+	Headers() []*tar.Header
 }
 
 type NullArchiveWriter struct{}
@@ -44,11 +45,15 @@ func (w *NullArchiveWriter) GetSourcePath(string) string {
 func (w *NullArchiveWriter) HasFileEntry(string) bool {
 	return true
 }
+func (w *NullArchiveWriter) Headers() []*tar.Header {
+	return []*tar.Header{}
+}
 
 // TarArchiveWriter provides functions to create a gzip-compressed tar archive.
 type TarArchiveWriter struct {
 	*tar.Writer
 	manifest   map[string]string
+	headers    []*tar.Header
 	gzipWriter *gzip.Writer
 }
 
@@ -140,6 +145,7 @@ func (w *TarArchiveWriter) writeFileOrEmptyDir(archivePath string, sourcePath st
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	w.headers = append(w.headers, header)
 
 	if info.IsDir() {
 		return nil
@@ -215,6 +221,10 @@ func (w *TarArchiveWriter) GetSourcePath(archivePath string) string {
 func (w *TarArchiveWriter) HasFileEntry(archivePath string) bool {
 	_, exists := w.manifest[archivePath]
 	return exists
+}
+
+func (w *TarArchiveWriter) Headers() []*tar.Header {
+	return w.headers
 }
 
 // Extract extracts the gzip-compressed tar archive bundle into dir.

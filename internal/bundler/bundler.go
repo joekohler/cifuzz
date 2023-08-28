@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/pkg/errors"
 
@@ -93,6 +94,22 @@ func (b *Bundler) Bundle() (string, error) {
 			return "", errors.WithStack(err)
 		}
 	}
+
+	// List contents of archive in verbose mode for easier debugging
+	// when we do not have access to the bundle itself
+	tableBuf := &strings.Builder{}
+	w := tabwriter.NewWriter(tableBuf, 0, 0, 1, ' ', tabwriter.AlignRight)
+	for _, h := range archiveWriter.Headers() {
+		_, err := fmt.Fprintf(w, "%s\t%d\t %s\n", h.FileInfo().Mode().String(), h.Size, h.Name)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+	}
+	err = w.Flush()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	log.Debugf("Content of bundle %s:\n%s", bundle.Name(), tableBuf.String())
 
 	err = archiveWriter.Close()
 	if err != nil {
