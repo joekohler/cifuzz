@@ -3,8 +3,6 @@ package jazzer
 import (
 	"context"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -60,14 +58,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	javaHome, err := runfiles.Finder.JavaHomePath()
+	javaBin, err := runfiles.Finder.JavaPath()
 	if err != nil {
 		return err
-	}
-
-	javaBin := filepath.Join(javaHome, "bin", "java")
-	if runtime.GOOS == "windows" {
-		javaBin = filepath.Join(javaHome, "bin", "java.exe")
 	}
 	args := []string{javaBin}
 
