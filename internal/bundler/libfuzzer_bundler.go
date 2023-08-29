@@ -21,7 +21,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/cmake"
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
-	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -137,7 +136,7 @@ func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
 
 func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVariant) ([]*build.Result, error) {
 	var allResults []*build.Result
-	for i, variant := range configureVariants {
+	for _, variant := range configureVariants {
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
 			Args:       b.opts.BuildSystemArgs,
@@ -151,7 +150,7 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 			return nil, err
 		}
 
-		b.printBuildingMsg(variant, i)
+		b.printBuildingMsg(variant)
 
 		if len(b.opts.FuzzTests) == 0 {
 			// We panic here instead of returning an error because it's a
@@ -173,7 +172,7 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 
 func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVariant) ([]*build.Result, error) {
 	var allResults []*build.Result
-	for i, variant := range configureVariants {
+	for _, variant := range configureVariants {
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
 			Args:       b.opts.BuildSystemArgs,
@@ -190,7 +189,7 @@ func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVa
 			return nil, err
 		}
 
-		b.printBuildingMsg(variant, i)
+		b.printBuildingMsg(variant)
 
 		err = builder.Configure()
 		if err != nil {
@@ -220,19 +219,12 @@ func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVa
 	return allResults, nil
 }
 
-func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant, i int) {
+func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant) {
 	var typeDisplayString string
 	if isCoverageBuild(variant.Sanitizers) {
 		typeDisplayString = "coverage"
 	} else {
 		typeDisplayString = "fuzzing"
-	}
-
-	// Print a newline to separate the build logs unless this is the
-
-	// first variant build
-	if i > 0 && !logging.ShouldLogBuildToFile() {
-		log.Print()
 	}
 
 	log.Infof("Building for %s...", typeDisplayString)
@@ -245,7 +237,7 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 	}
 
 	var results []*build.Result
-	for i, variant := range configureVariants {
+	for _, variant := range configureVariants {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   b.opts.ProjectDir,
 			BuildCommand: b.opts.BuildCommand,
@@ -258,7 +250,7 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 			return nil, err
 		}
 
-		b.printBuildingMsg(variant, i)
+		b.printBuildingMsg(variant)
 
 		if len(b.opts.FuzzTests) == 0 {
 			// We panic here instead of returning an error because it's a
