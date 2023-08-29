@@ -63,6 +63,7 @@ jobs:
       version: ${{ needs.version.outputs.version }}
 
   slack_notification:
+    name: Slack Notification
     runs-on: ubuntu-latest
     needs: [version, create_release]
     steps:
@@ -70,12 +71,40 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: "C03RCP31BML"
-          # For posting a simple plain text message
-          slack-message: ":tada: **cifuzz release ${{ needs.version.outputs.version }}**: https://github.com/CodeIntelligenceTesting/cifuzz/releases/tag/v${{ needs.version.outputs.version }}"
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "New CI Fuzz Release :tada:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version*: ${{ needs.version.outputs.version }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Changelog & Downloads @ <https://github.com/CodeIntelligenceTesting/cifuzz/releases/tag/v${{ needs.version.outputs.version }}|GitHub>"
+                  }
+                }
+              ]
+            }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   send-release-event:
+    name: Datadog release tracking
     runs-on: ubuntu-latest
     needs: [version, create_release]
     steps:
