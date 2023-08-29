@@ -201,7 +201,8 @@ variable or by running 'cifuzz login' first.
 }
 
 func (c *runRemoteCmd) run() error {
-	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
+	var token string
+	authenticated, err := auth.GetAuthStatus(c.opts.Server)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if !errors.As(err, &connErr) {
@@ -210,13 +211,10 @@ func (c *runRemoteCmd) run() error {
 			log.Debugf("Connection error: %v", connErr)
 		}
 	}
-	if !authenticated {
-		log.Print("You need to authenticate to CI Sense to use this command.")
-		return cmdutils.ErrSilent
-	}
 
-	token := auth.GetToken(c.opts.Server)
-	if token == "" {
+	if authenticated {
+		token = auth.GetToken(c.opts.Server)
+	} else {
 		log.Print("You need to authenticate to CI Sense to use this command.")
 
 		if !c.opts.Interactive {
