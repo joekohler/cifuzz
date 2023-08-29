@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 
 	"github.com/Masterminds/semver"
@@ -155,17 +154,16 @@ func cmakeVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
 }
 
 func javaVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
-	javaHome, err := runfiles.Finder.JavaHomePath()
+	javaBin, err := runfiles.Finder.JavaPath()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
-	javaBin := filepath.Join(javaHome, "bin", "java")
 
 	version, err := getVersionFromCommand(javaBin, []string{"-version"}, javaRegex, dep.Key)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Found Java version %s in PATH: %s", version, javaHome)
+	log.Debugf("Found Java version %s in PATH: %s", version, javaBin)
 	return version, nil
 }
 
