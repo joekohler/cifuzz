@@ -195,6 +195,9 @@ func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archive
 		return err
 	}
 
+	// Print bundle.yaml content for debugging purposes
+	log.Debugf("Content of bundle.yaml:\n%s", metadataYamlContent)
+
 	return nil
 }
 
