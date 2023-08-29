@@ -85,9 +85,16 @@ func (f RunfilesFinderImpl) PerlPath() (string, error) {
 }
 
 func (f RunfilesFinderImpl) JavaPath() (string, error) {
-	os.LookupEnv("JAVA_HOME")
-	path, err := exec.LookPath("java")
-	return path, errors.WithStack(err)
+	javaHome, err := f.JavaHomePath()
+	if err != nil {
+		return "", err
+	}
+	javaBin := filepath.Join(javaHome, "bin", "java")
+	if runtime.GOOS == "windows" {
+		javaBin = filepath.Join(javaHome, "bin", "java.exe")
+	}
+
+	return javaBin, nil
 }
 
 func (f RunfilesFinderImpl) MavenPath() (string, error) {

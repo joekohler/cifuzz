@@ -62,6 +62,11 @@ func (m *RunfilesFinderMock) PerlPath() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+func (m *RunfilesFinderMock) JavaPath() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}
+
 func (m *RunfilesFinderMock) MavenPath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
