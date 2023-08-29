@@ -49,6 +49,8 @@ based tests into your project.
 - Easily set up, create and run fuzz tests
 - Generate coverage reports that [can be integrated in your
   IDE](docs/Coverage-ide-integrations.md)
+- (Experimental) support for portable [fuzz
+  containers](docs/Fuzz-Containers.md)
 - Supports multiple programming languages and build systems
 
 ![CLion](/docs/assets/tools/clion.png)
