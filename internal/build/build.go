@@ -12,8 +12,6 @@ import (
 type Result struct {
 	// A name which uniquely identifies the fuzz test and is a valid path
 	Name string
-	// Optional name for the fuzz test target method
-	TargetMethod string
 	// Canonical path of the fuzz test executable
 	Executable string
 	// Canonical path of the fuzz test's generated corpus directory

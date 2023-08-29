@@ -267,7 +267,7 @@ func (b *jazzerBundler) runBuild() (*build.Result, error) {
 			return nil, err
 		}
 
-		buildResult, err = builder.Build("", "")
+		buildResult, err = builder.Build("")
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +290,7 @@ func (b *jazzerBundler) runBuild() (*build.Result, error) {
 			return nil, err
 		}
 
-		buildResult, err = builder.Build("", "")
+		buildResult, err = builder.Build("")
 		if err != nil {
 			return nil, err
 		}
