@@ -236,11 +236,6 @@ func (c *runRemoteCmd) run() error {
 		if err != nil {
 			return err
 		}
-	} else {
-		err = auth.EnsureValidToken(*c.apiClient, token)
-		if err != nil {
-			return err
-		}
 	}
 
 	if c.opts.ProjectName == "" {
