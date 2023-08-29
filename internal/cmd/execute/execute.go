@@ -199,7 +199,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 func getMetadata() (*archive.Metadata, error) {
 	exists, err := fileutil.Exists(archive.MetadataFileName)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	if !exists {
 		return nil, errors.Errorf("bundle metadata file '%s' does not exist. Execute command should be run in a folder with an unpacked cifuzz bundle.", archive.MetadataFileName)

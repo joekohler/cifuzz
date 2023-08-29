@@ -65,7 +65,7 @@ func (f RunfilesFinderImpl) GenHTMLPath() (string, error) {
 			path := filepath.Join(dir, "genhtml")
 			exists, err := fileutil.Exists(path)
 			if err != nil {
-				return "", errors.WithStack(err)
+				return "", err
 			}
 			if exists {
 				return path, nil
@@ -137,7 +137,7 @@ func (f RunfilesFinderImpl) VisualStudioPath() (string, error) {
 	if !found {
 		log.Warn(`Please make sure that you run this command from a Developer Command Prompt for VS 2022.
 Otherwise Visual Studio will not be found.`)
-		return "", errors.New("Visual Studio not found.")
+		return "", errors.New("Visual Studio not found")
 	}
 	return path, nil
 }
@@ -208,7 +208,7 @@ func (f RunfilesFinderImpl) llvmToolPath(name string) (string, error) {
 	if runtime.GOOS == "windows" {
 		visualStudioPath, err := f.VisualStudioPath()
 		if err != nil {
-			return "", errors.New("Visual Studio not found.")
+			return "", err
 		}
 
 		path := os.Getenv("PATH")
@@ -221,7 +221,7 @@ func (f RunfilesFinderImpl) llvmToolPath(name string) (string, error) {
 			path = filepath.Join(dir, name+".exe")
 			exists, err := fileutil.Exists(path)
 			if err != nil {
-				return "", errors.WithStack(err)
+				return "", err
 			}
 			if exists {
 				return path, nil

@@ -195,7 +195,7 @@ func findBazelBuildFiles(toComplete string, dir string) ([]string, error) {
 	var buildFiles []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		path, err = filepath.Rel(dir, path)

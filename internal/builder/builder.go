@@ -446,7 +446,7 @@ func FindProjectDir() (string, error) {
 	}
 	exists, err := fileutil.Exists(filepath.Join(projectDir, "go.mod"))
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	for !exists {
 		if filepath.Dir(projectDir) == projectDir {
@@ -455,7 +455,7 @@ func FindProjectDir() (string, error) {
 		projectDir = filepath.Dir(projectDir)
 		exists, err = fileutil.Exists(filepath.Join(projectDir, "go.mod"))
 		if err != nil {
-			return "", errors.WithStack(err)
+			return "", err
 		}
 	}
 	return projectDir, nil

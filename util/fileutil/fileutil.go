@@ -164,7 +164,7 @@ func SearchFileBackwards(start, filename string) (string, error) {
 		filePath := filepath.Join(currentDir, filename)
 		exists, err := Exists(filePath)
 		if err != nil {
-			return "", errors.WithStack(err)
+			return "", err
 		}
 		if exists {
 			return filePath, nil

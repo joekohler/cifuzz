@@ -673,7 +673,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 		var err error
 		libraryPaths, err = ldd.LibraryPaths(buildResult.Executable)
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 
@@ -964,7 +964,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 		token := tokenstorage.Get(c.opts.Server)
 		project, err := c.apiClient.CreateProject(projectName, token)
 		if err != nil {
-			return "", errors.WithStack(err)
+			return "", err
 		}
 		return project.Name, nil
 

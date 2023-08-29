@@ -106,7 +106,7 @@ func (b *Builder) Build() (*build.BuildResult, error) {
 func (b *Builder) GradlePluginVersion() (string, error) {
 	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintPluginVersion", "-q"})
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
@@ -147,7 +147,7 @@ func GetGradleCommand(projectDir string) (string, error) {
 
 	gradleCmd, err := runfiles.Finder.GradlePath()
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	return gradleCmd, nil
 }
