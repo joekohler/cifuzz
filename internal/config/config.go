@@ -149,7 +149,7 @@ func ParseProjectConfig(configDir string, opts interface{}) error {
 	if viper.GetString("timeout") != "" {
 		_, err = time.ParseDuration(viper.GetString("timeout"))
 		if err != nil {
-			return errors.WithStack(fmt.Errorf("error decoding 'timeout': %w", err))
+			return errors.Wrap(err, "error decoding 'timeout'")
 		}
 	}
 
@@ -267,8 +267,7 @@ func FindConfigDir() (string, error) {
 	}
 	for !configFileExists {
 		if dir == filepath.Dir(dir) {
-			err = fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", ProjectConfigFile, os.ErrNotExist)
-			return "", err
+			return "", fmt.Errorf("not a cifuzz project (or any of the parent directories): %s %w", ProjectConfigFile, os.ErrNotExist)
 		}
 		dir = filepath.Dir(dir)
 		configFileExists, err = fileutil.Exists(filepath.Join(dir, ProjectConfigFile))

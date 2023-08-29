@@ -2,7 +2,6 @@ package runfiles
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -228,7 +227,7 @@ func (f RunfilesFinderImpl) llvmToolPath(name string) (string, error) {
 			}
 		}
 
-		return "", errors.New(fmt.Sprintf("%s not found in %%PATH%%", name))
+		return "", errors.Errorf("%s not found in %%PATH%%", name)
 	}
 
 	var err error

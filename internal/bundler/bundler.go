@@ -188,7 +188,7 @@ func (b *Bundler) createMetadataFileInArchive(fuzzers []*archive.Fuzzer, archive
 	metadataYamlPath := filepath.Join(b.opts.tempDir, archive.MetadataFileName)
 	err = os.WriteFile(metadataYamlPath, metadataYamlContent, 0o644)
 	if err != nil {
-		return errors.Wrapf(errors.WithStack(err), "failed to write %s", archive.MetadataFileName)
+		return errors.Wrapf(err, "failed to write %s", archive.MetadataFileName)
 	}
 	err = archiveWriter.WriteFile(archive.MetadataFileName, metadataYamlPath)
 	if err != nil {
