@@ -82,7 +82,7 @@ func (dep *Dependency) checkFinder(finderFunc func() (string, error)) bool {
 func Check(keys []Key, projectDir string) error {
 	err := check(keys, deps, runfiles.Finder, projectDir)
 	if err != nil {
-		return errors.Wrap(err, "Invalid dependencies")
+		return errors.WithMessage(err, "Invalid dependencies")
 	}
 
 	return nil

@@ -119,13 +119,13 @@ func FindAndParseProjectConfig(opts interface{}) error {
 	} else {
 		configDir, err = FindConfigDir()
 		if err != nil {
-			return errors.Wrap(err, "Failed to determine config directory for cifuzz.yaml")
+			return errors.WithMessage(err, "Failed to determine config directory for cifuzz.yaml")
 		}
 	}
 
 	err = ParseProjectConfig(configDir, opts)
 	if err != nil {
-		return errors.Wrap(err, "Failed to parse cifuzz.yaml")
+		return errors.WithMessage(err, "Failed to parse cifuzz.yaml")
 	}
 
 	return nil

@@ -431,7 +431,7 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to search through project to find fuzz test executable")
+		return "", errors.WithMessage(err, "Failed to search through project to find fuzz test executable")
 	}
 	// No executable was found, we handle this error in the caller
 	if executable == "" {

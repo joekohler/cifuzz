@@ -145,7 +145,7 @@ func (b *Bundler) createEmptyBundle() (*os.File, error) {
 
 	bundle, err := os.Create(b.opts.OutputPath)
 	if err != nil {
-		return nil, errors.Wrap(errors.WithStack(err), "failed to create fuzzing artifact archive")
+		return nil, errors.Wrap(err, "failed to create fuzzing artifact archive")
 	}
 
 	log.Debugf("Bundle output path: %s", b.opts.OutputPath)

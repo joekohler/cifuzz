@@ -126,7 +126,7 @@ func (c *createCmd) run() error {
 	// create stub
 	err = stubs.Create(c.opts.outputPath, c.opts.testType)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to create fuzz test stub %s", c.opts.outputPath)
+		return errors.WithMessagef(err, "Failed to create fuzz test stub %s", c.opts.outputPath)
 	}
 
 	// show success message

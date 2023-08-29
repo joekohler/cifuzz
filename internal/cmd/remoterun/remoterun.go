@@ -111,7 +111,7 @@ variable or by running 'cifuzz login' first.
 
 			err := bundle.SetUpBundleLogging(cmd.OutOrStdout(), cmd.ErrOrStderr(), &opts.Opts)
 			if err != nil {
-				return errors.Wrap(err, "Failed to setup logging")
+				return errors.WithMessage(err, "Failed to setup logging")
 			}
 
 			var argsToPass []string

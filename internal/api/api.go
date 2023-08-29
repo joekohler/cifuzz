@@ -329,7 +329,7 @@ func ValidateAndNormalizeServerURL(server string) (string, error) {
 		// See if prefixing https:// makes it a valid URL
 		err = validateURL("https://" + server)
 		if err != nil {
-			return "", errors.Wrapf(err, "Server '%s' is not a valid URL", server)
+			return "", errors.WithMessagef(err, "Server '%s' is not a valid URL", server)
 		}
 		server = "https://" + server
 	}

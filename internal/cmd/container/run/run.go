@@ -154,12 +154,12 @@ func (c *containerRunCmd) buildContainerFromImage(buildOutput io.Writer) (string
 	b := bundler.New(&c.opts.Opts)
 	bundlePath, err := b.Bundle()
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to create bundle")
+		return "", errors.WithMessage(err, "Failed to create bundle")
 	}
 
 	_, err = container.BuildImageFromBundle(bundlePath)
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to build image from bundle %s", bundlePath)
+		return "", errors.WithMessagef(err, "Failed to build image from bundle %s", bundlePath)
 	}
 
 	return container.Create(c.opts.PrintJSON)

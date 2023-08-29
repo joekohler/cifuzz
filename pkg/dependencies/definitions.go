@@ -187,7 +187,7 @@ var deps = Dependencies{
 				// Using the gradlew in the project dir is the preferred way
 				wrapper, err := gradle.FindGradleWrapper(projectDir)
 				if err != nil && !errors.Is(err, os.ErrNotExist) {
-					log.Error(errors.Wrap(err, "Error while checking for existing 'gradlew' in project dir. Gradle will be checked instead"))
+					log.Error(errors.WithMessage(err, "Error while checking for existing 'gradlew' in project dir. Gradle will be checked instead"))
 					return dep.checkFinder(dep.finder.GradlePath)
 				}
 				if wrapper != "" {

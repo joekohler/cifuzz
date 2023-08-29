@@ -91,14 +91,14 @@ func prepareBuildContext(bundlePath string) (string, error) {
 
 	err = archive.Extract(bundlePath, buildContextDir)
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to extract bundle to %s", buildContextDir)
+		return "", errors.WithMessagef(err, "Failed to extract bundle to %s", buildContextDir)
 	}
 
 	// read metadata from bundle to use information for building
 	// the right image
 	metadata, err := archive.MetadataFromPath(filepath.Join(buildContextDir, archive.MetadataFileName))
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to read bundle.yml")
+		return "", errors.WithMessage(err, "Failed to read bundle.yml")
 	}
 
 	// add additional files needed for the image
@@ -109,7 +109,7 @@ func prepareBuildContext(bundlePath string) (string, error) {
 	}
 	err = copyCifuzz(buildContextDir)
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to copy CI Fuzz binaries to %s", buildContextDir)
+		return "", errors.WithMessagef(err, "Failed to copy CI Fuzz binaries to %s", buildContextDir)
 	}
 
 	log.Debugf("Prepared build context for fuzz container image at %s", buildContextDir)

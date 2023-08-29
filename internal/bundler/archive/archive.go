@@ -208,7 +208,7 @@ func (w *TarArchiveWriter) WriteDir(archiveBasePath string, sourceDir string) er
 		return w.writeFileOrEmptyDir(archivePath, path)
 	})
 	if err != nil {
-		return errors.Wrapf(err, "Failed to write files from %s to archive path %s", sourceDir, archiveBasePath)
+		return errors.WithMessagef(err, "Failed to write files from %s to archive path %s", sourceDir, archiveBasePath)
 	}
 
 	return nil

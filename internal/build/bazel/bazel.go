@@ -341,7 +341,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 		}
 		err = archiveutil.UntarFile(ossFuzzArchive, extractedDir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to extract archive %s to %s", ossFuzzArchive, extractedDir)
+			return nil, errors.WithMessagef(err, "Failed to extract archive %s to %s", ossFuzzArchive, extractedDir)
 		}
 
 		path, err := PathFromLabel(fuzzTest, commonFlags)
@@ -382,7 +382,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 				return nil
 			})
 			if err != nil {
-				return nil, errors.Wrapf(err, "Failed to walk through runfiles directory %s", runfilesDir)
+				return nil, errors.WithMessagef(err, "Failed to walk through runfiles directory %s", runfilesDir)
 			}
 		}
 

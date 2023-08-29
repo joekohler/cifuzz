@@ -182,7 +182,7 @@ func (cmd *findingCmd) run(args []string) error {
 	findingName := args[0]
 	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName, errorDetails)
 	if finding.IsNotExistError(err) {
-		return errors.Wrapf(err, "Finding %s does not exist", findingName)
+		return errors.WithMessagef(err, "Finding %s does not exist", findingName)
 	}
 	if err != nil {
 		return err

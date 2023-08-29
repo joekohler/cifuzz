@@ -181,7 +181,7 @@ func listFilesRecursively(dir string) ([]string, error) {
 		paths = append(paths, relPath)
 		return nil
 	})
-	return paths, errors.Wrapf(err, "Failed to list files from directory %s", dir)
+	return paths, errors.WithMessagef(err, "Failed to list files from directory %s", dir)
 }
 
 // As long as we only have linux based runner we should make sure

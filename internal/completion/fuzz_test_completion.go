@@ -80,12 +80,12 @@ func absoluteBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 
 	workSpace, err := getWorkspacePath()
 	if err != nil {
-		log.Error(errors.Wrap(err, "Failed to get path to bazel workspace"))
+		log.Error(errors.WithMessage(err, "Failed to get path to bazel workspace"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 	buildFiles, err := findBazelBuildFiles(toComplete, workSpace)
 	if err != nil {
-		log.Error(errors.Wrap(err, "Failed to find bazel build files"))
+		log.Error(errors.WithMessage(err, "Failed to find bazel build files"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -102,7 +102,7 @@ func absoluteBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
 			// Command completion is best-effort: Do not fail on errors
-			log.Error(errors.Wrapf(err, "Failed to find absolute targets in bazel build file %s", buildFile))
+			log.Error(errors.WithMessagef(err, "Failed to find absolute targets in bazel build file %s", buildFile))
 			continue
 		}
 		for _, name := range targetNames {
@@ -123,7 +123,7 @@ func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 	}
 	buildFiles, err := findBazelBuildFiles(toComplete, workDir)
 	if err != nil {
-		log.Error(errors.Wrap(err, "Failed to find bazel build files"))
+		log.Error(errors.WithMessage(err, "Failed to find bazel build files"))
 		return nil, cobra.ShellCompDirectiveError
 	}
 
@@ -131,7 +131,7 @@ func relativeBazelFuzzTestLabels(toComplete string) ([]string, cobra.ShellCompDi
 		targetNames, err := findTargetsInBuildFile(buildFile)
 		if err != nil {
 			// Command completion is best-effort: Do not fail on errors
-			log.Error(errors.Wrapf(err, "Failed to find relative targets in bazel build file %s", buildFile))
+			log.Error(errors.WithMessagef(err, "Failed to find relative targets in bazel build file %s", buildFile))
 			continue
 		}
 

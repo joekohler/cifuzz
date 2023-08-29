@@ -109,7 +109,7 @@ func resolve(path, buildSystem, projectDir string) (string, error) {
 			// Handle case that gradle or maven command return default values that don't actually exist
 			exist, err := fileutil.Exists(testDir)
 			if err != nil {
-				return "", errors.Wrapf(err, "Failed to access test directory %s", testDir)
+				return "", errors.WithMessagef(err, "Failed to access test directory %s", testDir)
 			}
 			if !exist {
 				continue
@@ -195,7 +195,7 @@ func FuzzTestArguments(resolveSourceFile bool, args []string, buildSystem, proje
 		for _, arg := range args {
 			fuzzTest, err := resolve(arg, buildSystem, projectDir)
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("Failed to resolve source file %s", arg))
+				return nil, errors.WithMessagef(err, "Failed to resolve source file %s", arg)
 			}
 			fuzzTests = append(fuzzTests, fuzzTest)
 		}

@@ -206,7 +206,7 @@ func GetTestSourceSets(projectDir string) ([]string, error) {
 	for _, path := range paths {
 		exists, err := fileutil.Exists(path)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error checking if Gradle test source path %s exists", path)
+			return nil, errors.WithMessagef(err, "Error checking if Gradle test source path %s exists", path)
 		}
 		if exists {
 			sourceSets = append(sourceSets, path)
@@ -239,7 +239,7 @@ func GetMainSourceSets(projectDir string) ([]string, error) {
 	for _, path := range paths {
 		exists, err := fileutil.Exists(path)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error checking if Gradle main source path %s exists", path)
+			return nil, errors.WithMessagef(err, "Error checking if Gradle main source path %s exists", path)
 		}
 		if exists {
 			sourceSets = append(sourceSets, path)
