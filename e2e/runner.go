@@ -98,7 +98,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 
 	if testCase.CIUser == LoggedInCIUser {
 		if os.Getenv(envvarWithE2EUserToken) == "" {
-			require.FailNow(t, "You are trying to test LoggedIn behavior, you need to set "+envvarWithE2EUserToken+" envvar.")
+			require.FailNow(t, "You are trying to test behavior that requires a connection to CI Sense. Please set "+envvarWithE2EUserToken+" envvar.")
 		}
 		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN="+os.Getenv(envvarWithE2EUserToken))
 	}
