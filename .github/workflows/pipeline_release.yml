@@ -1,3 +1,5 @@
+# This name is used in other pipelines that run afterwards
+# Be careful when changing it
 name: Release Pipeline
 
 on:
