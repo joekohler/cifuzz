@@ -54,6 +54,8 @@ func (b *jazzerBundler) bundle() ([]*archive.Fuzzer, error) {
 		return nil, err
 	}
 
+	log.Info("Creating bundle...")
+
 	return b.assembleArtifacts(buildResults)
 }
 

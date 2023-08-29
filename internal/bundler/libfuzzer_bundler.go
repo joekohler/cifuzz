@@ -70,6 +70,8 @@ func (b *libfuzzerBundler) bundle() ([]*archive.Fuzzer, error) {
 		return nil, err
 	}
 
+	log.Info("Creating bundle...")
+
 	// Add all fuzz test artifacts to the archive. There will be one "Fuzzer" metadata object for each pair of fuzz test
 	// and Builder instance.
 	var fuzzers []*archive.Fuzzer
