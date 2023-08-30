@@ -193,7 +193,9 @@ func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 		if file.Filename == "com/example/ExploreMe.kt" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)
 			assert.Equal(t, 11, file.Coverage.LinesHit)
-			assert.Equal(t, 11, file.Coverage.BranchesHit)
+			// Because we ignore certain exceptions in the ExploreMe function,
+			// we can hit either 11 or 12 branches before it throws an exception.
+			assert.Contains(t, []int{11, 12}, file.Coverage.BranchesHit)
 
 		} else if file.Filename == "com/example/App.kt" {
 			assert.Equal(t, 0, file.Coverage.FunctionsHit)
