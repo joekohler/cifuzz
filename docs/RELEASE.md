@@ -37,25 +37,7 @@ Pushing a version tag will trigger an automatic [release
 pipeline](https://github.com/CodeIntelligenceTesting/cifuzz/actions/workflows/pipeline_release.yml)
 on GitHub.
 
-After the pipeline has passed, a draft release is automatically created,
-including binary artifacts for all supported platforms.
-
-You can find the draft release on the [cifuzz releases page on
-GitHub](https://github.com/CodeIntelligenceTesting/cifuzz/releases).
-
-### Step 3: Fill in a short summary
-
-The release notes will be automatically filled by the GitHub action.
-
-However, you can add a few bullets with the most important changes as a
-**Summary**.
-
-### Step 4: Publish the release
-
-After you have checked the draft release and maybe added a short summary at the
-top, go ahead and publish the release.
-
-**Please make sure to:**
-
-- check if the version tag and the release name have the same version notation
-- the published release is _set as the latest release_.
+After the pipeline has passed, a release is automatically created,
+including binary artifacts for all supported platforms,
+[container images](https://github.com/CodeIntelligenceTesting/cifuzz/pkgs/container/cifuzz)
+and notifications to external platforms like Slack and Datadog.
