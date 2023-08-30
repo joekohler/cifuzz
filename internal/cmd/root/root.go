@@ -136,6 +136,7 @@ func Execute() {
 
 		if errors.As(err, &usageErr) ||
 			strings.HasPrefix(err.Error(), "unknown command") ||
+			strings.HasPrefix(err.Error(), "invalid argument") ||
 			regexp.MustCompile(`(accepts|requires).*arg\(s\)`).MatchString(err.Error()) {
 			// Make cmd.Help() print to stderr
 			cmd.SetOut(cmd.ErrOrStderr())
