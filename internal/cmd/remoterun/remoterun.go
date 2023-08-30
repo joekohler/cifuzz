@@ -208,7 +208,10 @@ func (c *runRemoteCmd) run() error {
 		if !errors.As(err, &connErr) {
 			return err
 		} else {
-			log.Debugf("Connection error: %v", connErr)
+			// API calls might fail due to network issues, invalid server
+			// responses or similar. Because this is the remote run cmd, we
+			// don't just want to log the error, but also return here.
+			return errors.WithMessage(connErr, "Connection error")
 		}
 	}
 
