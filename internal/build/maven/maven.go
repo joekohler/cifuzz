@@ -57,7 +57,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	return b, err
 }
 
-func (b *Builder) Build(targetClass string) (*build.Result, error) {
+func (b *Builder) Build() (*build.BuildResult, error) {
 	var flags []string
 	if b.Parallel.Enabled {
 		flags = append(flags, "-T")
@@ -91,12 +91,9 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 		project.Build.TestOutputDirectory,
 	}...)
 
-	buildDir := project.Build.Directory
-
-	result := &build.Result{
-		Name:        targetClass,
-		BuildDir:    buildDir,
-		ProjectDir:  b.ProjectDir,
+	result := &build.BuildResult{
+		// BuildDir is not used by Jazzer
+		BuildDir:    "",
 		RuntimeDeps: deps,
 	}
 

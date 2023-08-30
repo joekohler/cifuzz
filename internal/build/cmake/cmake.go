@@ -203,7 +203,7 @@ func (b *Builder) Configure() error {
 
 // Build builds the specified fuzz tests with CMake. The fuzz tests must
 // not contain duplicates.
-func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
+func (b *Builder) Build(fuzzTests []string) ([]*build.CBuildResult, error) {
 	buildDir, err := b.BuildDir()
 	if err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 		return nil, nil
 	}
 
-	var results []*build.Result
+	var results []*build.CBuildResult
 	for _, fuzzTest := range fuzzTests {
 		executable, err := b.findFuzzTestExecutable(fuzzTest)
 		if err != nil {
@@ -261,15 +261,17 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.Result, error) {
 		}
 
 		generatedCorpus := filepath.Join(b.ProjectDir, ".cifuzz-corpus", fuzzTest)
-		result := &build.Result{
-			Name:            fuzzTest,
-			Executable:      executable,
-			GeneratedCorpus: generatedCorpus,
-			SeedCorpus:      seedCorpus,
-			BuildDir:        buildDir,
-			ProjectDir:      b.ProjectDir,
-			Sanitizers:      b.Sanitizers,
-			RuntimeDeps:     runtimeDeps,
+		result := &build.CBuildResult{
+			Name:       fuzzTest,
+			ProjectDir: b.ProjectDir,
+			Sanitizers: b.Sanitizers,
+			BuildResult: &build.BuildResult{
+				Executable:      executable,
+				GeneratedCorpus: generatedCorpus,
+				SeedCorpus:      seedCorpus,
+				BuildDir:        buildDir,
+				RuntimeDeps:     runtimeDeps,
+			},
 		}
 		results = append(results, result)
 	}

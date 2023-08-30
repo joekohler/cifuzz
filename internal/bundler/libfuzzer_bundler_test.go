@@ -54,14 +54,16 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 	}, archiveWriter)
 
 	// Assemble artifacts for fuzzer build results
-	buildResult := &build.Result{
-		Name:        fuzzTest,
-		Executable:  filepath.Join(buildDir, fuzzTest),
-		SeedCorpus:  filepath.Join(projectDir, "seeds"),
-		BuildDir:    buildDir,
-		Sanitizers:  []string{"address"},
-		RuntimeDeps: runtimeDeps,
-		ProjectDir:  projectDir,
+	buildResult := &build.CBuildResult{
+		Name:       fuzzTest,
+		Sanitizers: []string{"address"},
+		ProjectDir: projectDir,
+		BuildResult: &build.BuildResult{
+			Executable:  filepath.Join(buildDir, fuzzTest),
+			SeedCorpus:  filepath.Join(projectDir, "seeds"),
+			BuildDir:    buildDir,
+			RuntimeDeps: runtimeDeps,
+		},
 	}
 	fuzzers, systemDeps, err := b.assembleArtifacts(buildResult)
 	require.NoError(t, err)
@@ -83,14 +85,16 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 	}
 
 	// Assemble artifacts for coverage build results
-	buildResult = &build.Result{
-		Name:        fuzzTest,
-		Executable:  filepath.Join(buildDir, fuzzTest),
-		SeedCorpus:  filepath.Join(projectDir, "seeds"),
-		BuildDir:    buildDir,
-		Sanitizers:  []string{"coverage"},
-		RuntimeDeps: runtimeDeps,
-		ProjectDir:  projectDir,
+	buildResult = &build.CBuildResult{
+		Name:       fuzzTest,
+		Sanitizers: []string{"coverage"},
+		ProjectDir: projectDir,
+		BuildResult: &build.BuildResult{
+			Executable:  filepath.Join(buildDir, fuzzTest),
+			SeedCorpus:  filepath.Join(projectDir, "seeds"),
+			BuildDir:    buildDir,
+			RuntimeDeps: runtimeDeps,
+		},
 	}
 	fuzzers, _, err = b.assembleArtifacts(buildResult)
 	require.NoError(t, err)

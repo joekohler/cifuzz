@@ -102,7 +102,7 @@ func (b *libfuzzerBundler) bundle() ([]*archive.Fuzzer, error) {
 	return fuzzers, nil
 }
 
-func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
+func (b *libfuzzerBundler) buildAllVariants() ([]*build.CBuildResult, error) {
 	fuzzingVariant := configureVariant{
 		// TODO: Do not hardcode these values.
 		Sanitizers: []string{"address"},
@@ -140,8 +140,8 @@ func (b *libfuzzerBundler) buildAllVariants() ([]*build.Result, error) {
 	}
 }
 
-func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVariant) ([]*build.Result, error) {
-	var allResults []*build.Result
+func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVariant) ([]*build.CBuildResult, error) {
+	var allResults []*build.CBuildResult
 	for _, variant := range configureVariants {
 		builder, err := bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
@@ -176,8 +176,8 @@ func (b *libfuzzerBundler) buildAllVariantsBazel(configureVariants []configureVa
 	return allResults, nil
 }
 
-func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVariant) ([]*build.Result, error) {
-	var allResults []*build.Result
+func (b *libfuzzerBundler) buildAllVariantsCMake(configureVariants []configureVariant) ([]*build.CBuildResult, error) {
+	var allResults []*build.CBuildResult
 	for _, variant := range configureVariants {
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
 			ProjectDir: b.opts.ProjectDir,
@@ -236,13 +236,13 @@ func (b *libfuzzerBundler) printBuildingMsg(variant configureVariant) {
 	log.Infof("Building for %s...", typeDisplayString)
 }
 
-func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVariant) ([]*build.Result, error) {
+func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVariant) ([]*build.CBuildResult, error) {
 	if len(b.opts.BuildSystemArgs) > 0 {
 		log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
 			"These arguments are ignored: %s", strings.Join(b.opts.BuildSystemArgs, " "))
 	}
 
-	var results []*build.Result
+	var results []*build.CBuildResult
 	for _, variant := range configureVariants {
 		builder, err := other.NewBuilder(&other.BuilderOptions{
 			ProjectDir:   b.opts.ProjectDir,
@@ -278,7 +278,7 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 
 			// To avoid that subsequent builds overwrite the artifacts
 			// from this build, we copy them to a temporary directory
-			// and adjust the paths in the build.Result struct
+			// and adjust the paths in the build.CBuildResult struct
 			tempDir := filepath.Join(b.opts.tempDir, fuzzTestPrefix(result))
 			err = b.copyArtifactsToTempdir(result, tempDir)
 			if err != nil {
@@ -292,7 +292,7 @@ func (b *libfuzzerBundler) buildAllVariantsOther(configureVariants []configureVa
 	return results, nil
 }
 
-func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.Result, tempDir string) error {
+func (b *libfuzzerBundler) copyArtifactsToTempdir(buildResult *build.CBuildResult, tempDir string) error {
 	fuzzTestExecutableAbsPath := buildResult.Executable
 	isBelow, err := fileutil.IsBelow(fuzzTestExecutableAbsPath, buildResult.BuildDir)
 	if err != nil {
@@ -371,7 +371,7 @@ func (b *libfuzzerBundler) checkDependencies() error {
 }
 
 //nolint:nonamedreturns
-func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.Result) (
+func (b *libfuzzerBundler) assembleArtifacts(buildResult *build.CBuildResult) (
 	fuzzers []*archive.Fuzzer,
 	systemDeps []string,
 	err error,
@@ -599,7 +599,7 @@ depsLoop:
 
 // fuzzTestPrefix returns the path in the resulting artifact archive under which fuzz test specific files should be
 // added.
-func fuzzTestPrefix(buildResult *build.Result) string {
+func fuzzTestPrefix(buildResult *build.CBuildResult) string {
 	sanitizerSegment := strings.Join(buildResult.Sanitizers, "+")
 	if sanitizerSegment == "" {
 		sanitizerSegment = "none"

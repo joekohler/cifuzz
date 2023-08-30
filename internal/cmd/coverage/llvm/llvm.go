@@ -48,7 +48,7 @@ type CoverageGenerator struct {
 	BuildStdout     io.Writer
 	BuildStderr     io.Writer
 
-	buildResult    *build.Result
+	buildResult    *build.CBuildResult
 	tmpDir         string
 	outputDir      string
 	runfilesFinder runfiles.RunfilesFinder

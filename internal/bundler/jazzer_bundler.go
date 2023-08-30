@@ -245,8 +245,8 @@ func (b *jazzerBundler) checkDependencies() error {
 	return nil
 }
 
-func (b *jazzerBundler) runBuild() (*build.Result, error) {
-	var buildResult *build.Result
+func (b *jazzerBundler) runBuild() (*build.BuildResult, error) {
+	var buildResult *build.BuildResult
 	switch b.opts.BuildSystem {
 	case config.BuildSystemMaven:
 		if len(b.opts.BuildSystemArgs) > 0 {
@@ -267,7 +267,7 @@ func (b *jazzerBundler) runBuild() (*build.Result, error) {
 			return nil, err
 		}
 
-		buildResult, err = builder.Build("")
+		buildResult, err = builder.Build()
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +290,7 @@ func (b *jazzerBundler) runBuild() (*build.Result, error) {
 			return nil, err
 		}
 
-		buildResult, err = builder.Build("")
+		buildResult, err = builder.Build()
 		if err != nil {
 			return nil, err
 		}

@@ -9,9 +9,8 @@ import (
 	"code-intelligence.com/cifuzz/util/envutil"
 )
 
-type Result struct {
-	// A name which uniquely identifies the fuzz test and is a valid path
-	Name string
+// BuildResult contains fields which are needed to run the fuzz test
+type BuildResult struct {
 	// Canonical path of the fuzz test executable
 	Executable string
 	// Canonical path of the fuzz test's generated corpus directory
@@ -20,13 +19,25 @@ type Result struct {
 	SeedCorpus string
 	// Canonical path of the build directory
 	BuildDir string
-	// The sanitizers with which the fuzz test was built
-	Sanitizers []string
 	// The canonical paths of the fuzz test's runtime dependencies
 	RuntimeDeps []string
+}
+
+// CBuildResult contains the fields needed to run or bundle a C project which has been built
+type CBuildResult struct {
+	*BuildResult
+	// A name which uniquely identifies the fuzz test and is a valid path
+	Name string
+	// The sanitizers with which the fuzz test was built
+	Sanitizers []string
 	// Canonical path of the directory to which source file paths should
 	// be made relative
 	ProjectDir string
+}
+
+// JavaBuildResult contains the fields needed to run or bundle a Java (or other JVM language) project which has been built
+type JavaBuildResult struct {
+	*BuildResult
 }
 
 func CommonBuildEnv() ([]string, error) {

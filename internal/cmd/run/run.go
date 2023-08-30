@@ -382,7 +382,7 @@ func (c *runCmd) run() error {
 	}
 	defer fileutil.Cleanup(c.tempDir)
 
-	var buildResult *build.Result
+	var buildResult *build.BuildResult
 	buildResult, err = c.buildFuzzTest()
 	if err != nil {
 		return err
@@ -451,7 +451,7 @@ func (c *runCmd) run() error {
 	return nil
 }
 
-func (c *runCmd) buildFuzzTest() (*build.Result, error) {
+func (c *runCmd) buildFuzzTest() (*build.BuildResult, error) {
 	var err error
 
 	buildPrinter := logging.NewBuildPrinter(c.opts.buildStdout, log.BuildInProgressMsg)
@@ -494,7 +494,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		var buildResults []*build.Result
+		var buildResults []*build.BuildResult
 		buildResults, err = builder.BuildForRun([]string{c.opts.fuzzTest})
 		if err != nil {
 			return nil, err
@@ -523,16 +523,17 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		var buildResults []*build.Result
-		buildResults, err = builder.Build([]string{c.opts.fuzzTest})
+		cBuildResults, err := builder.Build([]string{c.opts.fuzzTest})
 		if err != nil {
 			return nil, err
 		}
-
+		// TODO: Maybe it would be more elegant to let builder.Build return
+		//       an empty build result so that this check is not needed.
 		if c.opts.BuildOnly {
 			return nil, nil
 		}
-		return buildResults[0], nil
+
+		return cBuildResults[0].BuildResult, nil
 
 	case config.BuildSystemMaven:
 		if len(c.opts.argsToPass) > 0 {
@@ -554,8 +555,8 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		var buildResult *build.Result
-		buildResult, err = builder.Build(c.opts.fuzzTest)
+		var buildResult *build.BuildResult
+		buildResult, err = builder.Build()
 		if err != nil {
 			return nil, err
 		}
@@ -581,8 +582,8 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		var buildResult *build.Result
-		buildResult, err = builder.Build(c.opts.fuzzTest)
+		var buildResult *build.BuildResult
+		buildResult, err = builder.Build()
 		if err != nil {
 			return nil, err
 		}
@@ -592,7 +593,7 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 		// We return an empty result to proceed with the fuzzing step (which
 		// requires a build result).
 		// *Possible* TODO: refactor runFuzzTest to not require a build result?
-		return &build.Result{}, nil
+		return &build.BuildResult{}, nil
 	case config.BuildSystemOther:
 		if len(c.opts.argsToPass) > 0 {
 			log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
@@ -617,19 +618,18 @@ func (c *runCmd) buildFuzzTest() (*build.Result, error) {
 			return nil, err
 		}
 
-		var buildResult *build.Result
-		buildResult, err = builder.Build(c.opts.fuzzTest)
+		cBuildResult, err := builder.Build(c.opts.fuzzTest)
 		if err != nil {
 			return nil, err
 		}
-		return buildResult, nil
+		return cBuildResult.BuildResult, nil
 	}
 
 	return nil, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
 }
 
 // runFuzzTest runs the fuzz test with the given build result.
-func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
+func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 	var err error
 
 	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
@@ -691,6 +691,8 @@ func (c *runCmd) runFuzzTest(buildResult *build.Result) error {
 		UseMinijail:        c.opts.UseSandbox,
 		Verbose:            viper.GetBool("verbose"),
 	}
+
+	// TODO: Only set ReadOnlyBindings if buildResult.BuildDir != ""
 
 	var runner Runner
 
@@ -961,7 +963,7 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 	return projectName, nil
 }
 
-func (c *runCmd) prepareCorpusDirs(buildResult *build.Result) error {
+func (c *runCmd) prepareCorpusDirs(buildResult *build.BuildResult) error {
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
 		// The generated corpus dir has to be created before starting the fuzzing run.

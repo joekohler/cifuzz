@@ -75,7 +75,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	return b, err
 }
 
-func (b *Builder) Build(targetClass string) (*build.Result, error) {
+func (b *Builder) Build() (*build.BuildResult, error) {
 	gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(b.ProjectDir)
 	if err != nil {
 		return nil, err
@@ -94,14 +94,9 @@ func (b *Builder) Build(targetClass string) (*build.Result, error) {
 		return nil, err
 	}
 
-	buildDir, err := GetBuildDirectory(b.ProjectDir)
-	if err != nil {
-		return nil, err
-	}
-	result := &build.Result{
-		Name:        targetClass,
-		BuildDir:    buildDir,
-		ProjectDir:  b.ProjectDir,
+	result := &build.BuildResult{
+		// BuildDir is not used by Jazzer
+		BuildDir:    "",
 		RuntimeDeps: deps,
 	}
 

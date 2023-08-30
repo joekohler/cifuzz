@@ -123,7 +123,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 }
 
 // Build builds the specified fuzz test via the user-specified build command
-func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
+func (b *Builder) Build(fuzzTest string) (*build.CBuildResult, error) {
 	var err error
 
 	if !slices.Equal(b.Sanitizers, []string{"coverage"}) {
@@ -187,15 +187,17 @@ func (b *Builder) Build(fuzzTest string) (*build.Result, error) {
 	}
 
 	generatedCorpus := filepath.Join(b.ProjectDir, ".cifuzz-corpus", fuzzTest)
-	return &build.Result{
-		Name:            fuzzTest,
-		Executable:      executable,
-		GeneratedCorpus: generatedCorpus,
-		SeedCorpus:      seedCorpus,
-		BuildDir:        wd,
-		ProjectDir:      b.ProjectDir,
-		Sanitizers:      b.Sanitizers,
-		RuntimeDeps:     runtimeDeps,
+	return &build.CBuildResult{
+		Name:       fuzzTest,
+		ProjectDir: b.ProjectDir,
+		Sanitizers: b.Sanitizers,
+		BuildResult: &build.BuildResult{
+			Executable:      executable,
+			GeneratedCorpus: generatedCorpus,
+			SeedCorpus:      seedCorpus,
+			BuildDir:        wd,
+			RuntimeDeps:     runtimeDeps,
+		},
 	}, nil
 }
 

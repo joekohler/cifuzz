@@ -85,7 +85,7 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 // support combining sanitizers, so we can't build with both ASan
 // and UBSan. Therefore, we only build with ASan and plan to upstream
 // support for combining sanitizers.
-func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
+func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.BuildResult, error) {
 	var err error
 
 	var binLabels []string
@@ -188,7 +188,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	}
 
 	// Assemble the build results
-	var results []*build.Result
+	var results []*build.BuildResult
 
 	for _, fuzzTest := range fuzzTests {
 		// Turn the fuzz test label into a valid path
@@ -200,13 +200,11 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 		generatedCorpusBasename := "." + filepath.Base(path) + "_cifuzz_corpus"
 		generatedCorpus := filepath.Join(b.ProjectDir, filepath.Dir(path), generatedCorpusBasename)
 
-		result := &build.Result{
-			Name:            path,
+		result := &build.BuildResult{
 			Executable:      fuzzScript,
 			GeneratedCorpus: generatedCorpus,
 			SeedCorpus:      seedCorpus,
 			BuildDir:        buildDir,
-			Sanitizers:      []string{"address"},
 		}
 		results = append(results, result)
 	}
@@ -214,7 +212,7 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.Result, error) {
 	return results, nil
 }
 
-func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*build.Result, error) {
+func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*build.CBuildResult, error) {
 	var err error
 
 	env, err := build.CommonBuildEnv()
@@ -321,7 +319,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 	}
 
 	// Assemble the build results
-	var results []*build.Result
+	var results []*build.CBuildResult
 
 	for _, fuzzTest := range fuzzTests {
 		// Get the path to the archive created by the build
@@ -362,7 +360,7 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 
 		// Find the runtime dependencies. The bundler will include them
 		// in the bundle because below we set the BuildDir field of the
-		// build.Result to extractedCorpus, which contains all the
+		// build.CBuildResult to extractedCorpus, which contains all the
 		// runtime dependencies, causing the bundler to treat them all
 		// as created by the build and therefore including them in the
 		// bundle.
@@ -388,15 +386,17 @@ func (b *Builder) BuildForBundle(sanitizers []string, fuzzTests []string) ([]*bu
 			}
 		}
 
-		result := &build.Result{
-			Name:       path,
-			Executable: executable,
-			SeedCorpus: extractedCorpus,
-			BuildDir:   extractedDir,
+		result := &build.CBuildResult{
+			Name: path,
 			// Bazel builds files with PWD=/proc/self/cwd
-			ProjectDir:  "/proc/self/cwd",
-			Sanitizers:  sanitizers,
-			RuntimeDeps: runtimeDeps,
+			ProjectDir: "/proc/self/cwd",
+			Sanitizers: sanitizers,
+			BuildResult: &build.BuildResult{
+				Executable:  executable,
+				SeedCorpus:  extractedCorpus,
+				BuildDir:    extractedDir,
+				RuntimeDeps: runtimeDeps,
+			},
 		}
 		results = append(results, result)
 	}
@@ -479,7 +479,7 @@ func checkCIFuzzBazelRepoCommit() error {
 		// If the reason for the error is that the cifuzz repository is
 		// missing, produce a more helpful error message.
 		if strings.Contains(err.Error(), "target 'cifuzz' not declared in package") {
-			return cmdutils.WrapExecError(errors.Errorf(`The "cifuzz" repository is not defined in the WORKSPACE file, 
+			return cmdutils.WrapExecError(errors.Errorf(`The "cifuzz" repository is not defined in the WORKSPACE file,
 run 'cifuzz init' to see setup instructions.`), cmd)
 		}
 		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
@@ -487,7 +487,7 @@ run 'cifuzz init' to see setup instructions.`), cmd)
 	matches := cifuzzCommitRegex.FindSubmatch(out)
 	if matches == nil {
 		return cmdutils.WrapExecError(errors.Errorf(
-			`Failed to parse the definition of the "cifuzz" repository in the WORKSPACE file, 
+			`Failed to parse the definition of the "cifuzz" repository in the WORKSPACE file,
 run 'cifuzz init' to see setup instructions.
 bazel query output:
 %s`, string(out)), cmd)
@@ -514,7 +514,7 @@ func checkRulesFuzzingVersion() error {
 		// missing, produce a more helpful error message.
 		if strings.Contains(err.Error(), "target 'cifuzz' not declared in package") {
 			return cmdutils.WrapExecError(errors.Errorf(
-				`The "rules_fuzzing" repository is not defined in the WORKSPACE file, 
+				`The "rules_fuzzing" repository is not defined in the WORKSPACE file,
 run 'cifuzz init' to see setup instructions.`),
 				cmd)
 		}
