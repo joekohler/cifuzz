@@ -32,7 +32,7 @@ type options struct {
 	Interactive bool   `mapstructure:"interactive"`
 	Server      string `mapstructure:"server"`
 	Project     string `mapstructure:"project"`
-	testLang    config.FuzzTestType
+	testLang    string
 }
 
 func New() *cobra.Command {
@@ -62,13 +62,13 @@ func New() *cobra.Command {
 			}
 
 			if len(args) == 1 {
-				opts.testLang = config.FuzzTestType(args[0])
+				opts.testLang = args[0]
 			}
 
 			// Override detected build system if test language is specified.
 			if opts.testLang != "" {
 				// opts.testLang is checked in the RunE function to be a valid initTestType.
-				opts.BuildSystem = supportedInitTestTypes[string(opts.testLang)]
+				opts.BuildSystem = supportedInitTestTypes[opts.testLang]
 			} else {
 				// Detect and validate buildSystem only when testLang is not specified by the user.
 				opts.BuildSystem, err = config.DetermineBuildSystem(opts.Dir)
@@ -143,7 +143,7 @@ Use 'cifuzz create' to create your first fuzz test.`)
 	return nil
 }
 
-func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, testLang config.FuzzTestType) {
+func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, testLang string) {
 	switch buildSystem {
 	case config.BuildSystemBazel:
 		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
@@ -205,7 +205,7 @@ func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, test
 	}
 }
 
-func getNodeProjectLang() (config.FuzzTestType, error) {
+func getNodeProjectLang() (string, error) {
 	langOptions := map[string]string{
 		"JavaScript": string(config.JavaScript),
 		"TypeScript": string(config.TypeScript),
@@ -215,7 +215,7 @@ func getNodeProjectLang() (config.FuzzTestType, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	return config.FuzzTestType(userSelectedLang), nil
+	return userSelectedLang, nil
 }
 
 // map of supported test types/build systems for init command. Used to validate input and show args in --help
