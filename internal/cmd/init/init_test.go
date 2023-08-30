@@ -3,11 +3,13 @@ package init
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
@@ -65,4 +67,15 @@ func TestInitCmdForNodeWithTSLanguageArg(t *testing.T) {
 	assert.Contains(t, stdErr, "jest.config.ts")
 	assert.Contains(t, stdErr, "To introduce the fuzz function types globally, add the following import to globals.d.ts:")
 	assert.FileExists(t, filepath.Join(testDir, "cifuzz.yaml"))
+}
+
+func TestSupportedInitTestTypes(t *testing.T) {
+	// Test that the supportedInitTestTypesMap and supportedInitTestTypes are in sync.
+	initTestTypes := supportedInitTestTypes
+	sort.Strings(initTestTypes)
+
+	initTestTypesKeys := maps.Keys(supportedInitTestTypesMap)
+	sort.Strings(initTestTypesKeys)
+
+	assert.Equal(t, initTestTypesKeys, initTestTypes)
 }
