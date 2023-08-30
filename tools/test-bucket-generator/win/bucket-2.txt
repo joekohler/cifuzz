@@ -1,4 +1,4 @@
-code-intelligence.com/cifuzz/integration-tests/gradle/java
-code-intelligence.com/cifuzz/integration-tests/java-maven-spring
-code-intelligence.com/cifuzz/integration-tests/other
-code-intelligence.com/cifuzz/tools/cmake
+code-intelligence.com/cifuzz/integration-tests/java-maven
+code-intelligence.com/cifuzz/integration-tests/nodejs
+code-intelligence.com/cifuzz/pkg/runner/libfuzzer/integrationtest
+code-intelligence.com/cifuzz/internal/builder
