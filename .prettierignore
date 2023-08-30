@@ -4,3 +4,4 @@ package-lock.json
 **/.cifuzz-*/
 coverage/
 examples/bazel/bazel-*/
+examples/**/build
