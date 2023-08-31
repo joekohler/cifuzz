@@ -100,7 +100,8 @@ type Options struct {
 	// the point where the fuzzer has completed initialization.
 	StartupOutputWriter io.Writer
 	// The directory to which paths in the stack trace are made relative to
-	ProjectDir string
+	ProjectDir  string
+	SourceFiles []string
 }
 
 func NewLibfuzzerOutputParser(options *Options) *parser {
@@ -615,10 +616,15 @@ func (p *parser) finalizeAndSendPendingFinding(ctx context.Context) error {
 	// Parse the stack trace
 	parserOpts := &stacktrace.ParserOptions{
 		ProjectDir:      p.ProjectDir,
+		SourceFiles:     p.SourceFiles,
 		SupportJazzer:   p.SupportJazzer,
 		SupportJazzerJS: p.SupportJazzerJS,
 	}
-	p.pendingFinding.StackTrace, err = stacktrace.NewParser(parserOpts).Parse(p.pendingFinding.Logs)
+	parser, err := stacktrace.NewParser(parserOpts)
+	if err != nil {
+		return err
+	}
+	p.pendingFinding.StackTrace, err = parser.Parse(p.pendingFinding.Logs)
 	if err != nil {
 		return err
 	}

@@ -24,6 +24,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/bazel"
 	"code-intelligence.com/cifuzz/internal/build/cmake"
+	"code-intelligence.com/cifuzz/internal/build/java"
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	"code-intelligence.com/cifuzz/internal/build/other"
@@ -712,6 +713,16 @@ func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
 		runner = libfuzzer.NewRunner(runnerOpts)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
+		sourceDirs, err := java.SourceDirs(c.opts.ProjectDir, c.opts.BuildSystem)
+		if err != nil {
+			return err
+		}
+		testDirs, err := java.TestDirs(c.opts.ProjectDir, c.opts.BuildSystem)
+		if err != nil {
+			return err
+		}
+		runnerOpts.SourceDirs = append(sourceDirs, testDirs...)
+
 		runnerOpts := &jazzer.RunnerOptions{
 			TargetClass:      c.opts.fuzzTest,
 			TargetMethod:     c.opts.targetMethod,

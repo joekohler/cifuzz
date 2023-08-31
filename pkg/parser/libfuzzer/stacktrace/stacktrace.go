@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/util/regexutil"
 )
 
@@ -15,7 +16,7 @@ var framePattern = regexp.MustCompile(
 	`#(?P<frame_number>\d+)\s+0x[a-fA-F0-9]+\s+in\s+(?P<function>(\(anonymous namespace\))?[^(\s]+).*\s(?P<source_file>\S+?):(?P<line>\d+):?(?P<column>\d*)`)
 
 // Special pattern for Java stack traces
-var framePatternJava = regexp.MustCompile(`\sat\s(?P<source_file>\S+)[.](?P<function>\S+[^<>])[(]\S+:(?P<line>\d+)`)
+var framePatternJava = regexp.MustCompile(`^\s*at\s+(?P<function>[^(]*)\((?P<source_file>[^:]*):(?P<line>\d*)\)\s*$`)
 
 // Special pattern for Node stack traces
 var framePatternNode = regexp.MustCompile(`\s*at\s((?P<function>\S+)\s+(\[.*\])?\s*\()?(?P<source_file>\S+?):(?P<line>\d+):?(?P<column>\d*)\)?`)
@@ -38,16 +39,28 @@ type StackFrame struct {
 
 type ParserOptions struct {
 	ProjectDir      string
+	SourceFiles     []string
 	SupportJazzer   bool
 	SupportJazzerJS bool
 }
 
 type parser struct {
 	*ParserOptions
+	*sourcemap.SourceMap
 }
 
-func NewParser(opts *ParserOptions) *parser {
-	return &parser{opts}
+func NewParser(opts *ParserOptions) (*parser, error) {
+	var err error
+	var sourceMap *sourcemap.SourceMap
+
+	if opts.SupportJazzer {
+		sourceMap, err = sourcemap.CreateSourceMap(opts.ProjectDir, opts.SourceFiles)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &parser{opts, sourceMap}, nil
 }
 
 // Parse parses output from an error reported by libFuzzer or a sanitizer
@@ -142,6 +155,14 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 		return nil, nil
 	}
 
+	function := matches["function"]
+	if p.SupportJazzer {
+		function = p.filterPackages(function)
+		if function == "" {
+			return nil, nil
+		}
+	}
+
 	var frameNumber uint64
 	if matches["frame_number"] != "" {
 		frameNumber, err = strconv.ParseUint(matches["frame_number"], 10, 32)
@@ -164,13 +185,19 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 		}
 	}
 
-	return &StackFrame{
+	stackFrame := &StackFrame{
 		SourceFile:  filepath.ToSlash(sourceFile),
 		Line:        uint32(lineNumber),
 		Column:      uint32(column),
 		FrameNumber: uint32(frameNumber),
-		Function:    matches["function"],
-	}, nil
+		Function:    function,
+	}
+
+	if p.SupportJazzer {
+		p.setJavaSourceFilePath(stackFrame)
+	}
+
+	return stackFrame, nil
 }
 
 func (p *parser) validateSourceFile(path string) string {
@@ -211,18 +238,6 @@ func (p *parser) validateSourceFile(path string) string {
 		return ""
 	}
 
-	if p.SupportJazzer {
-		// Ignore files from the Java standard library and jazzer. We can't filter
-		// these out via the regex because go regex doesn't support
-		// lookups to filter out specific words.
-		javaPrefixes := []string{"java.base", "java.lang", "jaz.Zer", "sun.reflect"}
-		for _, prefix := range javaPrefixes {
-			if strings.Contains(path, prefix) {
-				return ""
-			}
-		}
-	}
-
 	// Ignore files from node_modules
 	if p.SupportJazzerJS {
 		if strings.Contains(path, "node_modules") {
@@ -231,6 +246,20 @@ func (p *parser) validateSourceFile(path string) string {
 	}
 
 	return path
+}
+
+func (p *parser) filterPackages(packageName string) string {
+	// Ignore files from the Java standard library and jazzer. We can't filter
+	// these out via the regex because go regex doesn't support
+	// lookups to filter out specific words.
+	javaPrefixes := []string{"java.base", "java.lang", "jaz.Zer", "sun.reflect"}
+	for _, prefix := range javaPrefixes {
+		if strings.Contains(packageName, prefix) {
+			return ""
+		}
+	}
+
+	return packageName
 }
 
 func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
@@ -264,4 +293,29 @@ func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
 		Line:       uint32(lineNumber),
 		Column:     uint32(column),
 	}, nil
+}
+
+func (p *parser) setJavaSourceFilePath(frame *StackFrame) {
+	// remove function and class name
+	possiblePackageName := frame.Function
+	possiblePackageName = removeLastPart(removeLastPart(possiblePackageName))
+	// In the case of nested classes we are not at the true package
+	// name yet. Remove possible class suffixes until we find the
+	// Java package that matches.
+	for possiblePackageName != "" {
+		for _, relFile := range p.SourceMap.JavaPackages[possiblePackageName] {
+			if filepath.Base(relFile) == frame.SourceFile {
+				frame.SourceFile = relFile
+			}
+		}
+		possiblePackageName = removeLastPart(possiblePackageName)
+	}
+}
+
+func removeLastPart(packageName string) string {
+	sepIndex := strings.LastIndex(packageName, ".")
+	if sepIndex > 0 {
+		return packageName[0:sepIndex]
+	}
+	return ""
 }
