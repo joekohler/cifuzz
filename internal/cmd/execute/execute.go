@@ -1,9 +1,14 @@
+//go:build !windows
+
 package execute
 
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -141,6 +146,43 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 }
 
 func (c *executeCmd) run(metadata *archive.Metadata) error {
+	// Check if we're running as the user specified via the UID environment variable.
+	// If not, execute the command as that user.
+	uidStr := os.Getenv("CIFUZZ_UID")
+	if uidStr == "" {
+		return errors.New("CIFUZZ_UID environment variable not set")
+	}
+	uid, err := strconv.Atoi(uidStr)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if uid != os.Getuid() {
+		// Change the owner of the current working directory to the specified UID
+		// so that the fuzzer can write to the current working directory.
+		err = os.Chown(".", uid, -1)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// Execute the current command as the user specified via the UID environment variable.
+		// This is useful when running cifuzz in a container, where the user inside the container
+		// may not have the same UID as the user on the host.
+		// Note: This is only supported on Linux.
+		err = syscall.Setuid(uid)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		path, err := exec.LookPath(os.Args[0])
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		log.Infof("Executing command as UID %d: %s", uid, strings.Join(os.Args, " "))
+		err = syscall.Exec(path, os.Args, os.Environ())
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	fuzzer, err := findFuzzer(c.opts.name, metadata)
 	if err != nil {
 		return err

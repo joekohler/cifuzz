@@ -101,7 +101,6 @@ func New() (*cobra.Command, error) {
 	rootCmd.AddCommand(initCmd.New())
 	rootCmd.AddCommand(containerCmd.New())
 	rootCmd.AddCommand(createCmd.New())
-	rootCmd.AddCommand(executeCmd.New())
 	rootCmd.AddCommand(runCmd.New())
 	rootCmd.AddCommand(remoteRunCmd.New())
 	rootCmd.AddCommand(reloadCmd.New())
@@ -109,6 +108,11 @@ func New() (*cobra.Command, error) {
 	rootCmd.AddCommand(coverageCmd.New())
 	rootCmd.AddCommand(findingCmd.New())
 	rootCmd.AddCommand(integrateCmd.New())
+
+	if runtime.GOOS != "windows" {
+		// The execute command is not supported on Windows
+		rootCmd.AddCommand(executeCmd.New())
+	}
 
 	return rootCmd, nil
 }

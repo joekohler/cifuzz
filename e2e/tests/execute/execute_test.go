@@ -1,6 +1,9 @@
 package execute_test
 
 import (
+	"fmt"
+	"os"
+	"runtime"
 	"testing"
 
 	"code-intelligence.com/cifuzz/e2e"
@@ -39,6 +42,7 @@ var executeTests = &[]e2e.TestCase{
 		Command:      "execute",
 		Args:         []string{"invalid.name"},
 		SampleFolder: []string{"folder-with-unpacked-bundle"},
+		Environment:  append(os.Environ(), fmt.Sprintf("CIFUZZ_UID=%d", os.Getuid())),
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			output.Failed().ErrorContains("fuzzer 'invalid.name' not found in a bundle metadata file")
 		},
@@ -46,5 +50,8 @@ var executeTests = &[]e2e.TestCase{
 }
 
 func TestExecute(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("The execute command is not supported on Windows")
+	}
 	e2e.RunTests(t, *executeTests)
 }

@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -23,12 +24,25 @@ func Create(imageID string, printJSON bool) (string, error) {
 		return "", err
 	}
 
-	hostConfig := &container.HostConfig{}
+	workDir, err := os.Getwd()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	hostConfig := &container.HostConfig{
+		Binds: []string{
+			// Mount the current working directory into the container. This
+			// allows the fuzz container to copy inputs into the generated and
+			// managed seed corpus.
+			fmt.Sprintf("%[1]s:%[1]s", workDir),
+		},
+	}
 	containerConfig := &container.Config{
 		Image:        imageID,
 		Cmd:          []string{"--single-fuzz-test"},
 		AttachStdout: true,
 		AttachStderr: true,
+		// Tell the cifuzz execute command which UID it should use.
+		Env: []string{fmt.Sprintf("CIFUZZ_UID=%d", os.Getuid())},
 	}
 
 	if viper.GetBool("verbose") {
