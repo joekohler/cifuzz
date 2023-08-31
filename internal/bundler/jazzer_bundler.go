@@ -9,11 +9,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/build"
+	javaBuild "code-intelligence.com/cifuzz/internal/build/java"
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
@@ -21,18 +21,12 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/java"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
-
-// SourceMap provides a mapping from package names
-// into the corresponding source file locations
-type SourceMap struct {
-	JavaPackages map[string][]string `json:"java_packages,omitempty"`
-}
 
 // The directory inside the fuzzing artifact used to store runtime dependencies
 const runtimeDepsPath = "runtime_deps"
@@ -86,10 +80,19 @@ func (b *jazzerBundler) assembleArtifacts(fuzzTests []string, targetMethods []st
 	}
 
 	// add source map to archive
-	sourceMap, err := b.createSourceMap()
+	sourceDirs, err := javaBuild.SourceDirs(b.opts.ProjectDir, b.opts.BuildSystem)
 	if err != nil {
 		return nil, err
 	}
+	testDirs, err := javaBuild.TestDirs(b.opts.ProjectDir, b.opts.BuildSystem)
+	if err != nil {
+		return nil, err
+	}
+	sourceMap, err := sourcemap.CreateSourceMap(b.opts.ProjectDir, append(sourceDirs, testDirs...))
+	if err != nil {
+		return nil, err
+	}
+
 	if len(sourceMap.JavaPackages) > 0 {
 		jsonSourceMap, err := json.Marshal(sourceMap)
 		if err != nil {
@@ -384,116 +387,6 @@ func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []st
 	}
 
 	return fuzzTests, targetMethods, nil
-}
-
-func (b *jazzerBundler) getTestDirs() ([]string, error) {
-	var testDirs []string
-	var err error
-	if b.opts.BuildSystem == config.BuildSystemGradle {
-		testDirs, err = gradle.GetTestSourceSets(b.opts.ProjectDir)
-		if err != nil {
-			return nil, err
-		}
-	} else if b.opts.BuildSystem == config.BuildSystemMaven {
-		testDir, err := maven.GetTestDir(b.opts.ProjectDir)
-		if err != nil {
-			return nil, err
-		}
-		if testDir != "" {
-			testDirs = append(testDirs, testDir)
-		}
-	} else {
-		defaultTestDir := filepath.Join(b.opts.ProjectDir, "src", "test")
-		exists, err := fileutil.Exists(defaultTestDir)
-		if err != nil {
-			return nil, errors.WithMessagef(err, "Error checking if default test dir %s exists", defaultTestDir)
-		}
-		if exists {
-			testDirs = append(testDirs, defaultTestDir)
-		}
-	}
-
-	return testDirs, nil
-}
-
-func (b *jazzerBundler) getSourceDirs() ([]string, error) {
-	var sourceDirs []string
-	var err error
-	if b.opts.BuildSystem == config.BuildSystemGradle {
-		sourceDirs, err = gradle.GetMainSourceSets(b.opts.ProjectDir)
-		if err != nil {
-			return nil, err
-		}
-	} else if b.opts.BuildSystem == config.BuildSystemMaven {
-		sourceDir, err := maven.GetSourceDir(b.opts.ProjectDir)
-		if err != nil {
-			return nil, err
-		}
-		if sourceDir != "" {
-			sourceDirs = append(sourceDirs, sourceDir)
-		}
-	} else {
-		defaultSourceDir := filepath.Join(b.opts.ProjectDir, "src", "main")
-		exists, err := fileutil.Exists(defaultSourceDir)
-		if err != nil {
-			return nil, errors.WithMessagef(err, "Error checking if default source dir %s exists", defaultSourceDir)
-		}
-		if exists {
-			sourceDirs = append(sourceDirs, defaultSourceDir)
-		}
-	}
-
-	return sourceDirs, nil
-}
-
-func (b *jazzerBundler) createSourceMap() (*SourceMap, error) {
-	var sourceFiles []string
-
-	sourceDirs, err := b.getSourceDirs()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	testDirs, err := b.getTestDirs()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	dirs := append(sourceDirs, testDirs...)
-	for _, dir := range dirs {
-		files, err := zglob.Glob(filepath.Join(dir, "**", "*.{java,kt}"))
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		sourceFiles = append(sourceFiles, files...)
-	}
-
-	sourceMap := SourceMap{
-		JavaPackages: make(map[string][]string),
-	}
-	for _, file := range sourceFiles {
-		packageName, err := func() (string, error) {
-			fd, err := os.Open(file)
-			if err != nil {
-				return "", errors.WithStack(err)
-			}
-			defer fd.Close()
-			return java.GetPackageFromSource(fd), nil
-		}()
-		if err != nil {
-			return nil, err
-		}
-		if packageName == "" {
-			continue
-		}
-		relPath, err := filepath.Rel(b.opts.ProjectDir, file)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		// Replace double slashes on Windows with forward slashes
-		relPath = strings.ReplaceAll(relPath, "\\", "/")
-		sourceMap.JavaPackages[packageName] = append(sourceMap.JavaPackages[packageName], relPath)
-	}
-
-	return &sourceMap, nil
 }
 
 func getUniqueArtifactName(dependency string, artifactsMap map[string]uint) string {
