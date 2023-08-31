@@ -90,11 +90,11 @@ func TestIntegration_Gradle(t *testing.T) {
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
-			SourceFile:  "com.example.ExploreMe",
+			SourceFile:  "src/main/java/com/example/ExploreMe.java",
 			Line:        19,
 			Column:      0,
 			FrameNumber: 0,
-			Function:    "exploreMe",
+			Function:    "com.example.ExploreMe.exploreMe",
 		},
 	}
 

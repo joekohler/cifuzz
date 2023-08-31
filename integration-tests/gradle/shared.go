@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
-	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
@@ -123,7 +123,7 @@ func TestBundleGradle(t *testing.T, lang string, dir string, cifuzz string, args
 	// Verify contents of source_map.json
 	content, err = os.ReadFile(sourceMapPath)
 	require.NoError(t, err)
-	sourceMap := bundler.SourceMap{}
+	sourceMap := sourcemap.SourceMap{}
 	err = json.Unmarshal(content, &sourceMap)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(sourceMap.JavaPackages))

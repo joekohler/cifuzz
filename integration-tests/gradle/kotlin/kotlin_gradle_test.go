@@ -128,11 +128,11 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
-			SourceFile:  "com.example.ExploreMe",
+			SourceFile:  "src/main/kotlin/com/example/ExploreMe.kt",
 			Line:        13,
 			Column:      0,
 			FrameNumber: 0,
-			Function:    "exploreMe",
+			Function:    "com.example.ExploreMe.exploreMe",
 		},
 	}
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)

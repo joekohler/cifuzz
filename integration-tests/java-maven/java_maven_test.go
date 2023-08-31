@@ -16,9 +16,9 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
-	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -108,11 +108,11 @@ func TestIntegration_Maven(t *testing.T) {
 
 	expectedStackTrace := []*stacktrace.StackFrame{
 		{
-			SourceFile:  "com.example.ExploreMe",
+			SourceFile:  "src/main/java/com/example/ExploreMe.java",
 			Line:        19,
 			Column:      0,
 			FrameNumber: 0,
-			Function:    "exploreMe",
+			Function:    "com.example.ExploreMe.exploreMe",
 		},
 	}
 
@@ -353,7 +353,7 @@ func testBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	// Verify contents of source_map.json
 	content, err = os.ReadFile(sourceMapPath)
 	require.NoError(t, err)
-	sourceMap := bundler.SourceMap{}
+	sourceMap := sourcemap.SourceMap{}
 	err = json.Unmarshal(content, &sourceMap)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(sourceMap.JavaPackages))
