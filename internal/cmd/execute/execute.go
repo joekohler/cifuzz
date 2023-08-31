@@ -15,6 +15,7 @@ import (
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -55,11 +56,21 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			bindFlags()
 			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
 			cmdutils.ViperMustBindPFlag("print-bundle-metadata", cmd.Flags().Lookup("print-bundle-metadata"))
+			cmdutils.ViperMustBindPFlag("stop-signal-file", cmd.Flags().Lookup("stop-signal-file"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
 			opts.PrintBundleMetadata = viper.GetBool("print-bundle-metadata")
 			opts.PrintJSON = viper.GetBool("print-json")
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			if signalFile := viper.GetString("stop-signal-file"); signalFile != "" {
+				defer func() {
+					_, err := os.Create(signalFile)
+					if err != nil {
+						log.Errorf(err, "Failed to create stop signal file: %v", err)
+					}
+				}()
+			}
+
 			metadata, err := getMetadata()
 			if err != nil {
 				return err
@@ -117,6 +128,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 
 	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
 	cmd.Flags().Bool("print-bundle-metadata", false, "Print the bundle metadata as JSON.")
+	cmd.Flags().String("stop-signal-file", "", "CI Fuzz will create a file 'cifuzz-execution-finished' upon exit")
 
 	// Note: If a flag should be configurable via viper as well (i.e.
 	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
