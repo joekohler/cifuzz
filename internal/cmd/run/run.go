@@ -404,7 +404,6 @@ func (c *runCmd) run() error {
 		c.opts.fuzzTest,
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           c.opts.ProjectDir,
-			BuildSystem:          c.opts.BuildSystem,
 			GeneratedCorpusDir:   buildResult.GeneratedCorpus,
 			ManagedSeedCorpusDir: buildResult.SeedCorpus,
 			UserSeedCorpusDirs:   c.opts.SeedCorpusDirs,

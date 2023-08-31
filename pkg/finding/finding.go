@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -14,11 +13,9 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/fileutil"
-	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 const (
@@ -152,7 +149,7 @@ func (f *Finding) saveJSON(jsonPath string) error {
 
 // CopyInputFileAndUpdateFinding copies the input file to the finding directory and
 // the seed corpus directory and adjusts the finding logs accordingly.
-func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, buildSystem string) error {
+func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string) error {
 	// Acquire a file lock to avoid races with other cifuzz processes
 	// running in parallel
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
@@ -170,17 +167,8 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, build
 		return errors.WithStack(err)
 	}
 
-	originalPath := f.InputFile
 	// Actually copy the input file
-	err = f.copyInputFile(projectDir, seedCorpusDir, buildSystem)
-	// Rename the basename of the original input file so that it's easy to match
-	// to a cifuzz finding during IDE regression tests.
-	renameErr := f.renameInputFile(originalPath)
-	if renameErr != nil {
-		// Failing to rename the input file just means missing out on convenience
-		// and does not impact the finding functionality, so don't fail.
-		log.Debugf("Failed to rename input file: %v", renameErr)
-	}
+	err = f.copyInputFile(projectDir, seedCorpusDir)
 
 	// Release the file lock
 	unlockErr := mutex.Unlock()
@@ -193,7 +181,7 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir, build
 	return err
 }
 
-func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) error {
+func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
 	path := filepath.Join(findingDir, nameCrashingInput)
 
@@ -205,22 +193,17 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) e
 		return errors.WithStack(err)
 	}
 
-	if sliceutil.Contains([]string{
-		config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther,
-	},
-		buildSystem,
-	) {
-		// Copy the input file to the seed corpus dir.
-		// This is only necessary for c/c++ projects.
-		err = os.MkdirAll(seedCorpusDir, 0o755)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		f.seedPath = filepath.Join(seedCorpusDir, f.Name)
-		err = copy.Copy(f.InputFile, f.seedPath)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	// Copy the input file to the seed corpus dir.
+	err = os.MkdirAll(seedCorpusDir, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	// Different inputs can result in the same finding, so we append the
+	// original basename to avoid basename collisions.
+	f.seedPath = filepath.Join(seedCorpusDir, f.Name+"-"+filepath.Base(f.InputFile))
+	err = copy.Copy(f.InputFile, f.seedPath)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	// Replace the old filename in the finding logs. Replace it with the
@@ -246,27 +229,6 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir, buildSystem string) e
 		return errors.WithStack(err)
 	}
 	f.InputFile = pathRelativeToProjectDir
-	return nil
-}
-
-var expectedInputFileBasename = regexp.MustCompile("^(?:crash|oom|timeout)-([0-9a-f]{40})$")
-
-func (f *Finding) renameInputFile(originalPath string) error {
-	basename := filepath.Base(originalPath)
-	matches := expectedInputFileBasename.FindStringSubmatch(basename)
-	if matches == nil {
-		// An unexpected output file is not an error, we just don't rename it.
-		return nil
-	}
-	// Different inputs can result in the same finding, so we need to keep the hash to prevent
-	// basename collisions.
-	newBasename := f.Name + "-" + matches[1]
-	newPath := filepath.Join(filepath.Dir(originalPath), newBasename)
-	err := os.Rename(originalPath, newPath)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	log.Debugf("Renamed input file from %s to %s", originalPath, newPath)
 	return nil
 }
 

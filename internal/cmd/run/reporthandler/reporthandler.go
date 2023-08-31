@@ -32,7 +32,6 @@ type ReportHandlerOptions struct {
 	GeneratedCorpusDir   string
 	ManagedSeedCorpusDir string
 	UserSeedCorpusDirs   []string
-	BuildSystem          string
 	PrintJSON            bool
 }
 
@@ -208,7 +207,16 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	f.Name = names.GetDeterministicName(nameSeed)
 
 	if f.InputFile != "" {
-		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.ManagedSeedCorpusDir, h.BuildSystem)
+		if h.ManagedSeedCorpusDir == "" {
+			// Handle the case that the seed corpus directory was not set. In
+			// the case of Java fuzz tests, the seed corpus directory is
+			// printed by Jazzer. We parse that output and send it to the
+			// report handler via a report with an empty finding. If we did
+			// not receive that report yet, we cannot copy the input file to
+			// the seed corpus directory.
+			return errors.New("finding before seed corpus directory was set")
+		}
+		err = f.CopyInputFileAndUpdateFinding(h.ProjectDir, h.ManagedSeedCorpusDir)
 		if err != nil {
 			return err
 		}

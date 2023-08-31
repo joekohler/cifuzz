@@ -13,6 +13,7 @@ import (
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 type RunnerOptions struct {
@@ -123,6 +124,17 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	// Add any additional corpus directories as further positional arguments
 	args = append(args, r.SeedCorpusDirs...)
+
+	// Set the directory in which fuzzing artifacts (e.g. crashes) are
+	// stored. This must be an absolute path, because else crash files
+	// are created in the current working directory, which the fuzz test
+	// could change, causing the parser to not find the crash files.
+	outputDir, err := os.MkdirTemp("", "jazzer-out-")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer fileutil.Cleanup(outputDir)
+	args = append(args, options.LibFuzzerArtifactPrefixFlag(outputDir+"/"))
 
 	// The environment we run the fuzzer in
 	env, err := r.FuzzerEnvironment()
