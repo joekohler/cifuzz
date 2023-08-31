@@ -36,7 +36,7 @@ code-intelligence.com/cifuzz/internal/cmdutils/resolve
 code-intelligence.com/cifuzz/internal/cmd/run
 code-intelligence.com/cifuzz/pkg/dependencies
 code-intelligence.com/cifuzz/pkg/dialog
-code-intelligence.com/cifuzz/internal/build/maven
+code-intelligence.com/cifuzz/internal/build/java/maven
 code-intelligence.com/cifuzz/internal/cmd/finding
 code-intelligence.com/cifuzz/internal/cmdutils
 code-intelligence.com/cifuzz/internal/ldd

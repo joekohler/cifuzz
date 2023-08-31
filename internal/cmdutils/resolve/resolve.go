@@ -13,8 +13,8 @@ import (
 	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 
-	"code-intelligence.com/cifuzz/internal/build/gradle"
-	"code-intelligence.com/cifuzz/internal/build/maven"
+	"code-intelligence.com/cifuzz/internal/build/java/gradle"
+	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/util/fileutil"

@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"code-intelligence.com/cifuzz/internal/build/gradle"
-	"code-intelligence.com/cifuzz/internal/build/maven"
+	"code-intelligence.com/cifuzz/internal/build/java/gradle"
+	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	bazelCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/bazel"
 	gradleCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/gradle"
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
