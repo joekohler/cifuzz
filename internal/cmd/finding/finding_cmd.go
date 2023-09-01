@@ -307,6 +307,10 @@ func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
 	var err error
 
 	token := auth.GetToken(cmd.opts.Server)
+	if token == "" {
+		log.Debugf("Skipping error details because no token is available")
+		return nil, nil
+	}
 	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
 	apiClient := api.NewClient(cmd.opts.Server, cmd.Command.Root().Version)

@@ -18,6 +18,10 @@ type errorDetailsJSON struct {
 
 // GetErrorDetails gets the error details from the API
 func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, error) {
+	if token == "" {
+		panic("GetErrorDetails called with empty token")
+	}
+
 	// get it from the API
 	url, err := url.JoinPath("v2", "error-details")
 	if err != nil {
