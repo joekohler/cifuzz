@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -19,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -28,6 +30,7 @@ type options struct {
 	ConfigDir   string `mapstructure:"config-dir"`
 	Interactive bool   `mapstructure:"interactive"`
 	Server      string `mapstructure:"server"`
+	Project     string `mapstructure:"project"`
 }
 
 type findingCmd struct {
@@ -86,27 +89,77 @@ func newWithOptions(opts *options) *cobra.Command {
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddInteractiveFlag,
 		cmdutils.AddServerFlag,
+		cmdutils.AddProjectFlag,
 	)
 
 	return cmd
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	errorDetails, err := auth.TryGetErrorDetails(cmd.opts.Server)
+	errorDetails, token, err := auth.TryGetErrorDetailsAndToken(cmd.opts.Server)
 	if err != nil {
 		return err
+	}
+
+	var apiClient *api.APIClient
+	var remoteAPIFindings api.Findings
+	if token != "" {
+		apiClient = api.NewClient(cmd.opts.Server)
+
+		// get remote findings if project is set and user is authenticated
+		if cmd.opts.Project != "" {
+			remoteAPIFindings, err = apiClient.DownloadRemoteFindings(cmd.opts.Project, token)
+			if err != nil {
+				return err
+			}
+
+		}
+	} else {
+		log.Infof(messaging.UsageWarning())
+	}
+
+	localFindings, err := finding.ListFindings(cmd.opts.ProjectDir, errorDetails)
+	if err != nil {
+		return err
+	}
+
+	// store remote findings in a slice of finding.Finding so that we can search
+	// them individually later. These won't be stored on disk.
+	var remoteFindings []*finding.Finding
+	for i := range remoteAPIFindings.Findings {
+		// we access the element via index to avoid copying the struct
+		rf := remoteAPIFindings.Findings[i]
+
+		timeStamp, err := time.Parse(time.RFC3339, rf.Timestamp)
+		if err != nil {
+			return errors.Wrapf(err, "Could not parse timestamp %s", rf.Timestamp)
+		}
+		remoteFindings = append(remoteFindings, &finding.Finding{
+			Origin:             "CI Sense",
+			Name:               strings.TrimPrefix(rf.Name, fmt.Sprintf("projects/%s/findings/", cmd.opts.Project)),
+			Type:               finding.ErrorType(rf.ErrorReport.Type),
+			InputData:          rf.ErrorReport.InputData,
+			Logs:               rf.ErrorReport.Logs,
+			Details:            rf.ErrorReport.Details,
+			HumanReadableInput: string(rf.ErrorReport.InputData),
+			MoreDetails:        rf.ErrorReport.MoreDetails,
+			CreatedAt:          timeStamp,
+			FuzzTest:           rf.FuzzTargetDisplayName,
+			Location: fmt.Sprintf("in %s (%s:%d:%d)",
+				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Function,
+				rf.ErrorReport.DebuggingInfo.BreakPoints[0].SourceFilePath,
+				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Line,
+				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Column),
+		})
 	}
 
 	if len(args) == 0 {
 		// If called without arguments, `cifuzz findings` lists short
 		// descriptions of all findings
-		findings, err := finding.ListFindings(cmd.opts.ProjectDir, errorDetails)
-		if err != nil {
-			return err
-		}
+		allFindings := append(localFindings, remoteFindings...)
 
 		if cmd.opts.PrintJSON {
-			s, err := stringutil.ToJSONString(findings)
+			s, err := stringutil.ToJSONString(allFindings)
 			if err != nil {
 				return err
 			}
@@ -114,7 +167,7 @@ func (cmd *findingCmd) run(args []string) error {
 			return nil
 		}
 
-		if len(findings) == 0 {
+		if len(allFindings) == 0 {
 			log.Print("This project doesn't have any findings yet")
 			return nil
 		}
@@ -125,11 +178,13 @@ func (cmd *findingCmd) run(args []string) error {
 			{"Origin", "Severity", "Name", "Description", "Fuzz Test", "Location"},
 		}
 
-		for _, f := range findings {
+		for _, f := range allFindings {
 			score := "n/a"
 			locationInfo := "n/a"
 			// add location (file, function, line) if available
-			if len(f.ShortDescriptionColumns()) > 1 {
+			if f.Location != "" {
+				locationInfo = f.Location
+			} else if len(f.ShortDescriptionColumns()) > 1 {
 				locationInfo = f.ShortDescriptionColumns()[1]
 			}
 			// check if MoreDetails exists to avoid nil pointer errors
@@ -167,6 +222,16 @@ func (cmd *findingCmd) run(args []string) error {
 	// If called with one argument, `cifuzz finding <finding name>`
 	// prints the information available for the specified finding
 	findingName := args[0]
+
+	// check if the finding is a remote finding...
+	for i := range remoteFindings {
+		f := remoteFindings[i]
+		if strings.TrimPrefix(f.Name, fmt.Sprintf("projects/%s/findings/", cmd.opts.Project)) == findingName {
+			return cmd.printFinding(f)
+		}
+	}
+
+	// ...if the finding is not a remote finding, check if it is a local finding
 	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName, errorDetails)
 	if finding.IsNotExistError(err) {
 		return errors.WithMessagef(err, "Finding %s does not exist", findingName)
