@@ -38,10 +38,12 @@ func init() {
 	}
 	if err != nil {
 		log.Errorf(err, "Error reading access tokens file: %v", err.Error())
+		return
 	}
 	err = json.Unmarshal(bytes, &accessTokens)
 	if err != nil {
 		log.Errorf(err, "Error parsing access tokens: %v", err.Error())
+		return
 	}
 }
 
@@ -104,11 +106,13 @@ func migrateOldTokens() {
 	err := os.MkdirAll(filepath.Dir(accessTokensFilePath), 0o755)
 	if err != nil {
 		log.Errorf(err, "Error creating config directory: %v", err.Error())
+		return
 	}
 
 	exists, err := fileutil.Exists(oldTokensFilePath)
 	if err != nil {
 		log.Errorf(err, "Error checking if old tokens file exists: %v", err.Error())
+		return
 	}
 
 	if exists && oldTokensFilePath != accessTokensFilePath {
