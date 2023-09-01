@@ -36,7 +36,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
-	"code-intelligence.com/cifuzz/internal/tokenstorage"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
@@ -349,22 +348,21 @@ depends on the build system configured for the project.
 }
 
 func (c *runCmd) run() error {
-	authenticated, err := auth.GetAuthStatus(c.apiClient.Server)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return err
-		} else {
-			log.Debugf("Connection error: %v", connErr)
-		}
-	}
-	if !authenticated {
-		log.Infof(messaging.UsageWarning())
-	}
-
 	var errorDetails *[]finding.ErrorDetails
-	if authenticated {
-		errorDetails, err = c.errorDetails()
+
+	token, err := auth.GetValidToken(c.opts.Server)
+	var connErr *api.ConnectionError
+	var authErr *auth.NoValidTokenError
+	if errors.As(err, &connErr) {
+		log.Warnf("Failed to connect to server: %v", connErr)
+		log.Warn("Findings are not supplemented with error details from CI Sense")
+	} else if errors.As(err, &authErr) {
+		log.Infof(messaging.UsageWarning())
+		log.Warn("Findings are not supplemented with error details from CI Sense")
+	} else if err != nil {
+		return err
+	} else {
+		errorDetails, err = c.errorDetails(token)
 		if err != nil {
 			return err
 		}
@@ -441,8 +439,8 @@ func (c *runCmd) run() error {
 	}
 
 	// check if there are findings that should be uploaded
-	if authenticated && len(c.reportHandler.Findings) > 0 {
-		err = c.uploadFindings(c.opts.fuzzTest, c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics)
+	if token != "" && len(c.reportHandler.Findings) > 0 {
+		err = c.uploadFindings(c.opts.fuzzTest, c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, token)
 		if err != nil {
 			return err
 		}
@@ -800,12 +798,7 @@ func (c *runCmd) checkDependencies() error {
 	return nil
 }
 
-func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
-	token := auth.GetToken(c.opts.Server)
-	if token == "" {
-		return nil, errors.New("No access token found")
-	}
-
+func (c *runCmd) errorDetails(token string) (*[]finding.ErrorDetails, error) {
 	errorDetails, err := c.apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError
@@ -821,12 +814,7 @@ func (c *runCmd) errorDetails() (*[]finding.ErrorDetails, error) {
 	return &errorDetails, nil
 }
 
-func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric) error {
-	token := auth.GetToken(c.opts.Server)
-	if token == "" {
-		return errors.New("No access token found")
-	}
-
+func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, token string) error {
 	projects, err := c.apiClient.ListProjects(token)
 	if err != nil {
 		return err
@@ -835,7 +823,7 @@ func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *re
 	project := c.opts.Project
 	if project == "" {
 		// ask user to select project
-		project, err = c.selectProject(projects)
+		project, err = c.selectProject(projects, token)
 		if err != nil {
 			return cmdutils.WrapSilentError(err)
 		}
@@ -938,7 +926,7 @@ func ExecuteRunner(runner Runner) error {
 	return err
 }
 
-func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
+func (c *runCmd) selectProject(projects []*api.Project, token string) (string, error) {
 	// Let the user select a project
 	var displayNames []string
 	var names []string
@@ -972,7 +960,6 @@ func (c *runCmd) selectProject(projects []*api.Project) (string, error) {
 			return "", errors.WithStack(err)
 		}
 
-		token := tokenstorage.Get(c.opts.Server)
 		project, err := c.apiClient.CreateProject(projectName, token)
 		if err != nil {
 			return "", err

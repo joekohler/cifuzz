@@ -88,7 +88,10 @@ func (c *loginCmd) run() error {
 	}
 
 	// Try the access tokens config file
-	token = tokenstorage.Get(c.opts.Server)
+	token, err = tokenstorage.Get(c.opts.Server)
+	if err != nil {
+		return err
+	}
 	if token != "" {
 		return auth.EnsureValidToken(*c.apiClient, token)
 	}

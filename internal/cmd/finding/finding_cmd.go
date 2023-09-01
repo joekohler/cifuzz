@@ -93,7 +93,9 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	authenticated, err := auth.GetAuthStatus(cmd.opts.Server)
+	var errorDetails *[]finding.ErrorDetails
+
+	token, err := auth.GetValidToken(cmd.opts.Server)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if !errors.As(err, &connErr) {
@@ -102,13 +104,13 @@ func (cmd *findingCmd) run(args []string) error {
 			log.Debugf("Connection error: %v", connErr)
 		}
 	}
-	if !authenticated {
+	if token == "" {
 		log.Infof(messaging.UsageWarning())
-	}
-
-	errorDetails, err := cmd.checkForErrorDetails()
-	if err != nil {
-		return err
+	} else {
+		errorDetails, err = cmd.checkForErrorDetails(token)
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(args) == 0 {
@@ -302,19 +304,11 @@ func wrapLongStringToMultiline(s string, maxLineLength int) string {
 // checkForErrorDetails tries to get error details from the API.
 // If the API is available and the user is logged in, it returns the error details.
 // If the API is not available or the user is not logged in, it returns nil.
-func (cmd *findingCmd) checkForErrorDetails() (*[]finding.ErrorDetails, error) {
-	var errorDetails []finding.ErrorDetails
-	var err error
-
-	token := auth.GetToken(cmd.opts.Server)
-	if token == "" {
-		log.Debugf("Skipping error details because no token is available")
-		return nil, nil
-	}
+func (cmd *findingCmd) checkForErrorDetails(token string) (*[]finding.ErrorDetails, error) {
 	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
 	apiClient := api.NewClient(cmd.opts.Server, cmd.Command.Root().Version)
-	errorDetails, err = apiClient.GetErrorDetails(token)
+	errorDetails, err := apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if !errors.As(err, &connErr) {

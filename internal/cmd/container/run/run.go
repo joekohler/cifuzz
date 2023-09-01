@@ -109,7 +109,7 @@ container is built and run locally instead of being pushed to a CI Sense server.
 }
 
 func (c *containerRunCmd) run() error {
-	authenticated, err := auth.GetAuthStatus(c.opts.Server)
+	authenticated, err := auth.HasValidToken(c.opts.Server)
 	if err != nil {
 		var connErr *api.ConnectionError
 		if !errors.As(err, &connErr) {

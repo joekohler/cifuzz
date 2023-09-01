@@ -16,36 +16,50 @@ import (
 )
 
 // GetToken returns the API access token for the given server.
-func GetToken(server string) string {
+func GetToken(server string) (string, error) {
 	// Try the environment variable
 	token := os.Getenv("CIFUZZ_API_TOKEN")
 	if token != "" {
 		log.Print("Using token from $CIFUZZ_API_TOKEN")
-		return token
+		return token, nil
 	}
 
 	// Try the access tokens config file
 	return tokenstorage.Get(server)
 }
 
-// GetAuthStatus returns the authentication status of the user
+// HasValidToken returns true if a valid API access token is configured
 // for the given server.
-func GetAuthStatus(server string) (bool, error) {
-	// Obtain the API access token
-	token := GetToken(server)
-
-	if token == "" {
+func HasValidToken(server string) (bool, error) {
+	_, err := GetValidToken(server)
+	var noValidTokenError *NoValidTokenError
+	if errors.As(err, &noValidTokenError) {
 		return false, nil
 	}
-
-	// Token might be invalid, so try to authenticate with it
-	apiClient := api.APIClient{Server: server}
-	err := EnsureValidToken(apiClient, token)
 	if err != nil {
 		return false, err
 	}
-
 	return true, nil
+}
+
+// GetValidToken returns the API access token for the given server if it
+// is valid. If no valid token is found, NoValidTokenError is returned.
+func GetValidToken(server string) (string, error) {
+	token, err := GetToken(server)
+	if err != nil {
+		return "", err
+	}
+	if token == "" {
+		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+	}
+
+	apiClient := api.APIClient{Server: server}
+	err = EnsureValidToken(apiClient, token)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 // readTokenInteractively reads the API access token from the user with an
@@ -163,7 +177,11 @@ func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	if err != nil {
 		return err
 	}
+	tokenFilePath, err := tokenstorage.GetTokenFilePath()
+	if err != nil {
+		return err
+	}
 	log.Successf("Successfully authenticated with %s", apiClient.Server)
-	log.Infof("Your API access token is stored in %s", tokenstorage.GetTokenFilePath())
+	log.Infof("Your API access token is stored in %s", tokenFilePath)
 	return nil
 }
