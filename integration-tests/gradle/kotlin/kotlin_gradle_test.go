@@ -134,6 +134,13 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			FrameNumber: 0,
 			Function:    "com.example.ExploreMe.exploreMe",
 		},
+		{
+			SourceFile:  "src/test/kotlin/com/example/FuzzTestCase.kt",
+			Line:        19,
+			Column:      0,
+			FrameNumber: 0,
+			Function:    "com.example.FuzzTestCase.myFuzzTest",
+		},
 	}
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
 }

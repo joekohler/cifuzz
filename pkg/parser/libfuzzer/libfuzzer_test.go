@@ -418,6 +418,13 @@ Base64: ZGVhZGJlZWY=`,
 								FrameNumber: 0,
 								Function:    "com.example.parser.Parser.parseBytes",
 							},
+							{
+								SourceFile:  "FuzzParser.java",
+								Line:        23,
+								Column:      0,
+								FrameNumber: 0,
+								Function:    "fuzz_targets.FuzzParser.fuzzerTestOneInput",
+							},
 						},
 					},
 				},
@@ -476,15 +483,7 @@ INFO: A corpus is not provided, starting from an empty corpus
 == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Remote Code Execution
 Unrestricted class loading based on externally controlled data may allow
 remote code execution depending on available classes on the classpath.
-	at jaz.Zer.<clinit>(Zer.java:54)
-	at java.base/java.lang.Class.forName0(Native Method)
-	at java.base/java.lang.Class.forName(Class.java:315)
 	at com.github.CodeIntelligenceTesting.cifuzz.ExploreMe.exploreMe(ExploreMe.java:22)
-	at com.github.CodeIntelligenceTesting.cifuzz.FuzzTestCase.myFuzzTest(FuzzTestCase.java:13)
-	at com.code_intelligence.jazzer.runtime.FuzzTargetRunnerNatives.startLibFuzzer(Native Method)
-	at com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:380)
-	at com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:254)
-	at com.code_intelligence.jazzer.driver.Driver.start(Driver.java:92)
 DEDUP_TOKEN: e943c470c21ef432
 == libFuzzer crashing input ==
 0x40,0x6a,0x61,0x7a,0x2e,0x5a,0x65,0x72,0000000000000000000
@@ -505,15 +504,7 @@ Base64: QGphei5aZXIKLR8AACEAHw==`,
 							"== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Remote Code Execution",
 							"Unrestricted class loading based on externally controlled data may allow",
 							"remote code execution depending on available classes on the classpath.",
-							"	at jaz.Zer.<clinit>(Zer.java:54)",
-							"	at java.base/java.lang.Class.forName0(Native Method)",
-							"	at java.base/java.lang.Class.forName(Class.java:315)",
 							"	at com.github.CodeIntelligenceTesting.cifuzz.ExploreMe.exploreMe(ExploreMe.java:22)",
-							"	at com.github.CodeIntelligenceTesting.cifuzz.FuzzTestCase.myFuzzTest(FuzzTestCase.java:13)",
-							"	at com.code_intelligence.jazzer.runtime.FuzzTargetRunnerNatives.startLibFuzzer(Native Method)",
-							"	at com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:380)",
-							"	at com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:254)",
-							"	at com.code_intelligence.jazzer.driver.Driver.start(Driver.java:92)",
 							"DEDUP_TOKEN: e943c470c21ef432",
 							"== libFuzzer crashing input ==",
 							"0x40,0x6a,0x61,0x7a,0x2e,0x5a,0x65,0x72,0000000000000000000",

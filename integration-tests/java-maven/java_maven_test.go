@@ -114,6 +114,13 @@ func TestIntegration_Maven(t *testing.T) {
 			FrameNumber: 0,
 			Function:    "com.example.ExploreMe.exploreMe",
 		},
+		{
+			SourceFile:  "src/test/java/com/example/FuzzTestCase.java",
+			Line:        19,
+			Column:      0,
+			FrameNumber: 0,
+			Function:    "com.example.FuzzTestCase.myFuzzTest",
+		},
 	}
 
 	require.Equal(t, expectedStackTrace, findings[0].StackTrace)

@@ -195,6 +195,13 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			FrameNumber: 0,
 			Function:    "exploreMe",
 		},
+		{
+			SourceFile:  "FuzzTestCase.fuzz.ts",
+			Line:        19,
+			Column:      12,
+			FrameNumber: 0,
+			Function:    "",
+		},
 	}
 	assert.Equal(t, expectedStackTrace, findings[0].StackTrace)
 
