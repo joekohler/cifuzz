@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"time"
 
@@ -18,13 +19,14 @@ type Findings struct {
 }
 
 type Finding struct {
-	Name        string      `json:"name"`
-	DisplayName string      `json:"display_name"`
-	FuzzTarget  string      `json:"fuzz_target"`
-	FuzzingRun  string      `json:"fuzzing_run"`
-	CampaignRun string      `json:"campaign_run"`
-	ErrorReport ErrorReport `json:"error_report"`
-	Timestamp   string      `json:"timestamp"`
+	Name                  string      `json:"name"`
+	DisplayName           string      `json:"display_name"`
+	FuzzTarget            string      `json:"fuzz_target"`
+	FuzzingRun            string      `json:"fuzzing_run"`
+	CampaignRun           string      `json:"campaign_run"`
+	ErrorReport           ErrorReport `json:"error_report"`
+	Timestamp             string      `json:"timestamp"`
+	FuzzTargetDisplayName string      `json:"fuzz_target_display_name,omitempty"`
 }
 
 type ErrorReport struct {
@@ -66,6 +68,41 @@ type Environment struct {
 type Severity struct {
 	Description string  `json:"description,omitempty"`
 	Score       float32 `json:"score,omitempty"`
+}
+
+// DownloadRemoteFindings downloads all remote findings for a given project from CI Sense.
+func (client *APIClient) DownloadRemoteFindings(project string, token string) (Findings, error) {
+	remoteFindings := Findings{}
+
+	url, err := url.JoinPath("v1", "projects", project, "findings")
+	if err != nil {
+		return remoteFindings, errors.WithStack(err)
+	}
+
+	// setting a timeout of 5 seconds for the request, since we don't want to
+	// wait too long, especially when we need to await this request for command
+	// completion
+	resp, err := client.sendRequestWithTimeout("GET", url, nil, token, 5*time.Second)
+	if err != nil {
+		return remoteFindings, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return remoteFindings, responseToAPIError(resp)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return remoteFindings, errors.WithStack(err)
+	}
+
+	err = json.Unmarshal(body, &remoteFindings)
+	if err != nil {
+		return remoteFindings, errors.WithStack(err)
+	}
+
+	return remoteFindings, nil
 }
 
 func (client *APIClient) UploadFinding(project string, fuzzTarget string, campaignRunName string, fuzzingRunName string, finding *finding.Finding, token string) error {
