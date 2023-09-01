@@ -255,7 +255,7 @@ func (p *parser) filterPackages(packageName string) string {
 	// Ignore files from the Java standard library and jazzer. We can't filter
 	// these out via the regex because go regex doesn't support
 	// lookups to filter out specific words.
-	javaPrefixes := []string{"java.base", "java.lang", "jaz.Zer", "sun.reflect"}
+	javaPrefixes := []string{"java.base", "java.lang", "jaz.Zer", "sun.reflect", "com.code_intelligence.jazzer"}
 	for _, prefix := range javaPrefixes {
 		if strings.Contains(packageName, prefix) {
 			return ""
