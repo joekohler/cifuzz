@@ -205,6 +205,7 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	log.Debugf("Copied input file from %s to %s", f.InputFile, f.seedPath)
 
 	// Replace the old filename in the finding logs. Replace it with the
 	// relative path to not leak the directory structure of the current
