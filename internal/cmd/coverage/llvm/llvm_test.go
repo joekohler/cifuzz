@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -16,7 +15,6 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	"code-intelligence.com/cifuzz/internal/builder"
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/mocks"
 )
@@ -30,10 +28,6 @@ func TestMain(m *testing.M) {
 func TestIntegration_LLVM(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
-	}
-	if runtime.GOOS == "windows" && !config.AllowUnsupportedPlatforms() {
-		// TODO: Remove this once https://github.com/microsoft/STL/issues/3568 is fixed.
-		t.Skip("This test is broken with Visual Studio 2022")
 	}
 
 	// Install cifuzz
