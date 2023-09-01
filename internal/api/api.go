@@ -51,6 +51,8 @@ func (e APIError) Unwrap() error {
 	return e.err
 }
 
+// responseToAPIError converts a non-200 response to an APIError with the
+// response status code and message.
 func responseToAPIError(resp *http.Response) error {
 	msg := resp.Status
 	body, err := io.ReadAll(resp.Body)
