@@ -26,6 +26,8 @@ const (
 )
 
 type Finding struct {
+	Origin string
+
 	Name               string        `json:"name,omitempty"`
 	Type               ErrorType     `json:"type,omitempty"`
 	InputData          []byte        `json:"input_data,omitempty"`
@@ -338,6 +340,7 @@ func LoadFinding(projectDir, findingName string, errorDetails *[]ErrorDetails) (
 		return nil, errors.WithStack(err)
 	}
 
+	f.Origin = "Local"
 	f.EnhanceWithErrorDetails(errorDetails)
 
 	return &f, nil

@@ -100,7 +100,8 @@ func TestListFindings(t *testing.T) {
 
 func testFinding() *Finding {
 	return &Finding{
-		Name: "test-name",
+		Origin: "Local",
+		Name:   "test-name",
 		Logs: []string{
 			"Oops",
 			"The application crashed",

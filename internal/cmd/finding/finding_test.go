@@ -45,7 +45,8 @@ func TestListFindings(t *testing.T) {
 
 	// Create a finding
 	f := &finding.Finding{
-		Name: "test_finding",
+		Name:   "test_finding",
+		Origin: "Local",
 	}
 
 	// Add some MoreDetails to check for possible nil pointer errors
@@ -79,6 +80,7 @@ func TestListFindings_Authenticated(t *testing.T) {
 
 	// Create the expected finding
 	f := &finding.Finding{
+		Origin:  "Local",
 		Name:    "test_finding",
 		Type:    "undefined behavior",
 		Details: "test_details",
@@ -115,7 +117,8 @@ func TestListFindings_Authenticated(t *testing.T) {
 func TestPrintFinding(t *testing.T) {
 	// Create a finding
 	f := &finding.Finding{
-		Name: "test_finding",
+		Origin: "Local",
+		Name:   "test_finding",
 	}
 
 	projectDir := testutil.BootstrapEmptyProject(t, "test-list-findings-")
@@ -174,6 +177,7 @@ func TestPrintFinding_Authenticated(t *testing.T) {
 
 	// Create the expected finding
 	f := &finding.Finding{
+		Origin:  "Local",
 		Name:    "test_finding",
 		Type:    "undefined behavior",
 		Details: "test_details",

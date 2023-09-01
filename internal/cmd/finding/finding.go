@@ -122,7 +122,7 @@ func (cmd *findingCmd) run(args []string) error {
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 1, ' ', 0)
 
 		data := [][]string{
-			{"Severity", "Name", "Description", "Fuzz Test", "Location"},
+			{"Origin", "Severity", "Name", "Description", "Fuzz Test", "Location"},
 		}
 
 		for _, f := range findings {
@@ -141,6 +141,7 @@ func (cmd *findingCmd) run(args []string) error {
 				}
 			}
 			data = append(data, []string{
+				f.Origin,
 				score,
 				f.Name,
 				// FIXME: replace f.ShortDescriptionColumns()[0] with
