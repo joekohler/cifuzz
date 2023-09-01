@@ -41,8 +41,12 @@ function(enable_fuzz_testing)
           -D_DISABLE_STRING_ANNOTATION
       )
 
+      # Split the version string by periods into a list
+      string(REPLACE "." ";" version_list ${CMAKE_CXX_COMPILER_VERSION})
+      # Get the first element of the list, which is the major version
+      list(GET version_list 0 CXX_COMPILER_MAJOR_VERSION)
       # Add Visual Studio directory for clang runtime libraries to link directories 
-      link_directories("$ENV{VSINSTALLDIR}\\VC\\Tools\\Llvm\\x64\\lib\\clang\\${CMAKE_CXX_COMPILER_VERSION}\\lib\\windows")
+      link_directories("$ENV{VSINSTALLDIR}\\VC\\Tools\\Llvm\\x64\\lib\\clang\\${CXX_COMPILER_MAJOR_VERSION}\\lib\\windows")
       add_link_options(
           # /INCREMENTAL is enabled by default with RelWithDebInfo, but is unsupported with ASan and potentially impacts
           # performance by padding functions.
