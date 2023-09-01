@@ -95,10 +95,13 @@ func (p *parser) parseStackTrace(logs []string) ([]*StackFrame, error) {
 			continue
 		}
 
-		if len(frames) > 0 && frame.FrameNumber <= frames[len(frames)-1].FrameNumber {
-			// The frame number is lower than the one from the previous
-			// frame, so this is probably a new stack trace.
-			break
+		if !p.SupportJazzer && !p.SupportJazzerJS {
+			// Frame numbers are only available for libfuzzer stacktraces
+			if len(frames) > 0 && frame.FrameNumber <= frames[len(frames)-1].FrameNumber {
+				// The frame number is lower than the one from the previous
+				// frame, so this is probably a new stack trace.
+				break
+			}
 		}
 
 		frames = append(frames, frame)
