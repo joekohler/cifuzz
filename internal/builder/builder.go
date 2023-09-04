@@ -11,6 +11,7 @@ import (
 	"github.com/alexflint/go-filemutex"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
+	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -310,7 +311,13 @@ func (i *CIFuzzBuilder) BuildListFuzzTestsTool() error {
 		return err
 	}
 
-	cmd := exec.Command(mvn, "package")
+	args := []string{mvn, "package"}
+	// Hide the progress output from Maven if stdout is not a terminal
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		args = append(args, "--batch-mode")
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = listFuzzTestsDir
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
