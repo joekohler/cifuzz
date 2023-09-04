@@ -15,6 +15,19 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
+// NoValidTokenError indicates that no valid API access token is configured.
+type NoValidTokenError struct {
+	err error
+}
+
+func (e NoValidTokenError) Error() string {
+	return e.err.Error()
+}
+
+func (e NoValidTokenError) Unwrap() error {
+	return e.err
+}
+
 // GetToken returns the API access token for the given server.
 func GetToken(server string) (string, error) {
 	// Try the environment variable
@@ -126,26 +139,28 @@ func EnsureValidToken(apiClient api.APIClient, token string) error {
 	if err != nil {
 		return err
 	}
-	if !isValid {
-		log.Warn(`Failed to authenticate with the configured API access token.
+	if isValid {
+		log.Success("You are authenticated.")
+		return nil
+	}
+
+	log.Warn(`Failed to authenticate with the configured API access token.
 It's possible that the token has been revoked.`)
 
-		if viper.GetBool("interactive") && term.IsTerminal(int(os.Stdin.Fd())) {
-			tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
-			if err != nil {
-				return err
-			}
-			if tryAgain {
-				_, err = ReadCheckAndStoreTokenInteractively(&apiClient)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	} else {
-		log.Success("You are authenticated.")
+	if !viper.GetBool("interactive") || !term.IsTerminal(int(os.Stdin.Fd())) {
+		return &NoValidTokenError{errors.New("Please log in with a valid API access token")}
 	}
-	return nil
+
+	tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
+	if err != nil {
+		return err
+	}
+	if !tryAgain {
+		return &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+	}
+
+	_, err = ReadCheckAndStoreTokenInteractively(&apiClient)
+	return err
 }
 
 // ShowServerConnectionDialog ask users if they want to use a SaaS backend

@@ -96,16 +96,15 @@ func (cmd *findingCmd) run(args []string) error {
 	var errorDetails *[]finding.ErrorDetails
 
 	token, err := auth.GetValidToken(cmd.opts.Server)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return err
-		} else {
-			log.Debugf("Connection error: %v", connErr)
-		}
-	}
-	if token == "" {
+	var connErr *api.ConnectionError
+	var authErr *auth.NoValidTokenError
+	if errors.As(err, &connErr) {
+		log.Debugf("Connection error: %v", connErr)
+	} else if errors.As(err, &authErr) {
 		log.Infof(messaging.UsageWarning())
+		log.Warn("No valid access token found, skipping error details")
+	} else if err != nil {
+		return err
 	} else {
 		errorDetails, err = cmd.checkForErrorDetails(token)
 		if err != nil {

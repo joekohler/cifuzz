@@ -18,21 +18,10 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
+var projectName = "test-project"
+
 func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
-	projectName := "test-project"
-	artifactsName := "test-artifacts-123"
-
-	server := mockserver.New(t)
-
-	// define handlers
-	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
-	server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
-		fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
-	)
-	server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
-
-	// start the server
-	server.Start(t)
+	server := startMockServer(t)
 
 	tempDir := testutil.MkdirTemp(t, "", "cifuzz-archive-*")
 
@@ -76,10 +65,16 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 }
 
 func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, expectedErrorExp *regexp.Regexp, args ...string) {
+	server := startMockServer(t)
+
 	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
 	require.NoError(t, err)
 
-	args = append([]string{"--project", "test-project", "--", "--non-existent-flag"}, args...)
+	args = append([]string{
+		"--project", "test-project",
+		"--server", server.Address,
+		"--", "--non-existent-flag"},
+		args...)
 
 	// Run the command and expect it to fail because we passed it a non-existent flag
 	cifuzzRunner.Run(t, &RunOptions{
@@ -91,4 +86,22 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, e
 		},
 		ExpectError: true,
 	})
+}
+
+func startMockServer(t *testing.T) *mockserver.MockServer {
+	artifactsName := "test-artifacts-123"
+
+	server := mockserver.New(t)
+
+	// define handlers
+	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+	server.Handlers[fmt.Sprintf("/v2/projects/%s/artifacts/import", projectName)] = mockserver.ReturnResponse(t,
+		fmt.Sprintf(`{"display-name": "test-artifacts", "resource-name": %q}`, artifactsName),
+	)
+	server.Handlers[fmt.Sprintf("/v1/%s:run", artifactsName)] = mockserver.ReturnResponse(t, `{"name": "test-campaign-run-123"}`)
+
+	// start the server
+	server.Start(t)
+
+	return server
 }
