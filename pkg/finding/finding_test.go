@@ -85,14 +85,14 @@ func TestFinding_MoveInputFile(t *testing.T) {
 	assert.Contains(t, finding.Logs[2], nameCrashingInput)
 }
 
-func TestListFindings(t *testing.T) {
+func TestGetLocalFindings(t *testing.T) {
 	finding := testFinding()
 
 	err := finding.Save(testBaseDir)
 	require.NoError(t, err)
 
 	// Check that the finding is listed
-	findings, err := ListFindings(testBaseDir, nil)
+	findings, err := LocalFindings(testBaseDir, nil)
 	require.NoError(t, err)
 	require.Len(t, findings, 1)
 	require.Equal(t, finding, findings[0])

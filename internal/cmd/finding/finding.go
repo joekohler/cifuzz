@@ -118,7 +118,7 @@ func (cmd *findingCmd) run(args []string) error {
 		log.Infof(messaging.UsageWarning())
 	}
 
-	localFindings, err := finding.ListFindings(cmd.opts.ProjectDir, errorDetails)
+	localFindings, err := finding.LocalFindings(cmd.opts.ProjectDir, errorDetails)
 	if err != nil {
 		return err
 	}

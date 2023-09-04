@@ -293,9 +293,9 @@ func (f *Finding) ShortDescriptionColumns() []string {
 	return columns
 }
 
-// ListFindings parses the JSON files of all findings and returns the
+// LocalFindings parses the JSON files of all findings and returns the
 // result.
-func ListFindings(projectDir string, errorDetails *[]ErrorDetails) ([]*Finding, error) {
+func LocalFindings(projectDir string, errorDetails *[]ErrorDetails) ([]*Finding, error) {
 	findingsDir := filepath.Join(projectDir, nameFindingsDir)
 	entries, err := os.ReadDir(findingsDir)
 	if os.IsNotExist(err) {
