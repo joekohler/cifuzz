@@ -74,6 +74,14 @@ func Confirm(message string, defaultValue bool) (bool, error) {
 		RejectText:   rejectText,
 		RejectStyle:  &pterm.ThemeDefault.PrimaryStyle,
 		SuffixStyle:  &pterm.ThemeDefault.SecondaryStyle,
+		OnInterruptFunc: func() {
+			// Print an empty line to avoid the cursor being on the same line
+			// as the confirmation prompt
+			log.Print()
+			// Exit with code 130 (128 + 2) to match the behavior of the
+			// default interrupt signal handler
+			os.Exit(130)
+		},
 	}.Show()
 	return res, errors.WithStack(err)
 }
