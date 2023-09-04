@@ -452,8 +452,6 @@ func (c *runCmd) run() error {
 }
 
 func (c *runCmd) buildFuzzTest() (*build.BuildResult, error) {
-	var err error
-
 	// Note that the build printer should *not* print to c.opts.buildStdout,
 	// because that could be a file which is used to store the build log.
 	// We don't want the messages of the build printer to be printed to
@@ -466,13 +464,17 @@ func (c *runCmd) buildFuzzTest() (*build.BuildResult, error) {
 	}
 	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
 
-	defer func(err *error) {
-		if *err != nil {
-			buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
-		} else {
-			buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
-		}
-	}(&err)
+	buildResult, err := c._buildFuzzTest()
+	if err != nil {
+		buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
+	} else {
+		buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
+	}
+	return buildResult, err
+}
+
+func (c *runCmd) _buildFuzzTest() (*build.BuildResult, error) {
+	var err error
 
 	// TODO: Do not hardcode these values.
 	sanitizers := []string{"address", "undefined"}
