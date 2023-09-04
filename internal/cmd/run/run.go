@@ -454,7 +454,18 @@ func (c *runCmd) run() error {
 func (c *runCmd) buildFuzzTest() (*build.BuildResult, error) {
 	var err error
 
-	buildPrinter := logging.NewBuildPrinter(c.opts.buildStdout, log.BuildInProgressMsg)
+	// Note that the build printer should *not* print to c.opts.buildStdout,
+	// because that could be a file which is used to store the build log.
+	// We don't want the messages of the build printer to be printed to
+	// the build log file, so we let it print to stdout or stderr instead.
+	var buildPrinterOutput io.Writer
+	if c.opts.PrintJSON {
+		buildPrinterOutput = c.Command.OutOrStdout()
+	} else {
+		buildPrinterOutput = c.Command.ErrOrStderr()
+	}
+	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
+
 	defer func(err *error) {
 		if *err != nil {
 			buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
