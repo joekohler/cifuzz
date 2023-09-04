@@ -122,7 +122,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 	findings := &Findings{
 		Findings: []Finding{
 			{
-				Name:        project + "/findings/cifuzz-" + finding.Name,
+				Name:        project + "/findings/" + finding.Name,
 				DisplayName: finding.Name,
 				FuzzTarget:  fuzzTarget,
 				FuzzingRun:  fuzzingRunName,
