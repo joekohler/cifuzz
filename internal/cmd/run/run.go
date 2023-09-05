@@ -38,9 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
-	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzerjs"
@@ -348,23 +346,9 @@ depends on the build system configured for the project.
 }
 
 func (c *runCmd) run() error {
-	var errorDetails *[]finding.ErrorDetails
-
-	token, err := auth.EnsureValidToken(c.opts.Server)
-	var connErr *api.ConnectionError
-	var authErr *auth.NoValidTokenError
-	if errors.As(err, &connErr) {
-		log.Warnf("Failed to connect to server: %v\nFindings will not be supplemented with error details from CI Sense.", connErr)
-	} else if errors.As(err, &authErr) {
-		log.Infof(messaging.UsageWarning())
-		log.Warn("Findings are not supplemented with error details from CI Sense")
-	} else if err != nil {
+	errorDetails, token, err := auth.TryGetErrorDetailsAndToken(c.opts.Server)
+	if err != nil {
 		return err
-	} else {
-		errorDetails, err = c.errorDetails(token)
-		if err != nil {
-			return err
-		}
 	}
 
 	err = c.checkDependencies()
@@ -795,22 +779,6 @@ func (c *runCmd) checkDependencies() error {
 		return err
 	}
 	return nil
-}
-
-func (c *runCmd) errorDetails(token string) (*[]finding.ErrorDetails, error) {
-	errorDetails, err := c.apiClient.GetErrorDetails(token)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return nil, err
-		} else {
-			log.Warn("Connection to API failed. Skipping error details.")
-			log.Debugf("Connection error: %v (continiung gracefully)", connErr)
-			return nil, nil
-		}
-	}
-
-	return &errorDetails, nil
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, token string) error {

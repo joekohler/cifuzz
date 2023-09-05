@@ -19,7 +19,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -93,24 +92,9 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	var errorDetails *[]finding.ErrorDetails
-
-	token, err := auth.EnsureValidToken(cmd.opts.Server)
-	var connErr *api.ConnectionError
-	var noValidTokenError *auth.NoValidTokenError
-	if errors.As(err, &connErr) {
-		log.Warnf("Failed to connect to server: %v", connErr)
-		log.Warn("Findings are not supplemented with error details from CI Sense")
-	} else if errors.As(err, &noValidTokenError) {
-		log.Infof(messaging.UsageWarning())
-		log.Warn("Findings are not supplemented with error details from CI Sense")
-	} else if err != nil {
+	errorDetails, err := auth.TryGetErrorDetails(cmd.opts.Server)
+	if err != nil {
 		return err
-	} else {
-		errorDetails, err = cmd.checkForErrorDetails(token)
-		if err != nil {
-			return err
-		}
 	}
 
 	if len(args) == 0 {
@@ -299,25 +283,4 @@ func wrapLongStringToMultiline(s string, maxLineLength int) string {
 	}
 	result += currentLine
 	return result
-}
-
-// checkForErrorDetails tries to get error details from the API.
-// If the API is available and the user is logged in, it returns the error details.
-// If the API is not available or the user is not logged in, it returns nil.
-func (cmd *findingCmd) checkForErrorDetails(token string) (*[]finding.ErrorDetails, error) {
-	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
-
-	apiClient := api.NewClient(cmd.opts.Server)
-	errorDetails, err := apiClient.GetErrorDetails(token)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return nil, err
-		} else {
-			log.Warn("Skipping error details.")
-			log.Debugf("Connection error: %v (continiung gracefully)", connErr)
-			return nil, nil
-		}
-	}
-	return &errorDetails, nil
 }
