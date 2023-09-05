@@ -307,7 +307,7 @@ func wrapLongStringToMultiline(s string, maxLineLength int) string {
 func (cmd *findingCmd) checkForErrorDetails(token string) (*[]finding.ErrorDetails, error) {
 	log.Debugf("Checking for error details on server %s", cmd.opts.Server)
 
-	apiClient := api.NewClient(cmd.opts.Server, cmd.Command.Root().Version)
+	apiClient := api.NewClient(cmd.opts.Server)
 	errorDetails, err := apiClient.GetErrorDetails(token)
 	if err != nil {
 		var connErr *api.ConnectionError

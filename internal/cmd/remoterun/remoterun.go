@@ -171,7 +171,7 @@ variable or by running 'cifuzz login' first.
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd := runRemoteCmd{Command: c, opts: opts}
-			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
+			cmd.apiClient = api.NewClient(opts.Server)
 			return cmd.run()
 		},
 	}

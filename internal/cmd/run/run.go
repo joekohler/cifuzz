@@ -319,7 +319,7 @@ depends on the build system configured for the project.
 			}
 
 			cmd := runCmd{Command: c, opts: opts}
-			cmd.apiClient = api.NewClient(opts.Server, cmd.Command.Root().Version)
+			cmd.apiClient = api.NewClient(opts.Server)
 			return cmd.run()
 		},
 	}

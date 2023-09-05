@@ -23,6 +23,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/cmd/remoterun/progress"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/version"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -99,10 +100,10 @@ type Artifact struct {
 	ResourceName string `json:"resource-name"`
 }
 
-func NewClient(server string, version string) *APIClient {
+func NewClient(server string) *APIClient {
 	return &APIClient{
 		Server:    server,
-		UserAgent: "cifuzz/" + version + " " + runtime.GOOS + "-" + runtime.GOARCH,
+		UserAgent: "cifuzz/" + version.Version + " " + runtime.GOOS + "-" + runtime.GOARCH,
 	}
 }
 
