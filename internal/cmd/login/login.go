@@ -93,7 +93,7 @@ func (c *loginCmd) run() error {
 		return err
 	}
 	if token != "" {
-		return auth.EnsureValidToken(*c.apiClient, token)
+		return auth.EnsureValidToken(c.apiClient, token)
 	}
 
 	// Try reading it interactively

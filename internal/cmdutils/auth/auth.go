@@ -67,7 +67,7 @@ func GetValidToken(server string) (string, error) {
 	}
 
 	apiClient := api.NewClient(server)
-	err = EnsureValidToken(*apiClient, token)
+	err = EnsureValidToken(apiClient, token)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +134,7 @@ func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient) (string, erro
 
 // EnsureValidToken checks if the token is valid and asks the user to log in
 // again if it is not.
-func EnsureValidToken(apiClient api.APIClient, token string) error {
+func EnsureValidToken(apiClient *api.APIClient, token string) error {
 	isValid, err := apiClient.IsTokenValid(token)
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ It's possible that the token has been revoked.`)
 		return &NoValidTokenError{errors.New("Please log in with a valid API access token")}
 	}
 
-	_, err = ReadCheckAndStoreTokenInteractively(&apiClient)
+	_, err = ReadCheckAndStoreTokenInteractively(apiClient)
 	return err
 }
 
@@ -173,7 +173,7 @@ func ShowServerConnectionDialog(server string) (bool, error) {
 
 	if wishToAuthenticate {
 		apiClient := api.NewClient(server)
-		_, err := ReadCheckAndStoreTokenInteractively(&apiClient)
+		_, err := ReadCheckAndStoreTokenInteractively(apiClient)
 		if err != nil {
 			return false, err
 		}
@@ -184,7 +184,7 @@ func ShowServerConnectionDialog(server string) (bool, error) {
 
 // CheckAndStoreToken checks if the token is valid and stores it if it is.
 func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
-	err := EnsureValidToken(*apiClient, token)
+	err := EnsureValidToken(apiClient, token)
 	if err != nil {
 		return err
 	}
