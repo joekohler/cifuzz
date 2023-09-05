@@ -214,26 +214,7 @@ func (c *runRemoteCmd) run() error {
 		}
 	}
 
-	if token == "" {
-		log.Print("You need to authenticate to CI Sense to use this command.")
-
-		if !c.opts.Interactive {
-			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
-			return cmdutils.ErrSilent
-		}
-
-		yes, err := dialog.Confirm("Log in now?", true)
-		if err != nil {
-			return err
-		}
-		if !yes {
-			log.Print("Please set CIFUZZ_API_TOKEN or run 'cifuzz login'.")
-			return cmdutils.ErrSilent
-		}
-		token, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	if c.opts.ProjectName == "" {
