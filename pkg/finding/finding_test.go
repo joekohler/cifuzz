@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/testutil"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -55,13 +54,9 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 }
 
 func TestFinding_MoveInputFile(t *testing.T) {
-	projectDir, err := os.MkdirTemp(testBaseDir, "move-test-project-dir-")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(projectDir)
-
-	seedCorpusDir, err := os.MkdirTemp(testBaseDir, "move-test-seed-corpus-")
-	require.NoError(t, err)
-	defer fileutil.Cleanup(seedCorpusDir)
+	var err error
+	projectDir := testutil.MkdirTemp(t, testBaseDir, "move-test-project-dir-")
+	seedCorpusDir := testutil.MkdirTemp(t, testBaseDir, "move-test-seed-corpus-")
 
 	// Create an input file
 	testfile := "crash_123_test"
