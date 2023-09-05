@@ -66,8 +66,8 @@ func GetValidToken(server string) (string, error) {
 		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
 	}
 
-	apiClient := api.APIClient{Server: server}
-	err = EnsureValidToken(apiClient, token)
+	apiClient := api.NewClient(server)
+	err = EnsureValidToken(*apiClient, token)
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +172,7 @@ func ShowServerConnectionDialog(server string) (bool, error) {
 	}
 
 	if wishToAuthenticate {
-		apiClient := api.APIClient{Server: server}
+		apiClient := api.NewClient(server)
 		_, err := ReadCheckAndStoreTokenInteractively(&apiClient)
 		if err != nil {
 			return false, err
