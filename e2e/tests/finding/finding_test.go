@@ -38,6 +38,7 @@ var findingTests = &[]e2e.TestCase{
 	{
 		Description:  "finding command ran by an authorized user in a project with findings prints findings table with severity score and fuzz test name",
 		Command:      "finding",
+		Args:         []string{"--interactive=false"},
 		SampleFolder: []string{"project-with-findings-and-error-details"},
 		CIUser:       e2e.LoggedInCIUser,
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
@@ -66,7 +67,7 @@ var findingTests = &[]e2e.TestCase{
 	{
 		Description:  "finding command with finding name argument ran by an authorized user in a project with findings print findings table",
 		Command:      "finding",
-		Args:         []string{"funky_angelfish"},
+		Args:         []string{"funky_angelfish --interactive=false"},
 		SampleFolder: []string{"project-with-findings-and-error-details"},
 		CIUser:       e2e.LoggedInCIUser,
 		Assert: func(t *testing.T, output e2e.CommandOutput) {

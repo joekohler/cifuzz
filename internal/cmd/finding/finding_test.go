@@ -216,3 +216,60 @@ func TestPrintFinding_Authenticated(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, stdErr, "cifuzz found more extensive information about this finding:")
 }
+
+func TestPrintRemoteFinding_Authenticated(t *testing.T) {
+	t.Setenv("CIFUZZ_API_TOKEN", "token")
+	server := mockserver.New(t)
+	server.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+	server.Handlers["/v2/error-details"] = mockserver.ReturnResponse(t, mockserver.ErrorDetailsJSON)
+	server.Handlers["/v1/projects/my-project/findings"] = mockserver.ReturnResponse(t, mockserver.RemoteFindingsJSON)
+	server.Start(t)
+
+	projectDir := testutil.BootstrapEmptyProject(t, "test-print-finding-")
+	opts := &options{
+		ProjectDir: projectDir,
+		ConfigDir:  projectDir,
+	}
+
+	// Create the expected finding
+	f := &finding.Finding{
+		Origin:  "CI Sense",
+		Name:    "pensive_flamingo",
+		Type:    "RUNTIME_ERROR",
+		Details: "test_details",
+		MoreDetails: &finding.ErrorDetails{
+			ID:          "undefined behavior",
+			Name:        "Undefined Behavior",
+			Description: "An operation has been detected which is undefined by the C/C++ standard. The result will be compiler dependent and is often unpredictable.",
+			Severity: &finding.Severity{
+				Score: 2.0,
+				Level: "Low",
+			},
+			Mitigation: "Avoid all operations that cause undefined behavior as per the C/C++ standard.",
+			Links: []finding.Link{
+				{
+					Description: "Undefined Behavior Sanitizer",
+					URL:         "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks",
+				},
+			},
+		},
+		Location: "in exploreMe (src/explore_me.cpp:13:11)",
+		FuzzTest: "my_fuzz_test",
+	}
+
+	err := f.Save(projectDir)
+	require.NoError(t, err)
+
+	// Check that the command lists the finding
+	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--server", server.Address, "--project", "my-project")
+	require.NoError(t, err)
+	jsonString, err := stringutil.ToJSONString(f)
+	require.NoError(t, err)
+	require.Equal(t, jsonString, stdOut)
+
+	// Check that the command prints extra information
+	cmd := newWithOptions(opts)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, cmd, os.Stdin, f.Name, "--server", server.Address)
+	require.NoError(t, err)
+	assert.Contains(t, stdErr, "cifuzz found more extensive information about this finding:")
+}
