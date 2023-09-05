@@ -203,17 +203,6 @@ variable or by running 'cifuzz login' first.
 func (c *runRemoteCmd) run() error {
 	token, err := auth.GetValidToken(c.opts.Server)
 	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return err
-		} else {
-			// API calls might fail due to network issues, invalid server
-			// responses or similar. Because this is the remote run cmd, we
-			// don't just want to log the error, but also return here.
-			return errors.WithMessage(connErr, "Connection error")
-		}
-	}
-
 		return err
 	}
 
