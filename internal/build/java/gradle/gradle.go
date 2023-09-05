@@ -83,7 +83,7 @@ func (b *Builder) Build() (*build.BuildResult, error) {
 
 	version, err := b.GradlePluginVersion()
 	if err != nil {
-		log.Error(errors.New("No cifuzz gradle plugin found"))
+		log.ErrorMsg(errors.New("Failed to access CI Fuzz gradle plugin"))
 		log.Print(messaging.Instructions(string(gradleBuildLanguage)))
 		return nil, cmdutils.WrapSilentError(err)
 	}
