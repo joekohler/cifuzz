@@ -163,25 +163,6 @@ It's possible that the token has been revoked.`)
 	return err
 }
 
-// ShowServerConnectionDialog ask users if they want to use a SaaS backend
-// if they are not authenticated and returns their wish to authenticate.
-func ShowServerConnectionDialog(server string) (bool, error) {
-	wishToAuthenticate, err := dialog.Confirm("Do you want to authenticate?", true)
-	if err != nil {
-		return false, err
-	}
-
-	if wishToAuthenticate {
-		apiClient := api.NewClient(server)
-		_, err := ReadCheckAndStoreTokenInteractively(apiClient)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return wishToAuthenticate, nil
-}
-
 // CheckAndStoreToken checks if the token is valid and stores it if it is.
 func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	err := EnsureValidToken(apiClient, token)
