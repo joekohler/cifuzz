@@ -354,8 +354,7 @@ func (c *runCmd) run() error {
 	var connErr *api.ConnectionError
 	var authErr *auth.NoValidTokenError
 	if errors.As(err, &connErr) {
-		log.Warnf("Failed to connect to server: %v", connErr)
-		log.Warn("Findings are not supplemented with error details from CI Sense")
+		log.Warnf("Failed to connect to server: %v\nFindings will not be supplemented with error details from CI Sense.", connErr)
 	} else if errors.As(err, &authErr) {
 		log.Infof(messaging.UsageWarning())
 		log.Warn("Findings are not supplemented with error details from CI Sense")

@@ -99,10 +99,11 @@ func (cmd *findingCmd) run(args []string) error {
 	var connErr *api.ConnectionError
 	var authErr *auth.NoValidTokenError
 	if errors.As(err, &connErr) {
-		log.Debugf("Connection error: %v", connErr)
+		log.Warnf("Failed to connect to server: %v", connErr)
+		log.Warn("Findings are not supplemented with error details from CI Sense")
 	} else if errors.As(err, &authErr) {
 		log.Infof(messaging.UsageWarning())
-		log.Warn("No valid access token found, skipping error details")
+		log.Warn("Findings are not supplemented with error details from CI Sense")
 	} else if err != nil {
 		return err
 	} else {
