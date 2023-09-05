@@ -13,7 +13,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
-	"code-intelligence.com/cifuzz/internal/tokenstorage"
 )
 
 type loginOpts struct {
@@ -84,26 +83,25 @@ func (c *loginCmd) run() error {
 			return errors.WithStack(err)
 		}
 		token = strings.TrimSpace(string(b))
-		return auth.CheckAndStoreToken(c.apiClient, token)
+
+		isValid, err := auth.IsValidToken(c.opts.Server, token)
+		if err != nil {
+			return err
+		}
+		if !isValid {
+			return errors.Errorf("Failed to authenticate with the token provided via stdin.")
+		}
+
+		return auth.StoreToken(c.opts.Server, token)
 	}
 
-	// Try the access tokens config file
-	token, err = tokenstorage.Get(c.opts.Server)
-	if err != nil {
-		return err
-	}
-	if token != "" {
-		return auth.EnsureValidToken(c.apiClient, token)
-	}
-
-	// Try reading it interactively
-	if c.opts.Interactive && term.IsTerminal(int(os.Stdin.Fd())) {
-		_, err = auth.ReadCheckAndStoreTokenInteractively(c.apiClient)
-		return err
-	}
-
-	err = errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
+	if !c.opts.Interactive || !term.IsTerminal(int(os.Stdin.Fd())) {
+		err = errors.Errorf(`No API access token provided. Please pass a valid token via stdin or run
 in interactive mode. You can generate a token here:
 %s/dashboard/settings/account/tokens?create&origin=cli.`+"\n", c.opts.Server)
-	return cmdutils.WrapIncorrectUsageError(err)
+		return cmdutils.WrapIncorrectUsageError(err)
+	}
+
+	_, err = auth.EnsureValidToken(c.opts.Server)
+	return err
 }

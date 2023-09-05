@@ -350,7 +350,7 @@ depends on the build system configured for the project.
 func (c *runCmd) run() error {
 	var errorDetails *[]finding.ErrorDetails
 
-	token, err := auth.GetValidToken(c.opts.Server)
+	token, err := auth.EnsureValidToken(c.opts.Server)
 	var connErr *api.ConnectionError
 	var authErr *auth.NoValidTokenError
 	if errors.As(err, &connErr) {

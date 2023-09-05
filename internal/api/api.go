@@ -297,6 +297,10 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 
 // IsTokenValid checks if the token is valid by querying the API server.
 func (client *APIClient) IsTokenValid(token string) (bool, error) {
+	if token == "" {
+		return false, nil
+	}
+
 	// TOOD: Change this to use another check without querying projects
 	_, err := client.ListProjects(token)
 	if err != nil {

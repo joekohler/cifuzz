@@ -201,7 +201,7 @@ variable or by running 'cifuzz login' first.
 }
 
 func (c *runRemoteCmd) run() error {
-	token, err := auth.GetValidToken(c.opts.Server)
+	token, err := auth.EnsureValidToken(c.opts.Server)
 	if err != nil {
 		return err
 	}

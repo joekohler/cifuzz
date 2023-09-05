@@ -95,13 +95,13 @@ func newWithOptions(opts *options) *cobra.Command {
 func (cmd *findingCmd) run(args []string) error {
 	var errorDetails *[]finding.ErrorDetails
 
-	token, err := auth.GetValidToken(cmd.opts.Server)
+	token, err := auth.EnsureValidToken(cmd.opts.Server)
 	var connErr *api.ConnectionError
-	var authErr *auth.NoValidTokenError
+	var noValidTokenError *auth.NoValidTokenError
 	if errors.As(err, &connErr) {
 		log.Warnf("Failed to connect to server: %v", connErr)
 		log.Warn("Findings are not supplemented with error details from CI Sense")
-	} else if errors.As(err, &authErr) {
+	} else if errors.As(err, &noValidTokenError) {
 		log.Infof(messaging.UsageWarning())
 		log.Warn("Findings are not supplemented with error details from CI Sense")
 	} else if err != nil {

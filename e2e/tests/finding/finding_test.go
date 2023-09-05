@@ -56,7 +56,6 @@ var findingTests = &[]e2e.TestCase{
 		CIUser:       e2e.InvalidTokenCIUser,
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Contains(t, output.Stderr, "Failed to authenticate with the configured API access token.")
 			assert.Contains(t, output.Stderr, "⚠️Invalid token: Received 401 Unauthorized from server ")
 			assert.Contains(t, output.Stderr, "Detailed error information have *not* been added. Please log in to retrieve additional error details.")
 			// it should not print the actual score

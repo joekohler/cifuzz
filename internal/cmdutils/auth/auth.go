@@ -41,43 +41,43 @@ func GetToken(server string) (string, error) {
 	return tokenstorage.Get(server)
 }
 
-// HasValidToken returns true if a valid API access token is configured
-// for the given server.
-func HasValidToken(server string) (bool, error) {
-	_, err := GetValidToken(server)
-	var noValidTokenError *NoValidTokenError
-	if errors.As(err, &noValidTokenError) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-// GetValidToken returns the API access token for the given server if it
-// is valid. If no valid token is found, NoValidTokenError is returned.
 func GetValidToken(server string) (string, error) {
 	token, err := GetToken(server)
 	if err != nil {
 		return "", err
 	}
-	if token == "" {
-		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
-	}
 
-	apiClient := api.NewClient(server)
-	err = EnsureValidToken(apiClient, token)
+	isValid, err := IsValidToken(server, token)
 	if err != nil {
 		return "", err
 	}
-
+	if !isValid {
+		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+	}
 	return token, nil
 }
 
-// readTokenInteractively reads the API access token from the user with an
-// interactive dialog prompt.
-func readTokenInteractively(server string) (string, error) {
+// HasValidToken returns true if a valid API access token is configured
+// for the given server.
+func HasValidToken(server string) (bool, error) {
+	token, err := GetToken(server)
+	if err != nil {
+		return false, err
+	}
+
+	return IsValidToken(server, token)
+}
+
+func IsValidToken(server, token string) (bool, error) {
+	if token == "" {
+		return false, nil
+	}
+
+	apiClient := api.NewClient(server)
+	return apiClient.IsTokenValid(token)
+}
+
+func readToken(server string) (string, error) {
 	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -108,68 +108,11 @@ func readTokenInteractively(server string) (string, error) {
 		}
 	}
 
-	token, err := dialog.ReadSecret("Paste your access token")
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
+	return dialog.ReadSecret("Paste your access token")
 }
 
-// ReadCheckAndStoreTokenInteractively reads the API access token from the
-// user, checks if it is valid and stores it.
-func ReadCheckAndStoreTokenInteractively(apiClient *api.APIClient) (string, error) {
-	token, err := readTokenInteractively(apiClient.Server)
-	if err != nil {
-		return "", err
-	}
-
-	err = CheckAndStoreToken(apiClient, token)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
-}
-
-// EnsureValidToken checks if the token is valid and asks the user to log in
-// again if it is not.
-func EnsureValidToken(apiClient *api.APIClient, token string) error {
-	isValid, err := apiClient.IsTokenValid(token)
-	if err != nil {
-		return err
-	}
-	if isValid {
-		log.Success("You are authenticated.")
-		return nil
-	}
-
-	log.Warn(`Failed to authenticate with the configured API access token.
-It's possible that the token has been revoked.`)
-
-	if !viper.GetBool("interactive") || !term.IsTerminal(int(os.Stdin.Fd())) {
-		return &NoValidTokenError{errors.New("Please log in with a valid API access token")}
-	}
-
-	tryAgain, err := dialog.Confirm("Do you want to log in again?", true)
-	if err != nil {
-		return err
-	}
-	if !tryAgain {
-		return &NoValidTokenError{errors.New("Please log in with a valid API access token")}
-	}
-
-	_, err = ReadCheckAndStoreTokenInteractively(apiClient)
-	return err
-}
-
-// CheckAndStoreToken checks if the token is valid and stores it if it is.
-func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
-	err := EnsureValidToken(apiClient, token)
-	if err != nil {
-		return err
-	}
-	err = tokenstorage.Set(apiClient.Server, token)
+func StoreToken(server, token string) error {
+	err := tokenstorage.Set(server, token)
 	if err != nil {
 		return err
 	}
@@ -177,7 +120,73 @@ func CheckAndStoreToken(apiClient *api.APIClient, token string) error {
 	if err != nil {
 		return err
 	}
-	log.Successf("Successfully authenticated with %s", apiClient.Server)
+	log.Successf("Successfully authenticated with %s", server)
 	log.Infof("Your API access token is stored in %s", tokenFilePath)
 	return nil
+}
+
+func EnsureValidToken(server string) (string, error) {
+	token, err := GetToken(server)
+	if err != nil {
+		return "", err
+	}
+
+	apiClient := api.NewClient(server)
+
+	if token != "" {
+		isValid, err := apiClient.IsTokenValid(token)
+		if err != nil {
+			return "", err
+		}
+		if isValid {
+			log.Success("You are authenticated.")
+			return token, nil
+		}
+
+		log.Warn(`Failed to authenticate with the configured API access token.
+It's possible that the token has been revoked.`)
+	}
+
+	if !viper.GetBool("interactive") || !term.IsTerminal(int(os.Stdin.Fd())) {
+		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+	}
+
+	var isValid bool
+
+	for !isValid {
+		var loginMsg string
+		if token != "" {
+			loginMsg = "Do you want to log in with another token?"
+		} else {
+			loginMsg = "Do you want to log in?"
+		}
+		tryAgain, err := dialog.Confirm(loginMsg, true)
+		if err != nil {
+			return "", err
+		}
+		if !tryAgain {
+			return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+		}
+
+		token, err = readToken(server)
+		if err != nil {
+			return "", err
+		}
+
+		isValid, err = apiClient.IsTokenValid(token)
+		if err != nil {
+			return "", err
+		}
+
+		if !isValid {
+			log.Warn(`Failed to authenticate with the entered API access token.`)
+		}
+	}
+
+	err = StoreToken(server, token)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
