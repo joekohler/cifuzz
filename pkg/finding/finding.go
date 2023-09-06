@@ -355,7 +355,17 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) {
 				strings.ToLower(f.ShortDescriptionColumns()[0]),
 				strings.ToLower(d.Name)) {
 
+			// Store the error details but keep the original ID
+			var originalID string
+			if f.MoreDetails != nil {
+				originalID = f.MoreDetails.ID
+			}
+
 			f.MoreDetails = &d
+
+			if originalID != "" {
+				f.MoreDetails.ID = originalID
+			}
 			return
 		}
 	}
