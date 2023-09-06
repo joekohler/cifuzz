@@ -1,4 +1,2 @@
 code-intelligence.com/cifuzz/integration-tests/java-maven
-code-intelligence.com/cifuzz/integration-tests/nodejs
-code-intelligence.com/cifuzz/pkg/runner/libfuzzer/integrationtest
-code-intelligence.com/cifuzz/internal/builder
+code-intelligence.com/cifuzz/integration-tests/errors/nodejs
