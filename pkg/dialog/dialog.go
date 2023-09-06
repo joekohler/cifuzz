@@ -110,7 +110,7 @@ func ReadSecret(message string) (string, error) {
 func AskToPersistProjectChoice(projectName string) error {
 	persist, err := Confirm(`Do you want to persist your choice?
 This will add a 'project' entry to your cifuzz.yaml.
-You can change these values later by editing the file.`, false)
+You can change these values later by editing the file.`, true)
 	if err != nil {
 		return err
 	}
