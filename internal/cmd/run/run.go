@@ -38,6 +38,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
+	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
@@ -120,8 +121,9 @@ func (opts *runOptions) validate() error {
 type runCmd struct {
 	*cobra.Command
 
-	opts      *runOptions
-	apiClient *api.APIClient
+	opts         *runOptions
+	apiClient    *api.APIClient
+	errorDetails *[]finding.ErrorDetails
 
 	reportHandler *reporthandler.ReportHandler
 	tempDir       string
@@ -350,6 +352,7 @@ func (c *runCmd) run() error {
 	if err != nil {
 		return err
 	}
+	c.errorDetails = errorDetails
 
 	err = c.checkDependencies()
 	if err != nil {
@@ -833,6 +836,9 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 
 	// upload findings
 	for _, finding := range c.reportHandler.Findings {
+		if c.errorDetails != nil {
+			finding.EnhanceWithErrorDetails(c.errorDetails)
+		}
 		err = c.apiClient.UploadFinding(project, fuzzTarget, campaignRunName, fuzzingRunName, finding, token)
 		if err != nil {
 			return err
