@@ -103,10 +103,11 @@ func (cmd *findingCmd) run(args []string) error {
 		return err
 	}
 
-	var apiClient *api.APIClient
 	var remoteAPIFindings api.Findings
 
 	if token != "" {
+		log.Info("Note that findings that have already been uploaded to CI Sense will only be shown if you are authenticated and 'project' is set.")
+
 		apiClient := api.NewClient(cmd.opts.Server)
 
 		// get remote findings if project is set and user is authenticated

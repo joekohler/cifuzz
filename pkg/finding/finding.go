@@ -149,6 +149,15 @@ func (f *Finding) saveJSON(jsonPath string) error {
 	return nil
 }
 
+func (f *Finding) Remove(projectDir string) error {
+	findingDir := filepath.Join(projectDir, nameFindingsDir, f.Name)
+	err := os.RemoveAll(findingDir)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // CopyInputFileAndUpdateFinding copies the input file to the finding directory and
 // the seed corpus directory and adjusts the finding logs accordingly.
 func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string) error {

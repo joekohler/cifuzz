@@ -843,6 +843,11 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 		if err != nil {
 			return err
 		}
+		// after a finding has been uploaded, we can delete the local copy
+		err = finding.Remove(c.opts.ProjectDir)
+		if err != nil {
+			return errors.WithMessage(err, fmt.Sprintf("Failed to remove finding %s", finding.Name))
+		}
 	}
 	log.Notef("Uploaded %d findings to CI Sense at: %s", len(c.reportHandler.Findings), c.opts.Server)
 	log.Infof("You can view the findings at %s/dashboard/%s/findings?origin=cli", c.opts.Server, campaignRunName)
