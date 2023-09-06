@@ -114,7 +114,7 @@ func TestIntegration_CPPErrors(t *testing.T) {
 					break
 				}
 			}
-			assert.True(t, idFound)
+			assert.True(t, idFound, "finding id %q not found", tc.id)
 		})
 	}
 }
