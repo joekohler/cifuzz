@@ -34,8 +34,7 @@ jobs:
         run: make version=${{ inputs.version }} installer/darwin-arm64
 
       - name: Check Compatibility
-        # TODO: Enable on Windows again once https://github.com/microsoft/STL/issues/3568 is fixed
-        if: ${{ inputs.compatibility_check == 'true' && !contains(matrix.os, 'windows') }}
+        if: ${{ inputs.compatibility_check == 'true' }}
         uses: ./.github/actions/compatibility_check
         with:
           os: ${{ matrix.os }}
