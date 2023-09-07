@@ -295,12 +295,8 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	tag := "cifuzz-test-container-run-other:latest"
 
-	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
-	env := cifuzzEnv(cifuzzRunner.DefaultWorkDir)
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		Command: []string{"container", "run"},
-		Args:    []string{"--docker-image", tag},
-		Env:     env,
+	shared.TestContainerRun(t, cifuzzRunner, tag, &shared.RunOptions{
+		Env: cifuzzEnv(cifuzzRunner.DefaultWorkDir),
 		ExpectedOutputs: []*regexp.Regexp{
 			regexp.MustCompile(`^==\d*==ERROR: AddressSanitizer: heap-buffer-overflow`),
 			regexp.MustCompile(`^SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior`),

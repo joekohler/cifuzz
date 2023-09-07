@@ -18,7 +18,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func Create(imageID string, printJSON bool) (string, error) {
+func Create(imageID string, printJSON bool, bindMounts []string) (string, error) {
 	cli, err := GetDockerClient()
 	if err != nil {
 		return "", err
@@ -28,13 +28,14 @@ func Create(imageID string, printJSON bool) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
+	// Mount the current working directory into the container. This
+	// allows the fuzz container to copy inputs into the generated and
+	// managed seed corpus.
+	bindMounts = append(bindMounts, fmt.Sprintf("%[1]s:%[1]s", workDir))
+
 	hostConfig := &container.HostConfig{
-		Binds: []string{
-			// Mount the current working directory into the container. This
-			// allows the fuzz container to copy inputs into the generated and
-			// managed seed corpus.
-			fmt.Sprintf("%[1]s:%[1]s", workDir),
-		},
+		Binds: bindMounts,
 	}
 	containerConfig := &container.Config{
 		Image:        imageID,

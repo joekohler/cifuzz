@@ -22,10 +22,11 @@ import (
 
 type containerRunOpts struct {
 	bundler.Opts  `mapstructure:",squash"`
-	PrintJSON     bool   `mapstructure:"print-json"`
-	Interactive   bool   `mapstructure:"interactive"`
-	Server        string `mapstructure:"server"`
-	ContainerPath string `mapstructure:"container"`
+	PrintJSON     bool     `mapstructure:"print-json"`
+	Interactive   bool     `mapstructure:"interactive"`
+	Server        string   `mapstructure:"server"`
+	ContainerPath string   `mapstructure:"container"`
+	BindMounts    []string `mapstructure:"bind-mounts"`
 }
 
 type containerRunCmd struct {
@@ -104,6 +105,14 @@ container is built and run locally instead of being pushed to a CI Sense server.
 		cmdutils.AddResolveSourceFileFlag,
 	)
 	cmd.Flags().StringVar(&opts.ContainerPath, "container", "", "Path of an existing container to start a run with.")
+	cmd.Flags().StringArrayVar(&opts.BindMounts, "bind", nil, "Bind mount a directory from the host into the container. "+
+		"Format: --bind <src-path>:<dest-path>")
+
+	// For now the --bind flag is only used for tests, so we hide it from the help output.
+	err := cmd.Flags().MarkHidden("bind")
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
@@ -162,5 +171,5 @@ func (c *containerRunCmd) buildContainerFromImage(buildOutput io.Writer) (string
 		return "", errors.WithMessagef(err, "Failed to build image from bundle %s", bundlePath)
 	}
 
-	return container.Create(imageID, c.opts.PrintJSON)
+	return container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts)
 }
