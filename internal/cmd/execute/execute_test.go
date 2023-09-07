@@ -1,12 +1,18 @@
 package execute
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/testutil"
 )
 
 func Test_getFuzzer(t *testing.T) {
@@ -185,4 +191,14 @@ func Test_findFuzzer(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStopSignalFile(t *testing.T) {
+	dir, cleanup := testutil.BootstrapExampleProjectForTest("execute-stop-signal-test", config.BuildSystemCMake)
+	defer cleanup()
+
+	// We don't care if this command fails, it should create the file in any case
+	// nolint
+	cmdutils.ExecuteCommand(t, New(), os.Stdin, "my_fuzz_test", "--stop-signal-file=test")
+	assert.FileExists(t, filepath.Join(dir, "test"), "--stop-signal-file flag did not create the file 'cifuzz-execution-finished'on exit")
 }
