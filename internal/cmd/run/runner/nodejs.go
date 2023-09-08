@@ -4,6 +4,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/viper"
 
+	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -20,9 +21,14 @@ func (r *NodeJSRunner) CheckDependencies(projectDir string) error {
 	}, projectDir)
 }
 
-func (r *NodeJSRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportHandler) error {
+func (r *NodeJSRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
 	log.Infof("Running %s", style.Sprintf(opts.FuzzTest+":"+opts.TestNamePattern))
+
+	reportHandler, err := createReportHandler(opts, &build.BuildResult{})
+	if err != nil {
+		return nil, err
+	}
 
 	runnerOpts := &jazzerjs.RunnerOptions{
 		PackageManager:  "npm",
@@ -41,6 +47,10 @@ func (r *NodeJSRunner) Run(opts *RunOptions, reportHandler *reporthandler.Report
 			Verbose:        viper.GetBool("verbose"),
 		},
 	}
+	err = ExecuteFuzzerRunner(jazzerjs.NewRunner(runnerOpts))
+	if err != nil {
+		return nil, err
+	}
 
-	return ExecuteRunner(jazzerjs.NewRunner(runnerOpts))
+	return reportHandler, nil
 }

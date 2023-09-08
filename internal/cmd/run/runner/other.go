@@ -31,28 +31,32 @@ func (r *OtherRunner) CheckDependencies(projectDir string) error {
 	return dependencies.Check(deps, projectDir)
 }
 
-func (r *OtherRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportHandler) error {
-
+func (r *OtherRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	cBuildResult, err := wrapBuild[build.CBuildResult](opts, r.build)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if opts.BuildOnly {
-		return nil
+		return nil, nil
 	}
 
-	err = prepareCorpusDir(opts, cBuildResult.BuildResult, reportHandler)
+	err = prepareCorpusDir(opts, cBuildResult.BuildResult)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	reportHandler, err := createReportHandler(opts, cBuildResult.BuildResult)
+	if err != nil {
+		return nil, err
 	}
 
 	err = runLibfuzzer(opts, cBuildResult.BuildResult, reportHandler)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return reportHandler, nil
 }
 
 func (r *OtherRunner) build(opts *RunOptions) (*build.CBuildResult, error) {

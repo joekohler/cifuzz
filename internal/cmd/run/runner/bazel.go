@@ -26,19 +26,24 @@ func (r *BazelRunner) CheckDependencies(projectDir string) error {
 	}, projectDir)
 }
 
-func (r *BazelRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportHandler) error {
+func (r *BazelRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	buildResult, err := wrapBuild[build.BuildResult](opts, r.build)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if opts.BuildOnly {
-		return nil
+		return nil, nil
 	}
 
-	err = prepareCorpusDir(opts, buildResult, reportHandler)
+	err = prepareCorpusDir(opts, buildResult)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	reportHandler, err := createReportHandler(opts, buildResult)
+	if err != nil {
+		return nil, err
 	}
 
 	// The install base directory contains e.g. the script generated
@@ -47,14 +52,14 @@ func (r *BazelRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportH
 	cmd := exec.Command("bazel", "info", "install_base")
 	err = cmd.Run()
 	if err != nil {
-		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
 	err = runLibfuzzer(opts, buildResult, reportHandler)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return reportHandler, nil
 }
 
 func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {

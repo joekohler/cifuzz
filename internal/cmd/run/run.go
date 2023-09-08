@@ -262,45 +262,17 @@ func (c *runCmd) run() error {
 	}
 	c.errorDetails = errorDetails
 
-	// Initialize the report handler. Only do this right before we start
-	// the fuzz test, because this is storing a timestamp which is used
-	// to figure out how long the fuzzing run is running.
-	c.reportHandler, err = reporthandler.NewReportHandler(
-		c.opts.FuzzTest,
-		&reporthandler.ReportHandlerOptions{
-			ProjectDir:         c.opts.ProjectDir,
-			UserSeedCorpusDirs: c.opts.SeedCorpusDirs,
-			PrintJSON:          c.opts.PrintJSON,
-			ErrorDetails:       errorDetails,
-		},
-	)
+	runner, err := runnerPkg.NewRunner(c.opts)
 	if err != nil {
 		return err
 	}
 
-	var runner runnerPkg.Runner
-	switch c.opts.BuildSystem {
-	case config.BuildSystemCMake:
-		runner = &runnerPkg.CMakeRunner{}
-	case config.BuildSystemMaven:
-		runner = &runnerPkg.MavenRunner{}
-	case config.BuildSystemGradle:
-		runner = &runnerPkg.GradleRunner{}
-	case config.BuildSystemNodeJS:
-		runner = &runnerPkg.NodeJSRunner{}
-	case config.BuildSystemOther:
-		runner = &runnerPkg.OtherRunner{}
-	case config.BuildSystemBazel:
-		runner = &runnerPkg.BazelRunner{}
-	default:
-		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
-	}
 	err = runner.CheckDependencies(c.opts.ProjectDir)
 	if err != nil {
 		return err
 	}
 
-	err = runner.Run(c.opts, c.reportHandler)
+	c.reportHandler, err = runner.Run(c.opts)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && c.opts.UseSandbox {
@@ -308,6 +280,11 @@ func (c *runCmd) run() error {
 		}
 		return err
 	}
+	// happens when `--build-only` was called
+	if c.reportHandler == nil && err == nil {
+		return nil
+	}
+	c.reportHandler.ErrorDetails = errorDetails
 
 	c.reportHandler.PrintCrashingInputNote()
 	err = c.reportHandler.PrintFinalMetrics()

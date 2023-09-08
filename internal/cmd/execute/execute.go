@@ -246,7 +246,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		runner = libfuzzer.NewRunner(runnerOpts)
 	}
 
-	return runnerPkg.ExecuteRunner(runner)
+	return runnerPkg.ExecuteFuzzerRunner(runner)
 }
 
 // getMetadata returns the bundle metadata from the bundle.yaml file.

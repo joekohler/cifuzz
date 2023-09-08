@@ -22,28 +22,32 @@ func (r *GradleRunner) CheckDependencies(projectDir string) error {
 	}, projectDir)
 }
 
-func (r *GradleRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportHandler) error {
-
+func (r *GradleRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	buildResult, err := wrapBuild[build.BuildResult](opts, r.build)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if opts.BuildOnly {
-		return nil
+		return nil, nil
 	}
 
-	err = prepareCorpusDir(opts, buildResult, reportHandler)
+	err = prepareCorpusDir(opts, buildResult)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	reportHandler, err := createReportHandler(opts, buildResult)
+	if err != nil {
+		return nil, err
 	}
 
 	err = runJazzer(opts, buildResult, reportHandler)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return reportHandler, nil
 }
 
 func (r *GradleRunner) build(opts *RunOptions) (*build.BuildResult, error) {
