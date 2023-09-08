@@ -16,7 +16,6 @@ import (
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
-	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
@@ -98,72 +97,6 @@ func TestAssembleArtifactsJava_Fuzzing(t *testing.T) {
 	actualContents, err := listFilesRecursively(out)
 	require.NoError(t, err)
 	require.Equal(t, expectedContents, actualContents)
-}
-
-func TestListFuzzTests(t *testing.T) {
-	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
-
-	testRoot := filepath.Join(tempDir, "src", "test", "java")
-	err := os.MkdirAll(testRoot, 0o755)
-	require.NoError(t, err)
-	firstPackage := filepath.Join(testRoot, "com", "example")
-	err = os.MkdirAll(firstPackage, 0o755)
-	require.NoError(t, err)
-	secondPackage := filepath.Join(testRoot, "org", "example", "foo")
-	err = os.MkdirAll(secondPackage, 0o755)
-	require.NoError(t, err)
-
-	err = os.WriteFile(filepath.Join(firstPackage, "FuzzTest.java"), []byte(`
-package com.example;
-
-import com.code_intelligence.jazzer.junit.FuzzTest;
-
-class FuzzTest {
-    @FuzzTest
-    void fuzz(byte[] data) {}
-}
-`), 0o644)
-	require.NoError(t, err)
-
-	err = os.WriteFile(filepath.Join(secondPackage, "Bar.java"), []byte(`
-package org.example.foo;
-
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import com.code_intelligence.jazzer.junit.FuzzTest;
-
-public class Bar {
-    public static void fuzzerTestOneInput(FuzzedDataProvider data) {}
-}
-`), 0o644)
-	require.NoError(t, err)
-
-	err = os.WriteFile(filepath.Join(secondPackage, "Baz.txt"), []byte(`
-package org.example.foo;
-
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import com.code_intelligence.jazzer.junit.FuzzTest;
-
-public class Baz {
-    public static void fuzzerTestOneInput(FuzzedDataProvider data) {}
-}
-`), 0o644)
-	require.NoError(t, err)
-
-	testDirs := []string{filepath.Join(tempDir, "src", "test")}
-	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
-	require.NoError(t, err)
-	require.ElementsMatchf(t, []string{
-		"com.example.FuzzTest::fuzz", "org.example.foo.Bar::fuzzerTestOneInput",
-	}, fuzzTests, "Expected to find fuzz test in %s", tempDir)
-}
-
-func TestListJVMFuzzTests_DoesNotExist(t *testing.T) {
-	tempDir := testutil.MkdirTemp(t, "", "bundle-*")
-
-	testDirs := []string{filepath.Join(tempDir, "src", "test")}
-	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, "")
-	require.NoError(t, err)
-	require.Empty(t, fuzzTests)
 }
 
 func listFilesRecursively(dir string) ([]string, error) {

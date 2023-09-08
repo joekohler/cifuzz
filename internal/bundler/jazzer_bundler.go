@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,7 +23,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
-	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
@@ -336,7 +334,7 @@ func (b *jazzerBundler) createManifestJar(targetClass string, targetMethod strin
 func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []string, error) {
 	var err error
 
-	allValidFuzzTests, err := listFuzzTests(nil, runtimeDeps)
+	allValidFuzzTests, err := cmdutils.ListJVMFuzzTests(nil, runtimeDeps)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -369,7 +367,7 @@ func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []st
 				targetMethods = append(targetMethods, targetMethod)
 			} else {
 				// Find all valid fuzz tests for the given class
-				fuzzTestsInClass, err := listFuzzTests([]string{fuzzTest}, runtimeDeps)
+				fuzzTestsInClass, err := cmdutils.ListJVMFuzzTests([]string{fuzzTest}, runtimeDeps)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -409,38 +407,4 @@ func getUniqueArtifactName(dependency string, artifactsMap map[string]uint) stri
 	artifactsMap[newBaseName] = 1
 
 	return newBaseName
-}
-
-func listFuzzTests(classNames []string, runtimeDeps []string) ([]string, error) {
-	listFuzzTestsJar, err := runfiles.Finder.ListFuzzTestsJarPath()
-	if err != nil {
-		return nil, err
-	}
-	classPath := strings.Join(append(runtimeDeps, listFuzzTestsJar), string(os.PathListSeparator))
-
-	args := []string{
-		"-cp",
-		classPath,
-		"com.code_intelligence.cifuzz.helper.ListFuzzTests",
-	}
-	if len(classNames) > 0 {
-		args = append(args, strings.Join(classNames, " "))
-	}
-
-	javaBin, err := runfiles.Finder.JavaPath()
-	if err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command(javaBin, args...)
-	cmd.Stderr = os.Stderr
-	log.Debugf("Command: %s", cmd.String())
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
-	}
-
-	fuzzTests := strings.Split(strings.TrimSpace(string(output)), "\n")
-
-	return fuzzTests, nil
 }

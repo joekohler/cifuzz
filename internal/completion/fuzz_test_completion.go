@@ -172,7 +172,7 @@ func validJVMFuzzTests(projectDir string, toComplete string) ([]string, cobra.Sh
 	testDirs := []string{
 		filepath.Join(projectDir, "src", "test"),
 	}
-	fuzzTests, err := cmdutils.ListJVMFuzzTests(testDirs, toComplete)
+	fuzzTests, err := cmdutils.ListJVMFuzzTestsByRegex(testDirs, toComplete)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

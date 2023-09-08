@@ -2,6 +2,7 @@ package cmdutils
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/regexutil"
 )
@@ -86,11 +89,11 @@ func ConstructJVMFuzzTestIdentifier(path, testDir string) (string, error) {
 	return "", nil
 }
 
-// ListJVMFuzzTests returns a list of all fuzz tests inside
+// ListJVMFuzzTestsByRegex returns a list of all fuzz tests inside
 // the given directories.
 // The returned list contains the fully qualified class name of the fuzz test.
 // to filter files based on the fqcn you can use the prefix filter parameter
-func ListJVMFuzzTests(testDirs []string, prefixFilter string) ([]string, error) {
+func ListJVMFuzzTestsByRegex(testDirs []string, prefixFilter string) ([]string, error) {
 	var fuzzTests []string
 	for _, testDir := range testDirs {
 		exists, err := fileutil.Exists(testDir)
@@ -143,4 +146,39 @@ func SeparateTargetClassAndMethod(fuzzTest string) (string, string) {
 
 	split := strings.Split(fuzzTest, "::")
 	return split[0], split[1]
+}
+
+// ListJVMFuzzTests gathers all fuzz tests using the list-fuzz-tests tool.
+func ListJVMFuzzTests(classNames []string, runtimeDeps []string) ([]string, error) {
+	listFuzzTestsJar, err := runfiles.Finder.ListFuzzTestsJarPath()
+	if err != nil {
+		return nil, err
+	}
+	classPath := strings.Join(append(runtimeDeps, listFuzzTestsJar), string(os.PathListSeparator))
+
+	args := []string{
+		"-cp",
+		classPath,
+		"com.code_intelligence.cifuzz.helper.ListFuzzTests",
+	}
+	if len(classNames) > 0 {
+		args = append(args, strings.Join(classNames, " "))
+	}
+
+	javaBin, err := runfiles.Finder.JavaPath()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(javaBin, args...)
+	cmd.Stderr = os.Stderr
+	log.Debugf("Command: %s", cmd.String())
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, WrapExecError(errors.WithStack(err), cmd)
+	}
+
+	fuzzTests := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	return fuzzTests, nil
 }
