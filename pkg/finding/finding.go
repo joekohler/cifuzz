@@ -35,7 +35,7 @@ type Finding struct {
 	Details            string        `json:"details,omitempty"`
 	HumanReadableInput string        `json:"human_readable_input,omitempty"`
 	MoreDetails        *ErrorDetails `json:"more_details,omitempty"`
-	Tag                uint64        `json:"tag,omitempty"`
+	Tag                string        `json:"tag,omitempty"`
 
 	// Note: The following fields don't exist in the protobuf
 	// representation used in the Code Intelligence core repository.

@@ -169,6 +169,7 @@ Skipping remote findings because running in non-interactive mode.`)
 			Details:            rf.ErrorReport.Details,
 			HumanReadableInput: string(rf.ErrorReport.InputData),
 			MoreDetails:        rf.ErrorReport.MoreDetails,
+			Tag:                rf.ErrorReport.Tag,
 			CreatedAt:          timeStamp,
 			FuzzTest:           rf.FuzzTargetDisplayName,
 			StackTrace: []*stacktrace.StackFrame{

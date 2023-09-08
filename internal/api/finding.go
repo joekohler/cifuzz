@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/url"
 	"time"
@@ -136,7 +135,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 						BreakPoints: breakPoints,
 					},
 					MoreDetails:      finding.MoreDetails,
-					Tag:              fmt.Sprint(finding.Tag),
+					Tag:              finding.Tag,
 					ShortDescription: finding.ShortDescriptionColumns()[0],
 				},
 				Timestamp: time.Now().Format(time.RFC3339),
