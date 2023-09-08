@@ -56,7 +56,6 @@ type runCmd struct {
 	errorDetails *[]finding.ErrorDetails
 
 	reportHandler *reporthandler.ReportHandler
-	tempDir       string
 }
 
 type FuzzerRunner interface {
@@ -314,14 +313,6 @@ func (c *runCmd) run() error {
 		return nil
 	}
 
-	// Create a temporary directory which the builder can use to create
-	// temporary files
-	c.tempDir, err = os.MkdirTemp("", "cifuzz-run-")
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer fileutil.Cleanup(c.tempDir)
-
 	var buildResult *build.BuildResult
 	buildResult, err = c.buildFuzzTest()
 	if err != nil {
@@ -432,6 +423,14 @@ func (c *runCmd) _buildFuzzTest() (*build.BuildResult, error) {
 			c.opts.FuzzTest += "_bin"
 		}
 
+		// Create a temporary directory which the builder can use to create
+		// temporary files
+		tempDir, err := os.MkdirTemp("", "cifuzz-run-")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		defer fileutil.Cleanup(tempDir)
+
 		var builder *bazel.Builder
 		builder, err = bazel.NewBuilder(&bazel.BuilderOptions{
 			ProjectDir: c.opts.ProjectDir,
@@ -439,7 +438,7 @@ func (c *runCmd) _buildFuzzTest() (*build.BuildResult, error) {
 			NumJobs:    c.opts.NumBuildJobs,
 			Stdout:     c.opts.BuildStdout,
 			Stderr:     c.opts.BuildStderr,
-			TempDir:    c.tempDir,
+			TempDir:    tempDir,
 			Verbose:    viper.GetBool("verbose"),
 		})
 		if err != nil {
