@@ -75,21 +75,10 @@ func (b *Builder) Build() (*build.BuildResult, error) {
 		return nil, err
 	}
 
-	project, err := parsePomXML(b.ProjectDir)
+	deps, err := GetDependencies(b.ProjectDir, b.Stderr)
 	if err != nil {
 		return nil, err
 	}
-
-	deps, err := b.getExternalDependencies()
-	if err != nil {
-		return nil, err
-	}
-	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
-	// These directories are configurable
-	deps = append(deps, []string{
-		project.Build.OutputDirectory,
-		project.Build.TestOutputDirectory,
-	}...)
 
 	result := &build.BuildResult{
 		// BuildDir is not used by Jazzer
@@ -100,7 +89,7 @@ func (b *Builder) Build() (*build.BuildResult, error) {
 	return result, nil
 }
 
-func (b *Builder) getExternalDependencies() ([]string, error) {
+func getExternalDependencies(projectDir string, stderr io.Writer) ([]string, error) {
 	tempDir, err := os.MkdirTemp("", "cifuzz-maven-dependencies-*")
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -115,7 +104,7 @@ func (b *Builder) getExternalDependencies() ([]string, error) {
 		outputFlag,
 	}
 
-	err = runMaven(b.ProjectDir, args, b.Stderr, b.Stderr)
+	err = runMaven(projectDir, args, stderr, stderr)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +161,26 @@ func parsePomXML(projectDir string) (*Project, error) {
 	}
 
 	return project, nil
+}
+
+func GetDependencies(projectDir string, stderr io.Writer) ([]string, error) {
+	project, err := parsePomXML(projectDir)
+	if err != nil {
+		return nil, err
+	}
+
+	deps, err := getExternalDependencies(projectDir, stderr)
+	if err != nil {
+		return nil, err
+	}
+	// Append local dependencies which are not listed by "mvn dependency:build-classpath"
+	// These directories are configurable
+	deps = append(deps, []string{
+		project.Build.OutputDirectory,
+		project.Build.TestOutputDirectory,
+	}...)
+
+	return deps, nil
 }
 
 // GetTestDir returns the value of <testSourceDirectory> from the projects

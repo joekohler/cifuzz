@@ -89,7 +89,7 @@ func (b *Builder) Build() (*build.BuildResult, error) {
 	}
 	log.Debugf("Found gradle plugin version: %s", version)
 
-	deps, err := b.getDependencies()
+	deps, err := GetDependencies(b.ProjectDir)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (b *Builder) GradlePluginVersion() (string, error) {
 	return strings.TrimPrefix(string(output), "cifuzz.plugin.version="), nil
 }
 
-func (b *Builder) getDependencies() ([]string, error) {
-	cmd, err := buildGradleCommand(b.ProjectDir, []string{"cifuzzPrintTestClasspath", "-q"})
+func GetDependencies(projectDir string) ([]string, error) {
+	cmd, err := buildGradleCommand(projectDir, []string{"cifuzzPrintTestClasspath", "-q"})
 	if err != nil {
 		return nil, err
 	}
