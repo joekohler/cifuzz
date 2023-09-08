@@ -17,8 +17,8 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
-	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
+	runnerPkg "code-intelligence.com/cifuzz/internal/cmd/run/runner"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
@@ -223,7 +223,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 	}
 
-	var runner runCmd.FuzzerRunner
+	var runner runnerPkg.FuzzerRunner
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
@@ -246,7 +246,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		runner = libfuzzer.NewRunner(runnerOpts)
 	}
 
-	return runCmd.ExecuteRunner(runner)
+	return runnerPkg.ExecuteRunner(runner)
 }
 
 // getMetadata returns the bundle metadata from the bundle.yaml file.

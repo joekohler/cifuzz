@@ -33,6 +33,7 @@ type ReportHandlerOptions struct {
 	ManagedSeedCorpusDir string
 	UserSeedCorpusDirs   []string
 	PrintJSON            bool
+	ErrorDetails         *[]finding.ErrorDetails
 }
 
 type ReportHandler struct {
@@ -46,7 +47,6 @@ type ReportHandler struct {
 
 	LastMetrics  *report.FuzzingMetric
 	FirstMetrics *report.FuzzingMetric
-	ErrorDetails *[]finding.ErrorDetails
 
 	numSeedsAtInit uint
 

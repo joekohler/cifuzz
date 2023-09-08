@@ -1,32 +1,17 @@
 package run
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"os/signal"
-	"path/filepath"
-	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/api"
-	"code-intelligence.com/cifuzz/internal/build"
-	"code-intelligence.com/cifuzz/internal/build/bazel"
-	"code-intelligence.com/cifuzz/internal/build/cmake"
-	"code-intelligence.com/cifuzz/internal/build/java"
-	"code-intelligence.com/cifuzz/internal/build/java/gradle"
-	"code-intelligence.com/cifuzz/internal/build/java/maven"
-	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	runnerPkg "code-intelligence.com/cifuzz/internal/cmd/run/runner"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -35,15 +20,10 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
-	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
-	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
-	"code-intelligence.com/cifuzz/pkg/runner/jazzerjs"
-	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
-	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -56,11 +36,6 @@ type runCmd struct {
 	errorDetails *[]finding.ErrorDetails
 
 	reportHandler *reporthandler.ReportHandler
-}
-
-type FuzzerRunner interface {
-	Run(context.Context) error
-	Cleanup(context.Context)
 }
 
 func New() *cobra.Command {
@@ -230,6 +205,10 @@ depends on the build system configured for the project.
 				opts.BuildStdout = cmd.OutOrStdout()
 			}
 			opts.BuildStderr = cmd.OutOrStderr()
+
+			opts.Stdout = cmd.OutOrStdout()
+			opts.Stderr = cmd.OutOrStderr()
+
 			if logging.ShouldLogBuildToFile() {
 				opts.BuildStdout, err = logging.BuildOutputToFile(opts.ProjectDir, []string{opts.FuzzTest})
 				if err != nil {
@@ -283,6 +262,22 @@ func (c *runCmd) run() error {
 	}
 	c.errorDetails = errorDetails
 
+	// Initialize the report handler. Only do this right before we start
+	// the fuzz test, because this is storing a timestamp which is used
+	// to figure out how long the fuzzing run is running.
+	c.reportHandler, err = reporthandler.NewReportHandler(
+		c.opts.FuzzTest,
+		&reporthandler.ReportHandlerOptions{
+			ProjectDir:         c.opts.ProjectDir,
+			UserSeedCorpusDirs: c.opts.SeedCorpusDirs,
+			PrintJSON:          c.opts.PrintJSON,
+			ErrorDetails:       errorDetails,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	var runner runnerPkg.Runner
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake:
@@ -305,47 +300,7 @@ func (c *runCmd) run() error {
 		return err
 	}
 
-	if c.opts.BuildSystem == config.BuildSystemCMake {
-		err := runner.Run()
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	var buildResult *build.BuildResult
-	buildResult, err = c.buildFuzzTest()
-	if err != nil {
-		return err
-	}
-
-	if c.opts.BuildOnly {
-		return nil
-	}
-
-	err = c.prepareCorpusDirs(buildResult)
-	if err != nil {
-		return err
-	}
-
-	// Initialize the report handler. Only do this right before we start
-	// the fuzz test, because this is storing a timestamp which is used
-	// to figure out how long the fuzzing run is running.
-	c.reportHandler, err = reporthandler.NewReportHandler(
-		c.opts.FuzzTest,
-		&reporthandler.ReportHandlerOptions{
-			ProjectDir:           c.opts.ProjectDir,
-			GeneratedCorpusDir:   buildResult.GeneratedCorpus,
-			ManagedSeedCorpusDir: buildResult.SeedCorpus,
-			UserSeedCorpusDirs:   c.opts.SeedCorpusDirs,
-			PrintJSON:            c.opts.PrintJSON,
-		})
-	if err != nil {
-		return err
-	}
-	c.reportHandler.ErrorDetails = errorDetails
-
-	err = c.runFuzzTest(buildResult)
+	err = runner.Run(c.opts, c.reportHandler)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && c.opts.UseSandbox {
@@ -379,306 +334,6 @@ func (c *runCmd) run() error {
 	}
 
 	return nil
-}
-
-func (c *runCmd) buildFuzzTest() (*build.BuildResult, error) {
-	// Note that the build printer should *not* print to c.opts.buildStdout,
-	// because that could be a file which is used to store the build log.
-	// We don't want the messages of the build printer to be printed to
-	// the build log file, so we let it print to stdout or stderr instead.
-	var buildPrinterOutput io.Writer
-	if c.opts.PrintJSON {
-		buildPrinterOutput = c.Command.OutOrStdout()
-	} else {
-		buildPrinterOutput = c.Command.ErrOrStderr()
-	}
-	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
-
-	buildResult, err := c._buildFuzzTest()
-	if err != nil {
-		buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
-	} else {
-		buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
-	}
-	return buildResult, err
-}
-
-func (c *runCmd) _buildFuzzTest() (*build.BuildResult, error) {
-	var err error
-
-	// TODO: Do not hardcode these values.
-	sanitizers := []string{"address", "undefined"}
-
-	switch c.opts.BuildSystem {
-	case config.BuildSystemBazel:
-		// The cc_fuzz_test rule defines multiple bazel targets: If the
-		// name is "foo", it defines the targets "foo", "foo_bin", and
-		// others. We need to run the "foo_bin" target but want to
-		// allow users to specify either "foo" or "foo_bin", so we check
-		// if the fuzz test name appended with "_bin" is a valid target
-		// and use that in that case
-		cmd := exec.Command("bazel", "query", c.opts.FuzzTest+"_bin")
-		err = cmd.Run()
-		if err == nil {
-			c.opts.FuzzTest += "_bin"
-		}
-
-		// Create a temporary directory which the builder can use to create
-		// temporary files
-		tempDir, err := os.MkdirTemp("", "cifuzz-run-")
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		defer fileutil.Cleanup(tempDir)
-
-		var builder *bazel.Builder
-		builder, err = bazel.NewBuilder(&bazel.BuilderOptions{
-			ProjectDir: c.opts.ProjectDir,
-			Args:       c.opts.ArgsToPass,
-			NumJobs:    c.opts.NumBuildJobs,
-			Stdout:     c.opts.BuildStdout,
-			Stderr:     c.opts.BuildStderr,
-			TempDir:    tempDir,
-			Verbose:    viper.GetBool("verbose"),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		var buildResults []*build.BuildResult
-		buildResults, err = builder.BuildForRun([]string{c.opts.FuzzTest})
-		if err != nil {
-			return nil, err
-		}
-		return buildResults[0], nil
-
-	case config.BuildSystemCMake:
-		var builder *cmake.Builder
-		builder, err = cmake.NewBuilder(&cmake.BuilderOptions{
-			ProjectDir: c.opts.ProjectDir,
-			Args:       c.opts.ArgsToPass,
-			Sanitizers: sanitizers,
-			Parallel: cmake.ParallelOptions{
-				Enabled: viper.IsSet("build-jobs"),
-				NumJobs: c.opts.NumBuildJobs,
-			},
-			Stdout:    c.opts.BuildStdout,
-			Stderr:    c.opts.BuildStderr,
-			BuildOnly: c.opts.BuildOnly,
-		})
-		if err != nil {
-			return nil, err
-		}
-		err = builder.Configure()
-		if err != nil {
-			return nil, err
-		}
-
-		cBuildResults, err := builder.Build([]string{c.opts.FuzzTest})
-		if err != nil {
-			return nil, err
-		}
-		// TODO: Maybe it would be more elegant to let builder.Build return
-		//       an empty build result so that this check is not needed.
-		if c.opts.BuildOnly {
-			return nil, nil
-		}
-
-		return cBuildResults[0].BuildResult, nil
-
-	case config.BuildSystemMaven:
-		if len(c.opts.ArgsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
-				"These arguments are ignored: %s", strings.Join(c.opts.ArgsToPass, " "))
-		}
-
-		var builder *maven.Builder
-		builder, err = maven.NewBuilder(&maven.BuilderOptions{
-			ProjectDir: c.opts.ProjectDir,
-			Parallel: maven.ParallelOptions{
-				Enabled: viper.IsSet("build-jobs"),
-				NumJobs: c.opts.NumBuildJobs,
-			},
-			Stdout: c.opts.BuildStdout,
-			Stderr: c.opts.BuildStderr,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		var buildResult *build.BuildResult
-		buildResult, err = builder.Build()
-		if err != nil {
-			return nil, err
-		}
-		return buildResult, err
-
-	case config.BuildSystemGradle:
-		if len(c.opts.ArgsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
-				"These arguments are ignored: %s", strings.Join(c.opts.ArgsToPass, " "))
-		}
-
-		var builder *gradle.Builder
-		builder, err = gradle.NewBuilder(&gradle.BuilderOptions{
-			ProjectDir: c.opts.ProjectDir,
-			Parallel: gradle.ParallelOptions{
-				Enabled: viper.IsSet("build-jobs"),
-				NumJobs: c.opts.NumBuildJobs,
-			},
-			Stdout: c.opts.BuildStdout,
-			Stderr: c.opts.BuildStderr,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		var buildResult *build.BuildResult
-		buildResult, err = builder.Build()
-		if err != nil {
-			return nil, err
-		}
-		return buildResult, err
-	case config.BuildSystemNodeJS:
-		// Node.js doesn't require a build step, so we just return an empty result.
-		// We return an empty result to proceed with the fuzzing step (which
-		// requires a build result).
-		// *Possible* TODO: refactor runFuzzTest to not require a build result?
-		return &build.BuildResult{}, nil
-	case config.BuildSystemOther:
-		if len(c.opts.ArgsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
-				"These arguments are ignored: %s", strings.Join(c.opts.ArgsToPass, " "))
-		}
-
-		var builder *other.Builder
-		builder, err = other.NewBuilder(&other.BuilderOptions{
-			ProjectDir:   c.opts.ProjectDir,
-			BuildCommand: c.opts.BuildCommand,
-			CleanCommand: c.opts.CleanCommand,
-			Sanitizers:   sanitizers,
-			Stdout:       c.opts.BuildStdout,
-			Stderr:       c.opts.BuildStderr,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		err := builder.Clean()
-		if err != nil {
-			return nil, err
-		}
-
-		cBuildResult, err := builder.Build(c.opts.FuzzTest)
-		if err != nil {
-			return nil, err
-		}
-		return cBuildResult.BuildResult, nil
-	}
-
-	return nil, errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
-}
-
-// runFuzzTest runs the fuzz test with the given build result.
-func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
-	var err error
-
-	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
-	if c.opts.TargetMethod != "" {
-		log.Infof("Running %s", style.Sprintf(c.opts.FuzzTest+"::"+c.opts.TargetMethod))
-	} else if c.opts.TestNamePattern != "" {
-		log.Infof("Running %s", style.Sprintf(c.opts.FuzzTest+":"+c.opts.TestNamePattern))
-	} else {
-		log.Infof("Running %s", style.Sprintf(c.opts.FuzzTest))
-	}
-
-	if buildResult.Executable != "" {
-		log.Debugf("Executable: %s", buildResult.Executable)
-	}
-
-	if c.opts.BuildSystem == config.BuildSystemBazel {
-		// The install base directory contains e.g. the script generated
-		// by bazel via --script_path and must therefore be accessible
-		// inside the sandbox.
-		cmd := exec.Command("bazel", "info", "install_base")
-		err = cmd.Run()
-		if err != nil {
-			return cmdutils.WrapExecError(errors.WithStack(err), cmd)
-		}
-	}
-
-	var libraryPaths []string
-	if runtime.GOOS != "windows" && buildResult.Executable != "" {
-		var err error
-		libraryPaths, err = ldd.LibraryPaths(buildResult.Executable)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Use user-specified seed corpus dirs (if any) and the default seed
-	// corpus (if it exists).
-	exists, err := fileutil.Exists(buildResult.SeedCorpus)
-	if err != nil {
-		return err
-	}
-	if exists {
-		c.opts.SeedCorpusDirs = append(c.opts.SeedCorpusDirs, buildResult.SeedCorpus)
-	}
-
-	runnerOpts := &libfuzzer.RunnerOptions{
-		Dictionary:         c.opts.Dictionary,
-		EngineArgs:         c.opts.EngineArgs,
-		EnvVars:            []string{"NO_CIFUZZ=1"},
-		FuzzTarget:         buildResult.Executable,
-		LibraryDirs:        libraryPaths,
-		GeneratedCorpusDir: buildResult.GeneratedCorpus,
-		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
-		ProjectDir:         c.opts.ProjectDir,
-		ReadOnlyBindings:   []string{buildResult.BuildDir},
-		ReportHandler:      c.reportHandler,
-		SeedCorpusDirs:     c.opts.SeedCorpusDirs,
-		Timeout:            c.opts.Timeout,
-		UseMinijail:        c.opts.UseSandbox,
-		Verbose:            viper.GetBool("verbose"),
-	}
-
-	// TODO: Only set ReadOnlyBindings if buildResult.BuildDir != ""
-
-	var fuzzerRunner FuzzerRunner
-
-	switch c.opts.BuildSystem {
-	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		fuzzerRunner = libfuzzer.NewRunner(runnerOpts)
-	case config.BuildSystemMaven, config.BuildSystemGradle:
-		sourceDirs, err := java.SourceDirs(c.opts.ProjectDir, c.opts.BuildSystem)
-		if err != nil {
-			return err
-		}
-		testDirs, err := java.TestDirs(c.opts.ProjectDir, c.opts.BuildSystem)
-		if err != nil {
-			return err
-		}
-		runnerOpts.SourceDirs = append(sourceDirs, testDirs...)
-
-		runnerOpts := &jazzer.RunnerOptions{
-			TargetClass:      c.opts.FuzzTest,
-			TargetMethod:     c.opts.TargetMethod,
-			ClassPaths:       buildResult.RuntimeDeps,
-			LibfuzzerOptions: runnerOpts,
-		}
-		fuzzerRunner = jazzer.NewRunner(runnerOpts)
-	case config.BuildSystemNodeJS:
-		runnerOpts := &jazzerjs.RunnerOptions{
-			TestPathPattern:  c.opts.FuzzTest,
-			TestNamePattern:  c.opts.TestNamePattern,
-			LibfuzzerOptions: runnerOpts,
-			PackageManager:   "npm",
-		}
-		fuzzerRunner = jazzerjs.NewRunner(runnerOpts)
-	}
-
-	return ExecuteRunner(fuzzerRunner)
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, token string) error {
@@ -752,55 +407,6 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	return nil
 }
 
-func ExecuteRunner(runner FuzzerRunner) error {
-	// Handle cleanup (terminating the fuzzer process) when receiving
-	// termination signals
-	signalHandlerCtx, cancelSignalHandler := context.WithCancel(context.Background())
-	routines, routinesCtx := errgroup.WithContext(signalHandlerCtx)
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	var signalErr error
-	routines.Go(func() error {
-		select {
-		case <-routinesCtx.Done():
-			return nil
-		case s := <-sigs:
-			log.Warnf("Received %s", s.String())
-			signalErr = cmdutils.NewSignalError(s.(syscall.Signal))
-			runner.Cleanup(routinesCtx)
-			return signalErr
-		}
-	})
-
-	// Run the fuzzer
-	routines.Go(func() error {
-		defer cancelSignalHandler()
-		return runner.Run(routinesCtx)
-	})
-
-	err := routines.Wait()
-	// We use a separate variable to pass signal errors, because when
-	// a signal was received, the first goroutine terminates the second
-	// one, resulting in a race of which returns an error first. In that
-	// case, we always want to print the signal error, not the
-	// "Unexpected exit code" error from the runner.
-	if signalErr != nil {
-		return signalErr
-	}
-
-	var execErr *cmdutils.ExecError
-	if errors.As(err, &execErr) {
-		// If the error is expected because libFuzzer might fail due to user
-		// configuration, we return the execErr directly
-		return execErr
-	}
-
-	// Routines.Wait() returns an error created by us so it already has a
-	// stack trace and we don't want to add another one here
-	// nolint: wrapcheck
-	return err
-}
-
 func (c *runCmd) selectProject(projects []*api.Project, token string) (string, error) {
 	// Let the user select a project
 	var displayNames []string
@@ -846,51 +452,4 @@ func (c *runCmd) selectProject(projects []*api.Project, token string) (string, e
 	}
 
 	return projectName, nil
-}
-
-func (c *runCmd) prepareCorpusDirs(buildResult *build.BuildResult) error {
-	switch c.opts.BuildSystem {
-	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		// The generated corpus dir has to be created before starting the fuzzing run.
-		err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
-
-		// Ensure that symlinks are resolved to be able to add minijail
-		// bindings for the corpus dirs.
-		exists, err := fileutil.Exists(buildResult.SeedCorpus)
-		if err != nil {
-			return err
-		}
-		if exists {
-			buildResult.SeedCorpus, err = filepath.EvalSymlinks(buildResult.SeedCorpus)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-		}
-
-		buildResult.GeneratedCorpus, err = filepath.EvalSymlinks(buildResult.GeneratedCorpus)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		for i, dir := range c.opts.SeedCorpusDirs {
-			c.opts.SeedCorpusDirs[i], err = filepath.EvalSymlinks(dir)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-		}
-	case config.BuildSystemMaven, config.BuildSystemGradle:
-		// The seed corpus dir has to be created before starting the fuzzing run.
-		// Otherwise jazzer will store the findings in the project dir.
-		// It is not necessary to create the corpus dir. Jazzer will do that for us.
-		err := os.MkdirAll(cmdutils.JazzerSeedCorpus(c.opts.FuzzTest, c.opts.ProjectDir), 0o755)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	return nil
 }

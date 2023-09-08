@@ -3,6 +3,11 @@ package runner
 import (
 	"runtime"
 
+	"github.com/spf13/viper"
+
+	"code-intelligence.com/cifuzz/internal/build"
+	"code-intelligence.com/cifuzz/internal/build/cmake"
+	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 )
 
@@ -25,7 +30,62 @@ func (r *CMakeRunner) CheckDependencies(projectDir string) error {
 	return dependencies.Check(deps, projectDir)
 }
 
-func (r *CMakeRunner) Run() error {
+func (r *CMakeRunner) Run(opts *RunOptions, reportHandler *reporthandler.ReportHandler) error {
+	cBuildResult, err := wrapBuild[build.CBuildResult](opts, r.build)
+	if err != nil {
+		return err
+	}
+
+	if opts.BuildOnly {
+		return nil
+	}
+
+	err = prepareCorpusDir(opts, cBuildResult.BuildResult, reportHandler)
+	if err != nil {
+		return err
+	}
+
+	err = runLibfuzzer(opts, cBuildResult.BuildResult, reportHandler)
+	if err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (r *CMakeRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
+	sanitizers := []string{"address", "undefined"}
+
+	var builder *cmake.Builder
+	builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
+		ProjectDir: opts.ProjectDir,
+		Args:       opts.ArgsToPass,
+		Sanitizers: sanitizers,
+		Parallel: cmake.ParallelOptions{
+			Enabled: viper.IsSet("build-jobs"),
+			NumJobs: opts.NumBuildJobs,
+		},
+		Stdout:    opts.BuildStdout,
+		Stderr:    opts.BuildStderr,
+		BuildOnly: opts.BuildOnly,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = builder.Configure()
+	if err != nil {
+		return nil, err
+	}
+
+	cBuildResults, err := builder.Build([]string{opts.FuzzTest})
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Maybe it would be more elegant to let builder.Build return
+	//       an empty build result so that this check is not needed.
+	if opts.BuildOnly {
+		return nil, nil
+	}
+
+	return cBuildResults[0], nil
 }

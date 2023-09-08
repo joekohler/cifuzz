@@ -37,6 +37,9 @@ type RunOptions struct {
 
 	BuildStdout io.Writer
 	BuildStderr io.Writer
+
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 func (opts *RunOptions) Validate() error {
