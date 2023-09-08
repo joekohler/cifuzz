@@ -29,6 +29,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	"code-intelligence.com/cifuzz/internal/build/other"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
+	runnerPkg "code-intelligence.com/cifuzz/internal/cmd/run/runner"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
@@ -36,7 +37,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
-	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -129,7 +129,7 @@ type runCmd struct {
 	tempDir       string
 }
 
-type Runner interface {
+type FuzzerRunner interface {
 	Run(context.Context) error
 	Cleanup(context.Context)
 }
@@ -354,7 +354,24 @@ func (c *runCmd) run() error {
 	}
 	c.errorDetails = errorDetails
 
-	err = c.checkDependencies()
+	var runner runnerPkg.Runner
+	switch c.opts.BuildSystem {
+	case config.BuildSystemCMake:
+		runner = &runnerPkg.CMakeRunner{}
+	case config.BuildSystemMaven:
+		runner = &runnerPkg.MavenRunner{}
+	case config.BuildSystemGradle:
+		runner = &runnerPkg.GradleRunner{}
+	case config.BuildSystemNodeJS:
+		runner = &runnerPkg.NodeJSRunner{}
+	case config.BuildSystemOther:
+		runner = &runnerPkg.OtherRunner{}
+	case config.BuildSystemBazel:
+		runner = &runnerPkg.BazelRunner{}
+	default:
+		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
+	}
+	err = runner.CheckDependencies(c.opts.ProjectDir)
 	if err != nil {
 		return err
 	}
@@ -691,11 +708,11 @@ func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 
 	// TODO: Only set ReadOnlyBindings if buildResult.BuildDir != ""
 
-	var runner Runner
+	var fuzzerRunner FuzzerRunner
 
 	switch c.opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		runner = libfuzzer.NewRunner(runnerOpts)
+		fuzzerRunner = libfuzzer.NewRunner(runnerOpts)
 	case config.BuildSystemMaven, config.BuildSystemGradle:
 		sourceDirs, err := java.SourceDirs(c.opts.ProjectDir, c.opts.BuildSystem)
 		if err != nil {
@@ -713,7 +730,7 @@ func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 			ClassPaths:       buildResult.RuntimeDeps,
 			LibfuzzerOptions: runnerOpts,
 		}
-		runner = jazzer.NewRunner(runnerOpts)
+		fuzzerRunner = jazzer.NewRunner(runnerOpts)
 	case config.BuildSystemNodeJS:
 		runnerOpts := &jazzerjs.RunnerOptions{
 			TestPathPattern:  c.opts.fuzzTest,
@@ -721,67 +738,10 @@ func (c *runCmd) runFuzzTest(buildResult *build.BuildResult) error {
 			LibfuzzerOptions: runnerOpts,
 			PackageManager:   "npm",
 		}
-		runner = jazzerjs.NewRunner(runnerOpts)
+		fuzzerRunner = jazzerjs.NewRunner(runnerOpts)
 	}
 
-	return ExecuteRunner(runner)
-}
-
-func (c *runCmd) checkDependencies() error {
-	var deps []dependencies.Key
-	switch c.opts.BuildSystem {
-	case config.BuildSystemCMake:
-		deps = []dependencies.Key{
-			dependencies.CMake,
-			dependencies.LLVMSymbolizer,
-		}
-		switch runtime.GOOS {
-		case "linux", "darwin":
-			deps = append(deps, dependencies.Clang)
-		case "windows":
-			deps = append(deps, dependencies.VisualStudio)
-		}
-	case config.BuildSystemMaven:
-		deps = []dependencies.Key{
-			dependencies.Java,
-			dependencies.Maven,
-		}
-	case config.BuildSystemGradle:
-		deps = []dependencies.Key{
-			dependencies.Java,
-			dependencies.Gradle,
-		}
-	case config.BuildSystemNodeJS:
-		deps = []dependencies.Key{
-			dependencies.Node,
-		}
-	case config.BuildSystemOther:
-		switch runtime.GOOS {
-		case "linux", "darwin":
-			deps = []dependencies.Key{
-				dependencies.Clang,
-				dependencies.LLVMSymbolizer,
-			}
-		case "windows":
-			deps = []dependencies.Key{
-				dependencies.VisualStudio,
-			}
-		}
-	case config.BuildSystemBazel:
-		// All dependencies are managed via bazel but it should be checked
-		// that the correct bazel version is installed
-		deps = []dependencies.Key{
-			dependencies.Bazel,
-		}
-	default:
-		return errors.Errorf("Unsupported build system \"%s\"", c.opts.BuildSystem)
-	}
-
-	err := dependencies.Check(deps, c.opts.ProjectDir)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ExecuteRunner(fuzzerRunner)
 }
 
 func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *report.FuzzingMetric, lastMetrics *report.FuzzingMetric, token string) error {
@@ -855,7 +815,7 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	return nil
 }
 
-func ExecuteRunner(runner Runner) error {
+func ExecuteRunner(runner FuzzerRunner) error {
 	// Handle cleanup (terminating the fuzzer process) when receiving
 	// termination signals
 	signalHandlerCtx, cancelSignalHandler := context.WithCancel(context.Background())

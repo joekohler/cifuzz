@@ -223,7 +223,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 	}
 
-	var runner runCmd.Runner
+	var runner runCmd.FuzzerRunner
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
