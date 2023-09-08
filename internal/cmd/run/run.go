@@ -305,7 +305,7 @@ func (c *runCmd) run() error {
 
 	// check if there are findings that should be uploaded
 	if token != "" && len(c.reportHandler.Findings) > 0 {
-		err = c.uploadFindings(c.opts.FuzzTest, c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, token)
+		err = c.uploadFindings(c.getFuzzTestNameForCampaignRun(), c.opts.BuildSystem, c.reportHandler.FirstMetrics, c.reportHandler.LastMetrics, token)
 		if err != nil {
 			return err
 		}
@@ -430,4 +430,13 @@ func (c *runCmd) selectProject(projects []*api.Project, token string) (string, e
 	}
 
 	return projectName, nil
+}
+
+func (c *runCmd) getFuzzTestNameForCampaignRun() string {
+	if c.opts.BuildSystem == config.BuildSystemMaven ||
+		c.opts.BuildSystem == config.BuildSystemGradle {
+		return fmt.Sprintf("%s::%s", c.opts.FuzzTest, c.opts.TargetMethod)
+	}
+
+	return c.opts.FuzzTest
 }
