@@ -190,8 +190,8 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 
 	// TODO: create or get real directory for seed corpus
 	corpusDirName := "corpus"
-	seedDirName := "seed"
-	err = os.MkdirAll(seedDirName, 0o755)
+	managedSeedDirName := "seed"
+	err = os.MkdirAll(managedSeedDirName, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -206,7 +206,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           fuzzer.ProjectDir,
 			PrintJSON:            c.opts.PrintJSON,
-			ManagedSeedCorpusDir: seedDirName,
+			ManagedSeedCorpusDir: managedSeedDirName,
 		})
 	if err != nil {
 		return err
@@ -233,6 +233,21 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	}
 	if exists {
 		runnerOpts.Dictionary = dictFileName
+	}
+
+	// Specify user-supplied seed corpus dirs if the bundle includes any.
+	userSeedCorpusDir := "seeds"
+	entries, err := os.ReadDir(userSeedCorpusDir)
+	// Don't return an error if the directory doesn't exist.
+	if err != nil && !os.IsNotExist(err) {
+		return errors.WithStack(err)
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			return errors.Errorf("unexpected file in user seed corpus dir %q: %s", userSeedCorpusDir, entry.Name())
+		}
+		seedCorpusDir := fmt.Sprintf("%s/%s", userSeedCorpusDir, entry.Name())
+		runnerOpts.SeedCorpusDirs = append(runnerOpts.SeedCorpusDirs, seedCorpusDir)
 	}
 
 	var runner adapter.FuzzerRunner
