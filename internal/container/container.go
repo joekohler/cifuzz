@@ -17,7 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-func Create(printJSON bool) (string, error) {
+func Create(imageID string, printJSON bool) (string, error) {
 	cli, err := GetDockerClient()
 	if err != nil {
 		return "", err
@@ -25,7 +25,7 @@ func Create(printJSON bool) (string, error) {
 
 	hostConfig := &container.HostConfig{}
 	containerConfig := &container.Config{
-		Image:        "cifuzz",
+		Image:        imageID,
 		Cmd:          []string{"--single-fuzz-test"},
 		AttachStdout: true,
 		AttachStderr: true,
