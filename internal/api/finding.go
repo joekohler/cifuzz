@@ -137,7 +137,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 					},
 					MoreDetails:      finding.MoreDetails,
 					Tag:              fmt.Sprint(finding.Tag),
-					ShortDescription: finding.ShortDescription(),
+					ShortDescription: finding.ShortDescriptionColumns()[0],
 				},
 				Timestamp: time.Now().Format(time.RFC3339),
 			},
