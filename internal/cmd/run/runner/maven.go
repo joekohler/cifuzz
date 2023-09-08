@@ -1,6 +1,8 @@
 package runner
 
-import "code-intelligence.com/cifuzz/pkg/dependencies"
+import (
+	"code-intelligence.com/cifuzz/pkg/dependencies"
+)
 
 type MavenRunner struct {
 }
