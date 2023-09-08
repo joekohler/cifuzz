@@ -214,6 +214,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 
 	runnerOpts := &libfuzzer.RunnerOptions{
 		FuzzTarget:         fuzzer.Path,
+		EngineArgs:         fuzzer.EngineOptions.Flags,
 		ProjectDir:         fuzzer.ProjectDir,
 		UseMinijail:        false,
 		LibraryDirs:        fuzzer.LibraryPaths,
