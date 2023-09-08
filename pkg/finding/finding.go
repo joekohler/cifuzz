@@ -37,8 +37,6 @@ type Finding struct {
 	MoreDetails        *ErrorDetails `json:"more_details,omitempty"`
 	Tag                uint64        `json:"tag,omitempty"`
 
-	Location string
-
 	// Note: The following fields don't exist in the protobuf
 	// representation used in the Code Intelligence core repository.
 	CreatedAt  time.Time                `json:"created_at,omitempty"`

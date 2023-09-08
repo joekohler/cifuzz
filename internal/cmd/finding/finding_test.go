@@ -12,6 +12,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -253,7 +254,14 @@ func TestPrintRemoteFinding_Authenticated(t *testing.T) {
 				},
 			},
 		},
-		Location: "in exploreMe (src/explore_me.cpp:13:11)",
+		StackTrace: []*stacktrace.StackFrame{
+			{
+				Function:   "exploreMe",
+				SourceFile: "src/explore_me.cpp",
+				Line:       13,
+				Column:     11,
+			},
+		},
 		FuzzTest: "my_fuzz_test",
 	}
 

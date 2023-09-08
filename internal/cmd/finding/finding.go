@@ -22,6 +22,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/messaging"
+	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -169,11 +170,14 @@ Skipping remote findings because running in non-interactive mode.`)
 			MoreDetails:        rf.ErrorReport.MoreDetails,
 			CreatedAt:          timeStamp,
 			FuzzTest:           rf.FuzzTargetDisplayName,
-			Location: fmt.Sprintf("in %s (%s:%d:%d)",
-				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Function,
-				rf.ErrorReport.DebuggingInfo.BreakPoints[0].SourceFilePath,
-				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Line,
-				rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Column),
+			StackTrace: []*stacktrace.StackFrame{
+				{
+					Function:   rf.ErrorReport.DebuggingInfo.BreakPoints[0].Function,
+					SourceFile: rf.ErrorReport.DebuggingInfo.BreakPoints[0].SourceFilePath,
+					Line:       rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Line,
+					Column:     rf.ErrorReport.DebuggingInfo.BreakPoints[0].Location.Column,
+				},
+			},
 		})
 	}
 
@@ -206,8 +210,8 @@ Skipping remote findings because running in non-interactive mode.`)
 			score := "n/a"
 			locationInfo := "n/a"
 			// add location (file, function, line) if available
-			if f.Location != "" {
-				locationInfo = f.Location
+			if f.StackTrace != nil && len(f.StackTrace) > 0 {
+				locationInfo = fmt.Sprintf("%s:%s:%d", f.StackTrace[0].SourceFile, f.StackTrace[0].Function, f.StackTrace[0].Line)
 			} else if len(f.ShortDescriptionColumns()) > 1 {
 				locationInfo = f.ShortDescriptionColumns()[1]
 			}
