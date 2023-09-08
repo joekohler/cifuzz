@@ -339,7 +339,9 @@ func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []st
 		return nil, nil, err
 	}
 	if len(allValidFuzzTests) == 0 {
-		return nil, nil, errors.Errorf("No fuzz test could be found in the project directory '%s'", b.opts.ProjectDir)
+		return nil, nil, cmdutils.WrapIncorrectUsageError(
+			errors.Errorf("No fuzz test could be found in the project directory '%s'", b.opts.ProjectDir),
+		)
 	}
 
 	var fuzzTests []string
@@ -360,24 +362,33 @@ func (b *jazzerBundler) fuzzTestIdentifier(runtimeDeps []string) ([]string, []st
 				// Check first that the fuzz test actually exists
 				class, targetMethod := cmdutils.SeparateTargetClassAndMethod(fuzzTest)
 				if !sliceutil.Contains(allValidFuzzTests, fuzzTest) {
-					return nil, nil, errors.Errorf("Fuzz test '%s' in class '%s' could not be found in the project directory '%s'", targetMethod, class, b.opts.ProjectDir)
+					return nil, nil, cmdutils.WrapIncorrectUsageError(
+						errors.Errorf("Fuzz test '%s' in class '%s' could not be found in the project directory '%s'",
+							targetMethod, class, b.opts.ProjectDir,
+						),
+					)
 				}
 
 				fuzzTests = append(fuzzTests, class)
 				targetMethods = append(targetMethods, targetMethod)
 			} else {
 				// Find all valid fuzz tests for the given class
-				fuzzTestsInClass, err := cmdutils.ListJVMFuzzTests([]string{fuzzTest}, runtimeDeps)
-				if err != nil {
-					return nil, nil, err
+				var fuzzTestsInTargetClass []string
+				for _, validFuzzTest := range allValidFuzzTests {
+					targetClass, _ := cmdutils.SeparateTargetClassAndMethod(validFuzzTest)
+					if fuzzTest == targetClass {
+						fuzzTestsInTargetClass = append(fuzzTestsInTargetClass, fuzzTest)
+					}
 				}
-				if len(fuzzTestsInClass) == 0 {
-					return nil, nil, errors.Errorf("No fuzz test could be found for the given class: %s", fuzzTest)
+				if len(fuzzTestsInTargetClass) == 0 {
+					return nil, nil, cmdutils.WrapIncorrectUsageError(
+						errors.Errorf("No fuzz test could be found for the given class: %s", fuzzTest),
+					)
 				}
 
-				for _, test := range fuzzTestsInClass {
-					class, targetMethod := cmdutils.SeparateTargetClassAndMethod(test)
-					fuzzTests = append(fuzzTests, class)
+				for _, test := range fuzzTestsInTargetClass {
+					targetClass, targetMethod := cmdutils.SeparateTargetClassAndMethod(test)
+					fuzzTests = append(fuzzTests, targetClass)
 					targetMethods = append(targetMethods, targetMethod)
 				}
 			}
