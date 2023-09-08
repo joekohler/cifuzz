@@ -223,6 +223,16 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 	}
 
+	// Specify the dictionary file if the bundle includes one.
+	dictFileName := "dict"
+	exists, err := fileutil.Exists(dictFileName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		runnerOpts.Dictionary = dictFileName
+	}
+
 	var runner adapter.FuzzerRunner
 
 	switch fuzzer.Engine {
