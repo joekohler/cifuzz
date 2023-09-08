@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
@@ -215,6 +216,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	runnerOpts := &libfuzzer.RunnerOptions{
 		FuzzTarget:         fuzzer.Path,
 		EngineArgs:         fuzzer.EngineOptions.Flags,
+		Timeout:            time.Duration(fuzzer.MaxRunTime) * time.Second,
 		ProjectDir:         fuzzer.ProjectDir,
 		UseMinijail:        false,
 		LibraryDirs:        fuzzer.LibraryPaths,
