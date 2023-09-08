@@ -222,6 +222,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		ReportHandler:      reportHandler,
 		GeneratedCorpusDir: corpusDirName,
 		EnvVars:            []string{"NO_CIFUZZ=1"},
+		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
 	}
 
 	// Specify the dictionary file if the bundle includes one.

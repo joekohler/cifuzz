@@ -52,6 +52,9 @@ func Create(imageID string, printJSON bool, bindMounts []string) (string, error)
 	if printJSON {
 		containerConfig.Cmd = append(containerConfig.Cmd, "--json")
 	}
+	if log.PlainStyle() {
+		containerConfig.Cmd = append(containerConfig.Cmd, "--plain")
+	}
 
 	// Make the container sleep forever if the environment variable is set.
 	// This is useful for debugging, as it allows to exec into the container,
