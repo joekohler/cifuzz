@@ -36,7 +36,7 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, fuzzTestName str
 			[]string{"c_api", "LIBFUZZER"}, // expected
 			[]string{"JAVA_LIBFUZZER", "nodejs_api", "java_api", "JAZZER_JS"}, // unexpected
 		)
-	case "com.example.FuzzTestCase":
+	case "com.example.FuzzTestCase::myFuzzTest":
 		server.Handlers[fmt.Sprintf("/v1/projects/%s/campaign_runs", projectName)] = mockserver.CheckBodyAndReturnResponse(t,
 			"{}",
 			[]string{"java_api", "JAVA_LIBFUZZER"}, // expected

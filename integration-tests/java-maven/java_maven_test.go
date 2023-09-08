@@ -19,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -36,11 +37,13 @@ func TestIntegration_Maven(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "maven")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
+	log.Infof("Project dir: %s", projectDir)
 
 	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  projectDir,
-		DefaultFuzzTest: "com.example.FuzzTestCase",
+		DefaultFuzzTest: "com.example.FuzzTestCase::myFuzzTest",
 	}
 
 	// Execute the init command
@@ -87,75 +90,54 @@ func TestIntegration_Maven(t *testing.T) {
 	findings := shared.GetFindings(t, cifuzz, projectDir)
 	require.Empty(t, findings)
 
-	// Run the (empty) fuzz test
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
-		TerminateAfterExpectedOutput: true,
+	t.Run("runEmptyFuzzTest", func(t *testing.T) {
+		// Run the (empty) fuzz test
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`^paths: \d+`)},
+			TerminateAfterExpectedOutput: true,
+		})
 	})
 
 	// Make the fuzz test call a function
 	modifyFuzzTestToCallFunction(t, fuzzTestPath)
-	// Run the fuzz test
-	expectedOutputExp := regexp.MustCompile(`High: Remote Code Execution`)
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+
+	t.Run("run", func(t *testing.T) {
+		testRun(t, cifuzzRunner)
+
+		t.Run("jacocoCoverageReport", func(t *testing.T) {
+			// Produce a jacoco xml coverage report
+			createJacocoXMLCoverageReport(t, cifuzz, projectDir)
+		})
 	})
 
-	// Check that the findings command lists the finding
-	findings = shared.GetFindings(t, cifuzz, projectDir)
-	require.Len(t, findings, 1)
-	require.Contains(t, findings[0].Details, "Remote Code Execution")
-
-	expectedStackTrace := []*stacktrace.StackFrame{
-		{
-			SourceFile:  "src/main/java/com/example/ExploreMe.java",
-			Line:        19,
-			Column:      0,
-			FrameNumber: 0,
-			Function:    "com.example.ExploreMe.exploreMe",
-		},
-		{
-			SourceFile:  "src/test/java/com/example/FuzzTestCase.java",
-			Line:        19,
-			Column:      0,
-			FrameNumber: 0,
-			Function:    "com.example.FuzzTestCase.myFuzzTest",
-		},
-	}
-
-	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
-
-	// Check that options set via the config file are respected
-	configFileContent := "print-json: true"
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), []byte(configFileContent), 0o644)
-	require.NoError(t, err)
-	expectedOutputExp = regexp.MustCompile(`"finding": {`)
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	t.Run("coverageVSCodePreset", func(t *testing.T) {
+		testCoverageVSCodePreset(t, cifuzz, projectDir)
 	})
 
-	// Check that command-line flags take precedence over config file
-	// settings (only on Linux because we only support Minijail on
-	// Linux).
-	cifuzzRunner.Run(t, &shared.RunOptions{
-		Args:             []string{"--json=false"},
-		UnexpectedOutput: expectedOutputExp,
+	t.Run("runWithoutFuzzTest", func(t *testing.T) {
+		// Run without specifying a fuzz test
+		testRunWithoutFuzzTest(t, cifuzzRunner)
 	})
 
-	// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
-	err = os.WriteFile(filepath.Join(projectDir, "cifuzz.yaml"), nil, 0o644)
-	require.NoError(t, err)
+	t.Run("runWrongFuzzTest", func(t *testing.T) {
+		// Run without specifying a fuzz test
+		testRunWrongFuzzTest(t, cifuzzRunner)
+	})
 
-	// Produce a jacoco xml coverage report
-	createJacocoXMLCoverageReport(t, cifuzz, projectDir)
+	t.Run("runWithAdditionalArgs", func(t *testing.T) {
+		// Check if adding additional jazzer parameters via flags is respected
+		shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
+	})
 
-	testCoverageVSCodePreset(t, cifuzz, projectDir)
+	t.Run("runWithConfigFile", func(t *testing.T) {
+		// Check that options set via the config file are respected
+		testRunWithConfigFile(t, cifuzzRunner)
+	})
 
-	// Run cifuzz bundle and verify the contents of the archive.
-	testBundle(t, projectDir, cifuzz, "com.example.FuzzTestCase")
-
-	// Check if adding additional jazzer parameters via flags is respected
-	shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
+	t.Run("bundle", func(t *testing.T) {
+		// Run cifuzz bundle and verify the contents of the archive.
+		testBundle(t, projectDir, cifuzz, "com.example.FuzzTestCase::myFuzzTest")
+	})
 
 	t.Run("runWithUpload", func(t *testing.T) {
 		testRunWithUpload(t, cifuzzRunner)
@@ -256,7 +238,7 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
-	shared.TestRunWithUpload(t, testdata, cifuzz, "com.example.FuzzTestCase")
+	shared.TestRunWithUpload(t, testdata, cifuzz, "com.example.FuzzTestCase::myFuzzTest")
 }
 
 func testBundle(t *testing.T, dir string, cifuzz string, args ...string) {
@@ -374,4 +356,92 @@ func testBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	for _, expectedSourceLocation := range expectedSourceLocations {
 		assert.Contains(t, sourceMap.JavaPackages["com.example"], expectedSourceLocation)
 	}
+}
+
+func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	testData := cifuzzRunner.DefaultWorkDir
+
+	configFileContent := "print-json: true"
+	err := os.WriteFile(filepath.Join(testData, "cifuzz.yaml"), []byte(configFileContent), 0o644)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		// Clear cifuzz.yml so that subsequent tests run with defaults (e.g. sandboxing).
+		err = os.WriteFile(filepath.Join(testData, "cifuzz.yaml"), nil, 0o644)
+		require.NoError(t, err)
+	})
+
+	expectedOutputExp := regexp.MustCompile(`"finding": {`)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	})
+
+	// Check that command-line flags take precedence over config file
+	// settings (only on Linux because we only support Minijail on
+	// Linux).
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		Args:             []string{"--json=false"},
+		UnexpectedOutput: expectedOutputExp,
+	})
+}
+
+func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzz := cifuzzRunner.CIFuzzPath
+	testData := cifuzzRunner.DefaultWorkDir
+
+	// Run the fuzz test
+	expectedOutputExp := regexp.MustCompile(`High: Remote Code Execution`)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	})
+
+	// Check that the findings command lists the finding
+	findings := shared.GetFindings(t, cifuzz, testData)
+	require.Len(t, findings, 1)
+	require.Contains(t, findings[0].Details, "Remote Code Execution")
+
+	expectedStackTrace := []*stacktrace.StackFrame{
+		{
+			SourceFile:  "src/main/java/com/example/ExploreMe.java",
+			Line:        19,
+			Column:      0,
+			FrameNumber: 0,
+			Function:    "com.example.ExploreMe.exploreMe",
+		},
+		{
+			SourceFile:  "src/test/java/com/example/FuzzTestCase.java",
+			Line:        19,
+			Column:      0,
+			FrameNumber: 0,
+			Function:    "com.example.FuzzTestCase.myFuzzTest",
+		},
+	}
+	require.Equal(t, expectedStackTrace, findings[0].StackTrace)
+}
+
+func testRunWithoutFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run without specifying a fuzz test
+	expectedOutputExp := regexp.MustCompile(`High: Remote Code Execution`)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	})
+}
+
+func testRunWrongFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	expectedOutputExp := regexp.MustCompile(`Invalid usage:`)
+
+	// Run with wrong class name
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "com.example.WrongFuzzTestCase",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+		ExpectError:     true,
+	})
+
+	// Run with wrong method name
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "com.example.FuzzTestCase::wrongFuzzTest",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+		ExpectError:     true,
+	})
 }

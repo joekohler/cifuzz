@@ -20,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestIntegration_GradleKotlin(t *testing.T) {
@@ -32,12 +33,13 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	// Copy testdata
 	projectDir := shared.CopyTestdataDir(t, "gradlekotlin")
+	t.Cleanup(func() { fileutil.Cleanup(projectDir) })
 	log.Infof("Project dir: %s", projectDir)
 
 	cifuzzRunner := &shared.CIFuzzRunner{
 		CIFuzzPath:      cifuzz,
 		DefaultWorkDir:  projectDir,
-		DefaultFuzzTest: "com.example.FuzzTestCase",
+		DefaultFuzzTest: "com.example.FuzzTestCase::myFuzzTest",
 	}
 
 	// Execute the init command
@@ -91,6 +93,16 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 		})
 	})
 
+	t.Run("runWithoutFuzzTest", func(t *testing.T) {
+		// Run without specifying a fuzz test
+		testRunWithoutFuzzTest(t, cifuzzRunner)
+	})
+
+	t.Run("runWrongFuzzTest", func(t *testing.T) {
+		// Run without specifying a fuzz test
+		testRunWrongFuzzTest(t, cifuzzRunner)
+	})
+
 	t.Run("runWithAdditionalArgs", func(t *testing.T) {
 		// Check if adding additional jazzer parameters via flags is respected
 		shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
@@ -103,7 +115,7 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 
 	t.Run("bundle", func(t *testing.T) {
 		// Run cifuzz bundle and verify the contents of the archive.
-		gradle.TestBundleGradle(t, "kotlin", projectDir, cifuzz, "com.example.FuzzTestCase")
+		gradle.TestBundleGradle(t, "kotlin", projectDir, cifuzz, "com.example.FuzzTestCase::myFuzzTest")
 	})
 
 	t.Run("runWithUpload", func(t *testing.T) {
@@ -253,5 +265,32 @@ func modifyFuzzTestToCallFunction(t *testing.T, fuzzTestPath string) {
 func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
-	shared.TestRunWithUpload(t, testdata, cifuzz, "com.example.FuzzTestCase")
+	shared.TestRunWithUpload(t, testdata, cifuzz, "com.example.FuzzTestCase::myFuzzTest")
+}
+
+func testRunWithoutFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Run without specifying a fuzz test
+	expectedOutputExp := regexp.MustCompile(`High: Remote Code Execution`)
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+	})
+}
+
+func testRunWrongFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	expectedOutputExp := regexp.MustCompile(`Invalid usage:`)
+
+	// Run with wrong class name
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "com.example.WrongFuzzTestCase",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+		ExpectError:     true,
+	})
+
+	// Run with wrong method name
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "com.example.FuzzTestCase::wrongFuzzTest",
+		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
+		ExpectError:     true,
+	})
 }
