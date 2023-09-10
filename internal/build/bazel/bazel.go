@@ -155,10 +155,8 @@ func (b *Builder) BuildForRun(fuzzTests []string) ([]*build.BuildResult, error) 
 		// Build with libFuzzer
 		"--@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer",
 		"--@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer",
-		// Build with ASan instrumentation
-		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan",
-		// Build with UBSan instrumentation
-		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan",
+		// Build with ASan and UBSan instrumentation
+		"--@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan-ubsan",
 		// Link in our additional libFuzzer logic that dumps inputs for non-fatal crashes.
 		"--@cifuzz//:__internal_has_libfuzzer",
 		"--verbose_failures",
@@ -524,11 +522,12 @@ run 'cifuzz init' to see setup instructions.`),
 	matches := rulesFuzzingSHA256Regex.FindSubmatch(out)
 	if len(matches) == 0 || string(matches[1]) != dependencies.RulesFuzzingSHA256 {
 		return cmdutils.WrapExecError(errors.Errorf(
-			`Please update the http_archive rule of the "rules_fuzzing" repository in the WORKSPACE file to:
+			`Please update the definition of the "rules_fuzzing" repository and its
+dependencies in the WORKSPACE file to:
 
     %s
 
-		`, dependencies.RulesFuzzingHTTPArchiveRule), cmd)
+		`, dependencies.RulesFuzzingWORKSPACEContent), cmd)
 	}
 
 	return nil

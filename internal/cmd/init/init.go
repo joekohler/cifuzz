@@ -142,7 +142,7 @@ Use 'cifuzz create' to create your first fuzz test.`)
 func setUpAndMentionBuildSystemIntegrations(dir string, buildSystem string, testLang string) {
 	switch buildSystem {
 	case config.BuildSystemBazel:
-		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingHTTPArchiveRule, dependencies.CIFuzzBazelCommit))
+		log.Print(fmt.Sprintf(messaging.Instructions(buildSystem), dependencies.RulesFuzzingWORKSPACEContent, dependencies.CIFuzzBazelCommit))
 	case config.BuildSystemCMake:
 		// Note: We set NO_SYSTEM_ENVIRONMENT_PATH to avoid that the
 		// system-wide cmake package takes precedence over a package
