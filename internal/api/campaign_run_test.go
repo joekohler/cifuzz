@@ -9,12 +9,13 @@ import (
 )
 
 func Test_createMetricsForCampaignRun(t *testing.T) {
+	now := time.Now()
 	type args struct {
 		firstMetrics *report.FuzzingMetric
 		lastMetrics  *report.FuzzingMetric
 	}
 	fakeMetrics := &report.FuzzingMetric{
-		Timestamp:               time.Now(),
+		Timestamp:               now,
 		ExecutionsPerSecond:     100,
 		Features:                100,
 		CorpusSize:              100,
@@ -24,7 +25,7 @@ func Test_createMetricsForCampaignRun(t *testing.T) {
 		SecondsSinceLastEdge:    uint64(100),
 	}
 	fakeMetricsInTheFuture := &report.FuzzingMetric{
-		Timestamp:               time.Now().Add(time.Second * 10),
+		Timestamp:               now.Add(time.Second * 10),
 		ExecutionsPerSecond:     100,
 		Features:                100,
 		CorpusSize:              100,
