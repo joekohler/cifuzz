@@ -25,8 +25,9 @@ import (
 )
 
 type Runner interface {
-	Run(*RunOptions) (*reporthandler.ReportHandler, error)
 	CheckDependencies(string) error
+	Run(*RunOptions) (*reporthandler.ReportHandler, error)
+	Cleanup()
 }
 
 func NewRunner(opts *RunOptions) (Runner, error) {

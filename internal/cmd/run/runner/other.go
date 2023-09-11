@@ -91,3 +91,6 @@ func (r *OtherRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
 	}
 	return cBuildResult, nil
 }
+
+func (*OtherRunner) Cleanup() {
+}

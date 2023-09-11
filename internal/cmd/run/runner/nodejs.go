@@ -54,3 +54,6 @@ func (r *NodeJSRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, erro
 
 	return reportHandler, nil
 }
+
+func (*NodeJSRunner) Cleanup() {
+}

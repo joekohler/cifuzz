@@ -94,3 +94,6 @@ func (r *CMakeRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
 
 	return cBuildResults[0], nil
 }
+
+func (*CMakeRunner) Cleanup() {
+}

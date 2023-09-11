@@ -79,3 +79,6 @@ func (r *MavenRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 	}
 	return buildResult, err
 }
+
+func (*MavenRunner) Cleanup() {
+}

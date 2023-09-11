@@ -77,3 +77,6 @@ func (r *GradleRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 	}
 	return buildResult, err
 }
+
+func (*GradleRunner) Cleanup() {
+}

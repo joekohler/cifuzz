@@ -266,6 +266,7 @@ func (c *runCmd) run() error {
 	if err != nil {
 		return err
 	}
+	defer runner.Cleanup()
 
 	err = runner.CheckDependencies(c.opts.ProjectDir)
 	if err != nil {

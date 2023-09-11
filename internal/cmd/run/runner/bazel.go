@@ -16,6 +16,7 @@ import (
 )
 
 type BazelRunner struct {
+	tempDir string
 }
 
 func (r *BazelRunner) CheckDependencies(projectDir string) error {
@@ -27,6 +28,14 @@ func (r *BazelRunner) CheckDependencies(projectDir string) error {
 }
 
 func (r *BazelRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+	// Create a temporary directory which the builder can use to create
+	// temporary files
+	var err error
+	r.tempDir, err = os.MkdirTemp("", "cifuzz-run-")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	buildResult, err := wrapBuild[build.BuildResult](opts, r.build)
 	if err != nil {
 		return nil, err
@@ -76,14 +85,6 @@ func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 		opts.FuzzTest += "_bin"
 	}
 
-	// Create a temporary directory which the builder can use to create
-	// temporary files
-	tempDir, err := os.MkdirTemp("", "cifuzz-run-")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	defer fileutil.Cleanup(tempDir)
-
 	var builder *bazel.Builder
 	builder, err = bazel.NewBuilder(&bazel.BuilderOptions{
 		ProjectDir: opts.ProjectDir,
@@ -91,7 +92,7 @@ func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 		NumJobs:    opts.NumBuildJobs,
 		Stdout:     opts.BuildStdout,
 		Stderr:     opts.BuildStderr,
-		TempDir:    tempDir,
+		TempDir:    r.tempDir,
 		Verbose:    viper.GetBool("verbose"),
 	})
 	if err != nil {
@@ -104,4 +105,8 @@ func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 		return nil, err
 	}
 	return buildResults[0], nil
+}
+
+func (r *BazelRunner) Cleanup() {
+	fileutil.Cleanup(r.tempDir)
 }
