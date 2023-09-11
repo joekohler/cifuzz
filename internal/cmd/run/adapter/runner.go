@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"context"
@@ -16,40 +16,12 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/java"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
-
-type Runner interface {
-	CheckDependencies(string) error
-	Run(*RunOptions) (*reporthandler.ReportHandler, error)
-	Cleanup()
-}
-
-func NewRunner(opts *RunOptions) (Runner, error) {
-	var runner Runner
-	switch opts.BuildSystem {
-	case config.BuildSystemCMake:
-		runner = &CMakeRunner{}
-	case config.BuildSystemMaven:
-		runner = &MavenRunner{}
-	case config.BuildSystemGradle:
-		runner = &GradleRunner{}
-	case config.BuildSystemNodeJS:
-		runner = &NodeJSRunner{}
-	case config.BuildSystemOther:
-		runner = &OtherRunner{}
-	case config.BuildSystemBazel:
-		runner = &BazelRunner{}
-	default:
-		return nil, errors.Errorf("Unsupported build system \"%s\"", opts.BuildSystem)
-	}
-	return runner, nil
-}
 
 type FuzzerRunner interface {
 	Run(context.Context) error
@@ -200,8 +172,4 @@ func runJazzer(opts *RunOptions, buildResult *build.BuildResult, reportHandler *
 	runnerOpts.LibfuzzerOptions.SourceDirs = append(sourceDirs, testDirs...)
 	fuzzerRunner = jazzer.NewRunner(runnerOpts)
 	return ExecuteFuzzerRunner(fuzzerRunner)
-}
-
-type BuildResultType interface {
-	build.BuildResult | build.CBuildResult | build.JavaBuildResult
 }

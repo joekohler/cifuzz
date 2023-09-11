@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"io"
@@ -15,6 +15,32 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
+
+type BuildResultType interface {
+	build.BuildResult | build.CBuildResult | build.JavaBuildResult
+}
+
+func wrapBuild[BR BuildResultType](opts *RunOptions, build func(*RunOptions) (*BR, error)) (*BR, error) {
+	// Note that the build printer should *not* print to c.opts.buildStdout,
+	// because that could be a file which is used to store the build log.
+	// We don't want the messages of the build printer to be printed to
+	// the build log file, so we let it print to stdout or stderr instead.
+	var buildPrinterOutput io.Writer
+	if opts.PrintJSON {
+		buildPrinterOutput = opts.Stdout
+	} else {
+		buildPrinterOutput = opts.Stderr
+	}
+	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
+
+	cBuildResult, err := build(opts)
+	if err != nil {
+		buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
+	} else {
+		buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
+	}
+	return cBuildResult, err
+}
 
 func prepareCorpusDir(opts *RunOptions, buildResult *build.BuildResult) error {
 	switch opts.BuildSystem {
@@ -61,28 +87,6 @@ func prepareCorpusDir(opts *RunOptions, buildResult *build.BuildResult) error {
 	}
 
 	return nil
-}
-
-func wrapBuild[BR BuildResultType](opts *RunOptions, build func(*RunOptions) (*BR, error)) (*BR, error) {
-	// Note that the build printer should *not* print to c.opts.buildStdout,
-	// because that could be a file which is used to store the build log.
-	// We don't want the messages of the build printer to be printed to
-	// the build log file, so we let it print to stdout or stderr instead.
-	var buildPrinterOutput io.Writer
-	if opts.PrintJSON {
-		buildPrinterOutput = opts.Stdout
-	} else {
-		buildPrinterOutput = opts.Stderr
-	}
-	buildPrinter := logging.NewBuildPrinter(buildPrinterOutput, log.BuildInProgressMsg)
-
-	cBuildResult, err := build(opts)
-	if err != nil {
-		buildPrinter.StopOnError(log.BuildInProgressErrorMsg)
-	} else {
-		buildPrinter.StopOnSuccess(log.BuildInProgressSuccessMsg, true)
-	}
-	return cBuildResult, err
 }
 
 func createReportHandler(opts *RunOptions, buildResult *build.BuildResult) (*reporthandler.ReportHandler, error) {

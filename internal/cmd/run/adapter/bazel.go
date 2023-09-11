@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"os"
@@ -15,11 +15,11 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-type BazelRunner struct {
+type BazelAdapter struct {
 	tempDir string
 }
 
-func (r *BazelRunner) CheckDependencies(projectDir string) error {
+func (r *BazelAdapter) CheckDependencies(projectDir string) error {
 	// All dependencies are managed via bazel but it should be checked
 	// that the correct bazel version is installed
 	return dependencies.Check([]dependencies.Key{
@@ -27,7 +27,7 @@ func (r *BazelRunner) CheckDependencies(projectDir string) error {
 	}, projectDir)
 }
 
-func (r *BazelRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+func (r *BazelAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	// Create a temporary directory which the builder can use to create
 	// temporary files
 	var err error
@@ -71,7 +71,7 @@ func (r *BazelRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error
 	return reportHandler, nil
 }
 
-func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {
+func (r *BazelAdapter) build(opts *RunOptions) (*build.BuildResult, error) {
 
 	// The cc_fuzz_test rule defines multiple bazel targets: If the
 	// name is "foo", it defines the targets "foo", "foo_bin", and
@@ -107,6 +107,6 @@ func (r *BazelRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 	return buildResults[0], nil
 }
 
-func (r *BazelRunner) Cleanup() {
+func (r *BazelAdapter) Cleanup() {
 	fileutil.Cleanup(r.tempDir)
 }

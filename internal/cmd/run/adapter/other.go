@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"runtime"
@@ -11,10 +11,10 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-type OtherRunner struct {
+type OtherAdapter struct {
 }
 
-func (r *OtherRunner) CheckDependencies(projectDir string) error {
+func (r *OtherAdapter) CheckDependencies(projectDir string) error {
 
 	var deps []dependencies.Key
 	switch runtime.GOOS {
@@ -31,7 +31,7 @@ func (r *OtherRunner) CheckDependencies(projectDir string) error {
 	return dependencies.Check(deps, projectDir)
 }
 
-func (r *OtherRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+func (r *OtherAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	cBuildResult, err := wrapBuild[build.CBuildResult](opts, r.build)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (r *OtherRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error
 	return reportHandler, nil
 }
 
-func (r *OtherRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
+func (r *OtherAdapter) build(opts *RunOptions) (*build.CBuildResult, error) {
 	if len(opts.ArgsToPass) > 0 {
 		log.Warnf("Passing additional arguments is not supported for build system type \"other\".\n"+
 			"These arguments are ignored: %s", strings.Join(opts.ArgsToPass, " "))
@@ -92,5 +92,5 @@ func (r *OtherRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
 	return cBuildResult, nil
 }
 
-func (*OtherRunner) Cleanup() {
+func (*OtherAdapter) Cleanup() {
 }

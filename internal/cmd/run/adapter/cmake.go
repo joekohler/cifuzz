@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"runtime"
@@ -11,10 +11,10 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 )
 
-type CMakeRunner struct {
+type CMakeAdapter struct {
 }
 
-func (r *CMakeRunner) CheckDependencies(projectDir string) error {
+func (r *CMakeAdapter) CheckDependencies(projectDir string) error {
 	var deps []dependencies.Key
 	deps = []dependencies.Key{
 		dependencies.CMake,
@@ -30,7 +30,7 @@ func (r *CMakeRunner) CheckDependencies(projectDir string) error {
 	return dependencies.Check(deps, projectDir)
 }
 
-func (r *CMakeRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+func (r *CMakeAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	cBuildResult, err := wrapBuild[build.CBuildResult](opts, r.build)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (r *CMakeRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error
 	return reportHandler, nil
 }
 
-func (r *CMakeRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
+func (r *CMakeAdapter) build(opts *RunOptions) (*build.CBuildResult, error) {
 	sanitizers := []string{"address", "undefined"}
 
 	var builder *cmake.Builder
@@ -95,5 +95,5 @@ func (r *CMakeRunner) build(opts *RunOptions) (*build.CBuildResult, error) {
 	return cBuildResults[0], nil
 }
 
-func (*CMakeRunner) Cleanup() {
+func (*CMakeAdapter) Cleanup() {
 }

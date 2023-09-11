@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"github.com/pterm/pterm"
@@ -12,16 +12,16 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 )
 
-type NodeJSRunner struct {
+type NodeJSAdapter struct {
 }
 
-func (r *NodeJSRunner) CheckDependencies(projectDir string) error {
+func (r *NodeJSAdapter) CheckDependencies(projectDir string) error {
 	return dependencies.Check([]dependencies.Key{
 		dependencies.Node,
 	}, projectDir)
 }
 
-func (r *NodeJSRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+func (r *NodeJSAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
 	log.Infof("Running %s", style.Sprintf(opts.FuzzTest+":"+opts.TestNamePattern))
 
@@ -55,5 +55,5 @@ func (r *NodeJSRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, erro
 	return reportHandler, nil
 }
 
-func (*NodeJSRunner) Cleanup() {
+func (*NodeJSAdapter) Cleanup() {
 }

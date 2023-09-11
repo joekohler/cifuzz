@@ -12,8 +12,8 @@ import (
 	"golang.org/x/term"
 
 	"code-intelligence.com/cifuzz/internal/api"
+	"code-intelligence.com/cifuzz/internal/cmd/run/adapter"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
-	runnerPkg "code-intelligence.com/cifuzz/internal/cmd/run/runner"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
@@ -31,7 +31,7 @@ import (
 type runCmd struct {
 	*cobra.Command
 
-	opts         *runnerPkg.RunOptions
+	opts         *adapter.RunOptions
 	apiClient    *api.APIClient
 	errorDetails *[]finding.ErrorDetails
 
@@ -39,7 +39,7 @@ type runCmd struct {
 }
 
 func New() *cobra.Command {
-	opts := &runnerPkg.RunOptions{}
+	opts := &adapter.RunOptions{}
 	var bindFlags func()
 
 	cmd := &cobra.Command{
@@ -262,18 +262,18 @@ func (c *runCmd) run() error {
 	}
 	c.errorDetails = errorDetails
 
-	runner, err := runnerPkg.NewRunner(c.opts)
+	adapter, err := adapter.NewAdapter(c.opts)
 	if err != nil {
 		return err
 	}
-	defer runner.Cleanup()
+	defer adapter.Cleanup()
 
-	err = runner.CheckDependencies(c.opts.ProjectDir)
+	err = adapter.CheckDependencies(c.opts.ProjectDir)
 	if err != nil {
 		return err
 	}
 
-	c.reportHandler, err = runner.Run(c.opts)
+	c.reportHandler, err = adapter.Run(c.opts)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && c.opts.UseSandbox {

@@ -1,4 +1,4 @@
-package runner
+package adapter
 
 import (
 	"strings"
@@ -6,24 +6,23 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/build"
-	"code-intelligence.com/cifuzz/internal/build/java/maven"
+	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
-type MavenRunner struct {
+type GradleAdapter struct {
 }
 
-func (r *MavenRunner) CheckDependencies(projectDir string) error {
+func (r *GradleAdapter) CheckDependencies(projectDir string) error {
 	return dependencies.Check([]dependencies.Key{
 		dependencies.Java,
-		dependencies.Maven,
+		dependencies.Gradle,
 	}, projectDir)
 }
 
-func (r *MavenRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
-
+func (r *GradleAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
 	buildResult, err := wrapBuild[build.BuildResult](opts, r.build)
 	if err != nil {
 		return nil, err
@@ -51,17 +50,16 @@ func (r *MavenRunner) Run(opts *RunOptions) (*reporthandler.ReportHandler, error
 	return reportHandler, nil
 }
 
-func (r *MavenRunner) build(opts *RunOptions) (*build.BuildResult, error) {
-
+func (r *GradleAdapter) build(opts *RunOptions) (*build.BuildResult, error) {
 	if len(opts.ArgsToPass) > 0 {
-		log.Warnf("Passing additional arguments is not supported for Maven.\n"+
+		log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
 			"These arguments are ignored: %s", strings.Join(opts.ArgsToPass, " "))
 	}
 
-	var builder *maven.Builder
-	builder, err := maven.NewBuilder(&maven.BuilderOptions{
+	var builder *gradle.Builder
+	builder, err := gradle.NewBuilder(&gradle.BuilderOptions{
 		ProjectDir: opts.ProjectDir,
-		Parallel: maven.ParallelOptions{
+		Parallel: gradle.ParallelOptions{
 			Enabled: viper.IsSet("build-jobs"),
 			NumJobs: opts.NumBuildJobs,
 		},
@@ -80,5 +78,5 @@ func (r *MavenRunner) build(opts *RunOptions) (*build.BuildResult, error) {
 	return buildResult, err
 }
 
-func (*MavenRunner) Cleanup() {
+func (*GradleAdapter) Cleanup() {
 }
