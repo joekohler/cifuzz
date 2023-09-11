@@ -182,7 +182,7 @@ func (f *Finding) CopyInputFileAndUpdateFinding(projectDir, seedCorpusDir string
 	err = f.copyInputFile(projectDir, seedCorpusDir)
 
 	// Release the file lock
-	unlockErr := mutex.Unlock()
+	unlockErr := mutex.Close()
 	if err == nil {
 		return errors.WithStack(unlockErr)
 	}
