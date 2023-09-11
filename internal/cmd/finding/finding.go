@@ -210,13 +210,7 @@ Skipping remote findings because running in non-interactive mode.`)
 
 		for _, f := range allFindings {
 			score := "n/a"
-			locationInfo := "n/a"
-			// add location (file, function, line) if available
-			if f.StackTrace != nil && len(f.StackTrace) > 0 {
-				locationInfo = fmt.Sprintf("%s:%s:%d", f.StackTrace[0].SourceFile, f.StackTrace[0].Function, f.StackTrace[0].Line)
-			} else if len(f.ShortDescriptionColumns()) > 1 {
-				locationInfo = f.ShortDescriptionColumns()[1]
-			}
+			locationInfo := f.SourceLocation()
 			// check if MoreDetails exists to avoid nil pointer errors
 			if f.MoreDetails != nil {
 				// check if we have a severity and if we have a severity score

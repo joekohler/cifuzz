@@ -244,6 +244,19 @@ func (f *Finding) copyInputFile(projectDir, seedCorpusDir string) error {
 	return nil
 }
 
+func (f *Finding) SourceLocation() string {
+	if f.StackTrace != nil && len(f.StackTrace) > 0 {
+		stackFrame := f.StackTrace[0]
+		// in some cases ASan/Libfuzzer do not include the column in the stack trace
+		if stackFrame.Column != 0 {
+			return fmt.Sprintf("%s:%d:%d", stackFrame.SourceFile, stackFrame.Line, stackFrame.Column)
+		} else {
+			return fmt.Sprintf("%s:%d", stackFrame.SourceFile, stackFrame.Line)
+		}
+	}
+	return "n/a"
+}
+
 func (f *Finding) ShortDescriptionWithName() string {
 	return fmt.Sprintf("[%s] %s", f.Name, f.ShortDescription())
 }
@@ -283,16 +296,10 @@ func (f *Finding) ShortDescriptionColumns() []string {
 
 	// add location (file, function, line)
 	if len(f.StackTrace) > 0 {
-		f := f.StackTrace[0]
-		var location string
-		// in some cases ASan/Libfuzzer do not include the column in the stack trace
-		if f.Column != 0 {
-			location = fmt.Sprintf("%s:%d:%d", f.SourceFile, f.Line, f.Column)
-		} else {
-			location = fmt.Sprintf("%s:%d", f.SourceFile, f.Line)
-		}
-		if f.Function != "" {
-			columns = append(columns, fmt.Sprintf("in %s (%s)", f.Function, location))
+		st := f.StackTrace[0]
+		location := f.SourceLocation()
+		if st.Function != "" {
+			columns = append(columns, fmt.Sprintf("in %s (%s)", st.Function, location))
 		} else {
 			columns = append(columns, fmt.Sprintf("in %s", location))
 		}
