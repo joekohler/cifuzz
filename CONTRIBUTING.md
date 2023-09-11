@@ -2,7 +2,8 @@
 
 ## Release process
 
-For more information, see [how to create and publish a new release](./docs/RELEASE.md).
+We are using a automatic release process based on conventional commits
+and semantic versioning.
 
 ## Building from Source (Linux / macOS)
 
