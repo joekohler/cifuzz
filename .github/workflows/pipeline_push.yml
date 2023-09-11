@@ -36,6 +36,9 @@ jobs:
       - name: Run linting check
         run: make lint
 
+      - name: Check conventional commits
+        uses: webiny/action-conventional-commits@v1.1.0
+
       - name: Run unit tests
         run: make test/unit
         shell: bash

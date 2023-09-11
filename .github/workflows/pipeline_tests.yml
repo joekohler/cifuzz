@@ -36,6 +36,9 @@ jobs:
       - name: Run linting check
         run: make lint
 
+      - name: Check conventional commits
+        uses: webiny/action-conventional-commits@v1.1.0
+
   unit_tests:
     name: unit tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
