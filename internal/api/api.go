@@ -289,6 +289,8 @@ func (client *APIClient) sendRequestWithTimeout(method string, endpoint string, 
 
 	req.Header.Set("User-Agent", client.UserAgent)
 	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 
 	log.Debugf("Sending HTTP request: %s %s\n%s", method, endpoint, body)
 	httpClient := &http.Client{Transport: getCustomTransport(), Timeout: timeout}
