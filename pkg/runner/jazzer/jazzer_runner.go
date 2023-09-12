@@ -8,6 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
@@ -59,14 +61,20 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
+	classPath := strings.Join(r.ClassPaths, string(os.PathListSeparator))
+	err = r.printDebugVersionInfos(classPath)
+	if err != nil {
+		return err
+	}
+
 	javaBin, err := runfiles.Finder.JavaPath()
 	if err != nil {
 		return err
 	}
 	args := []string{javaBin}
 
-	// class paths
-	args = append(args, "-cp", strings.Join(r.ClassPaths, string(os.PathListSeparator)))
+	// class path
+	args = append(args, "-cp", classPath)
 
 	// JVM tuning args
 	// See https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/common.md#recommended-jvm-options
@@ -177,4 +185,20 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 
 func (r *Runner) Cleanup(ctx context.Context) {
 	r.Runner.Cleanup(ctx)
+}
+
+func (r *Runner) printDebugVersionInfos(classPath string) error {
+	jazzerVersion, err := dependencies.JazzerVersion(classPath)
+	if err != nil {
+		return err
+	}
+	junitVersion, err := dependencies.JUnitVersion(classPath)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Jazzer version: %s", jazzerVersion)
+	log.Debugf("JUnit Jupiter Engine version: %s", junitVersion)
+
+	return nil
 }
