@@ -1,5 +1,12 @@
 package api
 
+import (
+	"encoding/json"
+	"net/url"
+
+	"github.com/pkg/errors"
+)
+
 type ContainerRun struct {
 	Image     string     `json:"image"`
 	FuzzTests []FuzzTest `json:"fuzz_tests,omitempty"`
@@ -39,4 +46,38 @@ type Job struct {
 	Type   string `json:"type,omitempty"`
 	Status string `json:"status,omitempty"`
 	Config string `json:"config,omitempty"`
+}
+
+// PostContainerRemoteRun posts a new container run to the CI Sense API at /v3/runs.
+func (client *APIClient) PostContainerRemoteRun(image string, project string, fuzzTests []string, token string) error {
+	tests := []FuzzTest{}
+	for _, fuzzTest := range fuzzTests {
+		tests = append(tests, FuzzTest{Name: fuzzTest})
+	}
+	containerRun := &ContainerRun{
+		Image:             image,
+		FuzzTests:         tests,
+		ProjectExternalID: project,
+	}
+
+	body, err := json.Marshal(containerRun)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	url, err := url.JoinPath("/v3", "runs")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	resp, err := client.sendRequest("POST", url, body, token)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return responseToAPIError(resp)
+	}
+
+	return nil
 }
