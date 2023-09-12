@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
@@ -30,6 +31,9 @@ var (
 
 	bazelRegex   = regexp.MustCompile(`(?m)bazel (?P<version>\d+(\.\d+\.\d+)?)`)
 	genHTMLRegex = regexp.MustCompile(`.*LCOV version (?P<version>\d+\.\d+(\.\d+)?)`)
+
+	jazzerRegex = regexp.MustCompile(`jazzer-(?P<version>\d+\.\d+\.\d+).jar`)
+	junitRegex  = regexp.MustCompile(`junit-jupiter-engine-(?P<version>\d+\.\d+\.\d+).jar`)
 )
 
 type execCheck func(string, Key) (*semver.Version, error)
@@ -179,6 +183,32 @@ func gradleVersion(dep *Dependency, projectDir string) (*semver.Version, error) 
 	}
 	log.Debugf("Found Gradle version %s: %s", version, path)
 	return version, nil
+}
+
+func JazzerVersion(classPath string) (*semver.Version, error) {
+	return extractVersion(classPath, jazzerRegex, "jazzer")
+}
+
+func JUnitVersion(classPath string) (*semver.Version, error) {
+	return extractVersion(classPath, junitRegex, "junit-jupiter-engine")
+}
+
+func JazzerJSVersion() (*semver.Version, error) {
+	cmd := exec.Command("npx", []string{"jazzer", "--version"}...)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+	return extractVersion(string(output), nodeRegex, "jazzer.js")
+}
+
+func JestVersion() (*semver.Version, error) {
+	cmd := exec.Command("npx", []string{"jest", "--version"}...)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
+	}
+	return extractVersion(string(output), nodeRegex, "jest")
 }
 
 func nodeVersion(dep *Dependency, projectDir string) (*semver.Version, error) {
