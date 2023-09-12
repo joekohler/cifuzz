@@ -8,6 +8,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -30,6 +31,11 @@ func (r *GradleAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, err
 
 	if opts.BuildOnly {
 		return nil, nil
+	}
+
+	err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
+	if err != nil {
+		return nil, err
 	}
 
 	err = prepareCorpusDir(opts, buildResult)

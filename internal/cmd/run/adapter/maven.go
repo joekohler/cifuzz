@@ -8,6 +8,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
@@ -31,6 +32,11 @@ func (r *MavenAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, erro
 
 	if opts.BuildOnly {
 		return nil, nil
+	}
+
+	err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
+	if err != nil {
+		return nil, err
 	}
 
 	err = prepareCorpusDir(opts, buildResult)

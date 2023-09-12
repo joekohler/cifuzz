@@ -302,6 +302,15 @@ func (c *coverageCmd) run() error {
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
+		deps, err := gradle.GetDependencies(c.opts.ProjectDir)
+		if err != nil {
+			return err
+		}
+		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
+		if err != nil {
+			return err
+		}
+
 		gen = &gradleCoverage.CoverageGenerator{
 			OutputPath:   c.opts.OutputPath,
 			FuzzTest:     c.opts.fuzzTest,
@@ -321,6 +330,15 @@ func (c *coverageCmd) run() error {
 		if len(c.opts.argsToPass) > 0 {
 			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
+		}
+
+		deps, err := maven.GetDependencies(c.opts.ProjectDir, c.opts.buildStderr)
+		if err != nil {
+			return err
+		}
+		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
+		if err != nil {
+			return err
 		}
 
 		gen = &mavenCoverage.CoverageGenerator{
