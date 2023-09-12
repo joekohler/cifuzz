@@ -92,7 +92,7 @@ container is built and run locally instead of being pushed to a CI Sense server.
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,
-		cmdutils.AddDockerImageFlag,
+		cmdutils.AddDockerImageFlagForContainerCommand,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
 		cmdutils.AddInteractiveFlag,

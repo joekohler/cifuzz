@@ -81,7 +81,7 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,
-		cmdutils.AddDockerImageFlag,
+		cmdutils.AddDockerImageFlagForContainerCommand,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
 		cmdutils.AddPrintJSONFlag,

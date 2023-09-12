@@ -115,13 +115,27 @@ func AddDictFlag(cmd *cobra.Command) func() {
 	}
 }
 
-func AddDockerImageFlag(cmd *cobra.Command) func() {
+func AddDockerImageFlagForContainerCommand(cmd *cobra.Command) func() {
 	// Default was originally set to "ubuntu:rolling", but this is not correct
 	// It will be set by the bundle command depending on the build system, unless user overrides it
 	cmd.Flags().String("docker-image", "",
-		"Docker image to use in the bundle config. This image will be used when\n"+
-			"the bundle is executed on CI Sense.\n"+
-			"By default, the image is chosen automatically based on the build system.")
+		`A Docker image which is used as the base for the container image.
+The image must contain all the dependencies required to run the fuzz test.
+By default, the image is chosen automatically based on the build system
+("eclipse-temurin:20" for Java build systems, "ubuntu:rolling" for others).`)
+	return func() {
+		ViperMustBindPFlag("docker-image", cmd.Flags().Lookup("docker-image"))
+	}
+}
+
+func AddDockerImageFlagForBundleCommand(cmd *cobra.Command) func() {
+	// Default was originally set to "ubuntu:rolling", but this is not correct
+	// It will be set by the bundle command depending on the build system, unless user overrides it
+	cmd.Flags().String("docker-image", "",
+		`Docker image to use in the bundle config. This image will be used when
+the bundle is executed on CI Sense.
+By default, the image is chosen automatically based on the build system
+("eclipse-temurin:20" for Java build systems, "ubuntu:rolling" for others).`)
 	return func() {
 		ViperMustBindPFlag("docker-image", cmd.Flags().Lookup("docker-image"))
 	}

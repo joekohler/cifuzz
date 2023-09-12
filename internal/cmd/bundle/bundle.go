@@ -192,7 +192,7 @@ on the build system. This can be overridden with a docker-image flag.
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,
-		cmdutils.AddDockerImageFlag,
+		cmdutils.AddDockerImageFlagForBundleCommand,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
 		cmdutils.AddProjectDirFlag,

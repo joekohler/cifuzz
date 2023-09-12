@@ -183,7 +183,7 @@ variable or by running 'cifuzz login' first.
 		cmdutils.AddBuildJobsFlag,
 		cmdutils.AddCommitFlag,
 		cmdutils.AddDictFlag,
-		cmdutils.AddDockerImageFlag,
+		cmdutils.AddDockerImageFlagForContainerCommand,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
 		cmdutils.AddInteractiveFlag,
