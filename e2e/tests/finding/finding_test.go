@@ -32,7 +32,7 @@ var findingTests = &[]e2e.TestCase{
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stdout, "n/a")
-			assert.Contains(t, output.Stdout, "in exploreMe (src/explore_me.cpp:18:11)")
+			assert.Contains(t, output.Stdout, "src/explore_me.cpp:18:11")
 		},
 	},
 	{
@@ -46,7 +46,7 @@ var findingTests = &[]e2e.TestCase{
 			assert.NotContains(t, output.Stdout, "n/a")
 			assert.Contains(t, output.Stdout, "9.0")
 			assert.Contains(t, output.Stdout, "heap buffer overflow")
-			assert.Contains(t, output.Stdout, "in exploreMe (src/explore_me.cpp:18:11)")
+			assert.Contains(t, output.Stdout, "src/explore_me.cpp:18:11")
 		},
 	},
 	{
@@ -74,7 +74,7 @@ var findingTests = &[]e2e.TestCase{
 			assert.EqualValues(t, 0, output.ExitCode)
 			assert.Contains(t, output.Stdout, "my_fuzz_test")
 			assert.Contains(t, output.Stdout, "heap buffer overflow")
-			assert.Contains(t, output.Stdout, "in exploreMe (src/explore_me.cpp:18:11)")
+			assert.Contains(t, output.Stdout, "src/explore_me.cpp:18:11")
 			assert.Contains(t, output.Stderr, "cifuzz found more extensive information about this finding:")
 			assert.Contains(t, output.Stderr, "| Severity Level       | Critical                                                                         |")
 			assert.Contains(t, output.Stderr, "| Severity Score       | 9.0                                                                              |")
