@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"code-intelligence.com/cifuzz/pkg/dependencies"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
 	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -50,6 +52,11 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
+	err = r.printDebugVersionInfos()
+	if err != nil {
+		return err
+	}
+
 	args := []string{"npx", "jest"}
 
 	// ---------------------------
@@ -83,4 +90,20 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 
 func (r *Runner) Cleanup(ctx context.Context) {
 	r.Runner.Cleanup(ctx)
+}
+
+func (r *Runner) printDebugVersionInfos() error {
+	jazzerJSVersion, err := dependencies.JazzerJSVersion()
+	if err != nil {
+		return err
+	}
+	jestVersion, err := dependencies.JestVersion()
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("JazzerJS version: %s", jazzerJSVersion)
+	log.Debugf("Jest version: %s", jestVersion)
+
+	return nil
 }
