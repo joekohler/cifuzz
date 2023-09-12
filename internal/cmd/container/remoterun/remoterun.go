@@ -1,28 +1,38 @@
 package remoterun
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/container"
+	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type containerRemoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
+	Interactive  bool   `mapstructure:"interactive"`
+	Server       string `mapstructure:"server"`  // CI Sense
+	Project      string `mapstructure:"project"` // CI Sense
 	Registry     string `mapstructure:"registry"`
 }
 
 type containerRemoteRunCmd struct {
 	*cobra.Command
-	opts *containerRemoteRunOpts
+	opts      *containerRemoteRunOpts
+	apiClient *api.APIClient
 }
 
 func New() *cobra.Command {
@@ -69,7 +79,14 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 			return opts.Validate()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			var err error
+			opts.Server, err = api.ValidateAndNormalizeServerURL(opts.Server)
+			if err != nil {
+				return err
+			}
+
 			cmd := &containerRemoteRunCmd{Command: c, opts: opts}
+			cmd.apiClient = api.NewClient(opts.Server)
 			return cmd.run()
 		},
 	}
@@ -84,6 +101,7 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 		cmdutils.AddDockerImageFlagForContainerCommand,
 		cmdutils.AddEngineArgFlag,
 		cmdutils.AddEnvFlag,
+		cmdutils.AddInteractiveFlag,
 		cmdutils.AddPrintJSONFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddProjectFlag,
@@ -100,6 +118,51 @@ func newWithOptions(opts *containerRemoteRunOpts) *cobra.Command {
 func (c *containerRemoteRunCmd) run() error {
 	var err error
 
+	token, err := auth.EnsureValidToken(c.opts.Server)
+	if err != nil {
+		return err
+	}
+
+	if c.opts.Project == "" {
+		projects, err := c.apiClient.ListProjects(token)
+		if err != nil {
+			log.Error(err)
+			err = errors.New("Flag \"project\" must be set")
+			return cmdutils.WrapIncorrectUsageError(err)
+		}
+
+		if c.opts.Interactive {
+			c.opts.Project, err = c.selectProject(projects)
+			if err != nil {
+				return err
+			}
+
+			if c.opts.Project == "<<cancel>>" {
+				log.Info("Container remote run cancelled.")
+				return nil
+			}
+
+			// this will ask users via a y/N prompt if they want to persist the
+			// project choice
+			err = dialog.AskToPersistProjectChoice(c.opts.Project)
+			if err != nil {
+				return err
+			}
+		} else {
+			var projectNames []string
+			for _, p := range projects {
+				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
+			}
+			if len(projectNames) == 0 {
+				log.Warnf("No projects found. Please create a project first at %s.", c.opts.Server)
+				err = errors.New("Flag \"project\" must be set")
+				return cmdutils.WrapIncorrectUsageError(err)
+			}
+			err = errors.New("Flag \"project\" must be set. Valid projects:\n  " + strings.Join(projectNames, "\n  "))
+			return cmdutils.WrapIncorrectUsageError(err)
+		}
+	}
+
 	buildPrinter := logging.NewBuildPrinter(os.Stdout, log.ContainerBuildInProgressMsg)
 	imageID, err := c.buildImage()
 	if err != nil {
@@ -109,7 +172,18 @@ func (c *containerRemoteRunCmd) run() error {
 
 	buildPrinter.StopOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
-	return container.UploadImage(imageID, c.opts.Registry)
+	err = container.UploadImage(imageID, c.opts.Registry)
+	if err != nil {
+		return err
+	}
+
+	imageID = c.opts.Registry + ":" + imageID
+	err = c.apiClient.PostContainerRemoteRun(imageID, c.opts.Project, c.opts.FuzzTests, token)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *containerRemoteRunCmd) buildImage() (string, error) {
@@ -120,4 +194,29 @@ func (c *containerRemoteRunCmd) buildImage() (string, error) {
 	}
 
 	return container.BuildImageFromBundle(bundlePath)
+}
+
+func (c *containerRemoteRunCmd) selectProject(projects []*api.Project) (string, error) {
+	// Let the user select a project
+	var displayNames []string
+	var names []string
+	for _, p := range projects {
+		displayNames = append(displayNames, strings.TrimPrefix(p.DisplayName, "projects/"))
+		names = append(names, strings.TrimPrefix(p.Name, "projects/"))
+	}
+	maxLen := stringutil.MaxLen(displayNames)
+	items := map[string]string{}
+	for i := range displayNames {
+		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], names[i])
+		items[key] = names[i]
+	}
+	// add option to cancel
+	items["<Cancel>"] = "<cancel>"
+
+	projectName, err := dialog.Select("Select a remote project:", items, true)
+	if err != nil {
+		return "<cancel>", err
+	}
+
+	return projectName, nil
 }
