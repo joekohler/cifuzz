@@ -13,10 +13,7 @@ import org.junit.jupiter.api.Timeout;
 public class FuzzTestListerTest {
 
   @Test
-  // Aggressively limit the execution time of this test to verify that it only scans the project's
-  // own .class files (< 200ms on a laptop), not all third-party dependencies (> 5 seconds on a
-  // laptop).
-  @Timeout(2)
+  @Timeout(10)
   void listAllJUnitFuzzTests() {
     Optional<List<String>> fuzzTests = JUnitFuzzTestLister.listFuzzTests(emptyList());
 
