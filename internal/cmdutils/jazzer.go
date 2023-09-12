@@ -1,6 +1,7 @@
 package cmdutils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/regexutil"
+	"code-intelligence.com/cifuzz/util/sliceutil"
 )
 
 var jazzerFuzzTestRegex = regexp.MustCompile(`@FuzzTest|\sfuzzerTestOneInput\s*\(`)
@@ -181,4 +183,38 @@ func ListJVMFuzzTests(classNames []string, runtimeDeps []string) ([]string, erro
 	fuzzTests := strings.Split(strings.TrimSpace(string(output)), "\n")
 
 	return fuzzTests, nil
+}
+
+// ValidateJVMFuzzTest checks if the given fuzz test is valid.
+// If no target method is specified, it will be added.
+func ValidateJVMFuzzTest(fuzzTest string, targetMethod *string, deps []string) error {
+	allValidFuzzTests, err := ListJVMFuzzTests(nil, deps)
+	if err != nil {
+		return err
+	}
+
+	var fuzzTestsInTargetClass []string
+	for _, validFuzzTest := range allValidFuzzTests {
+		targetClass, _ := SeparateTargetClassAndMethod(validFuzzTest)
+		if targetClass == fuzzTest {
+			fuzzTestsInTargetClass = append(fuzzTestsInTargetClass, validFuzzTest)
+		}
+	}
+
+	if len(fuzzTestsInTargetClass) == 0 {
+		return WrapIncorrectUsageError(errors.Errorf("No valid fuzz tests found in %s", fuzzTest))
+	}
+
+	if *targetMethod == "" {
+		if len(fuzzTestsInTargetClass) > 1 {
+			return WrapIncorrectUsageError(errors.Errorf("Multiple fuzz tests found in %s", fuzzTest))
+		}
+		_, *targetMethod = SeparateTargetClassAndMethod(fuzzTestsInTargetClass[0])
+	}
+
+	if !sliceutil.Contains(fuzzTestsInTargetClass, fmt.Sprintf("%s::%s", fuzzTest, *targetMethod)) {
+		return WrapIncorrectUsageError(errors.Errorf("%s::%s is not a valid fuzz test", fuzzTest, *targetMethod))
+	}
+
+	return nil
 }
