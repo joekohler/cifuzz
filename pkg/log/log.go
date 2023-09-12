@@ -117,7 +117,7 @@ func Warnf(format string, a ...any) {
 }
 
 func Warn(a ...any) {
-	log(pterm.Style{pterm.Bold, pterm.FgYellow}, "⚠️ ", a...)
+	log(pterm.Style{pterm.Bold, pterm.FgYellow}, "🔔 ", a...)
 }
 
 // Notef highlights a message as a note
