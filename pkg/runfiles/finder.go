@@ -119,12 +119,12 @@ func (f RunfilesFinderImpl) ProcessWrapperPath() (string, error) {
 	return f.findFollowSymlinks("lib/process_wrapper")
 }
 
-func (f RunfilesFinderImpl) ReplayerSourcePath() (string, error) {
-	return f.findFollowSymlinks("src/replayer.c")
+func (f RunfilesFinderImpl) DumperPath() (string, error) {
+	return f.findFollowSymlinks("lib/dumper.o")
 }
 
-func (f RunfilesFinderImpl) DumperSourcePath() (string, error) {
-	return f.findFollowSymlinks("src/dumper.c")
+func (f RunfilesFinderImpl) ReplayerSourcePath() (string, error) {
+	return f.findFollowSymlinks("src/replayer.c")
 }
 
 func (f RunfilesFinderImpl) ListFuzzTestsJarPath() (string, error) {

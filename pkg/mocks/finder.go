@@ -87,12 +87,12 @@ func (m *RunfilesFinderMock) ProcessWrapperPath() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *RunfilesFinderMock) ReplayerSourcePath() (string, error) {
+func (m *RunfilesFinderMock) DumperPath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
 }
 
-func (m *RunfilesFinderMock) DumperSourcePath() (string, error) {
+func (m *RunfilesFinderMock) ReplayerSourcePath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
 }
