@@ -57,7 +57,7 @@ var findingTests = &[]e2e.TestCase{
 		CIUser:       e2e.InvalidTokenCIUser,
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			assert.EqualValues(t, 0, output.ExitCode)
-			assert.Contains(t, output.Stderr, "⚠️Invalid token: Received 401 Unauthorized from server ")
+			assert.Contains(t, output.Stderr, "Invalid token: Received 401 Unauthorized from server ")
 			assert.Contains(t, output.Stderr, "Findings are not supplemented with error details from CI Sense")
 			// it should not print the actual score
 			assert.Contains(t, output.Stdout, "n/a")
