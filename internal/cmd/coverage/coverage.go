@@ -313,6 +313,7 @@ func (c *coverageCmd) run() error {
 
 		gen = &gradleCoverage.CoverageGenerator{
 			OutputPath:   c.opts.OutputPath,
+			OutputFormat: c.opts.OutputFormat,
 			FuzzTest:     c.opts.fuzzTest,
 			TargetMethod: c.opts.targetMethod,
 			ProjectDir:   c.opts.ProjectDir,
@@ -343,6 +344,7 @@ func (c *coverageCmd) run() error {
 
 		gen = &mavenCoverage.CoverageGenerator{
 			OutputPath:   c.opts.OutputPath,
+			OutputFormat: c.opts.OutputFormat,
 			FuzzTest:     c.opts.fuzzTest,
 			TargetMethod: c.opts.targetMethod,
 			ProjectDir:   c.opts.ProjectDir,
