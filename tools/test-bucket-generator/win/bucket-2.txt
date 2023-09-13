@@ -1,2 +1,3 @@
-code-intelligence.com/cifuzz/integration-tests/java-maven
-code-intelligence.com/cifuzz/integration-tests/errors/nodejs
+code-intelligence.com/cifuzz/integration-tests/bazel
+code-intelligence.com/cifuzz/integration-tests/nodejs
+code-intelligence.com/cifuzz/tools/cmake

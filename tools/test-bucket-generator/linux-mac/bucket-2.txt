@@ -1,6 +1,7 @@
+code-intelligence.com/cifuzz/integration-tests/gradle/kotlin
 code-intelligence.com/cifuzz/integration-tests/bazel
-code-intelligence.com/cifuzz/integration-tests/gradle/java
-code-intelligence.com/cifuzz/integration-tests/node-typescript
+code-intelligence.com/cifuzz/integration-tests/java-maven-spring
 code-intelligence.com/cifuzz/integration-tests/other
 code-intelligence.com/cifuzz/internal/bundler
 code-intelligence.com/cifuzz/internal/cmd/coverage/llvm
+code-intelligence.com/cifuzz/internal/builder
