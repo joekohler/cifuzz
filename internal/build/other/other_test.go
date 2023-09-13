@@ -21,7 +21,7 @@ func defaultFinderMock(t *testing.T, repoRoot string) *mocks.RunfilesFinderMock 
 
 	finderMock := &mocks.RunfilesFinderMock{}
 	finderMock.On("CIFuzzIncludePath").Return(filepath.Join(repoRoot, "include"), nil)
-	finderMock.On("DumperSourcePath").Return(filepath.Join(repoRoot, "tools", "dumper"), nil)
+	finderMock.On("DumperPath").Return(filepath.Join("lib", "dumper.o"), nil)
 	finderMock.On("ClangPath").Return("clang", nil)
 	return finderMock
 }

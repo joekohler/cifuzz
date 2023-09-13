@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
@@ -80,8 +79,7 @@ func (opts *BuilderOptions) Validate() error {
 
 type Builder struct {
 	*BuilderOptions
-	env      []string
-	buildDir string
+	env []string
 }
 
 func NewBuilder(opts *BuilderOptions) (*Builder, error) {
@@ -91,12 +89,6 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	}
 
 	b := &Builder{BuilderOptions: opts}
-
-	// Create a temporary build directory
-	b.buildDir, err = os.MkdirTemp("", "cifuzz-build-")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
 
 	b.env, err = build.CommonBuildEnv()
 	if err != nil {
@@ -125,28 +117,6 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 // Build builds the specified fuzz test via the user-specified build command
 func (b *Builder) Build(fuzzTest string) (*build.CBuildResult, error) {
 	var err error
-
-	if !slices.Equal(b.Sanitizers, []string{"coverage"}) {
-		// We compile the dumper without any user-provided flags. This
-		// should be safe as it does not use any stdlib functions.
-		dumperSource, err := b.RunfilesFinder.DumperSourcePath()
-		if err != nil {
-			return nil, err
-		}
-		clang, err := b.RunfilesFinder.ClangPath()
-		if err != nil {
-			return nil, err
-		}
-		// Compile with -fPIC just in case the fuzz test is a PIE.
-		cmd := exec.Command(clang, "-fPIC", "-c", dumperSource, "-o", filepath.Join(b.buildDir, "dumper.o"))
-		cmd.Stdout = b.Stdout
-		cmd.Stderr = b.Stderr
-		log.Debugf("Dumper Command: %s", cmd.String())
-		err = cmd.Run()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
 
 	err = b.setBuildCommandEnv(fuzzTest)
 	if err != nil {
@@ -318,12 +288,17 @@ func (b *Builder) setLibFuzzerEnv() error {
 		// the behavior of the original libfuzzer function
 		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
 	}
+
+	dumper, err := b.RunfilesFinder.DumperPath()
+	if err != nil {
+		return err
+	}
 	fuzzTestLdflags = append(fuzzTestLdflags,
 		// Build with instrumentation for Fuzzing
 		"-fsanitize=fuzzer",
 		// Path to the dumper of CI Fuzz which ensures that non-fatal sanitizer
 		// findings still have an input attached
-		filepath.Join(b.buildDir, "dumper.o"))
+		dumper)
 	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestLDFlags, strings.Join(fuzzTestLdflags, " "))
 	if err != nil {
 		return err
