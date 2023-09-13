@@ -77,11 +77,11 @@ func buildImageFromDockerFile(t *testing.T, ctx context.Context, dockerClient *c
 }
 
 func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *client.Client, testCase *TestCase,
-	testCaseRun testCaseRunOptions, imageTag string) CommandOutput {
+	testCaseRun testCaseRunOptions, imageTag string, server string) CommandOutput {
 
 	t.Helper()
 	if testCase.CIUser != AnonymousCIUser {
-		testCaseRun.args = "--server=" + ciServerToUseForE2ETests + " " + testCaseRun.args
+		testCaseRun.args = fmt.Sprintf("--server=%s %s", server, testCaseRun.args)
 	}
 
 	installDir := shared.InstallCIFuzzInTemp(t)

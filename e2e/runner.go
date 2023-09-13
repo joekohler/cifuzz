@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/cicheck"
 )
@@ -61,12 +62,21 @@ type testCaseRunOptions struct {
 func RunTests(t *testing.T, testCases []TestCase) {
 	TestUseLocalAPIToken(t)
 	for _, testCase := range testCases { //nolint:gocritic
-		runTest(t, &testCase)
+		runTest(t, &testCase, ciServerToUseForE2ETests)
+	}
+}
+
+// RunTestsWithMockServer Runs all test cases generated from the input combinations
+func RunTestsWithMockServer(t *testing.T, testCases []TestCase, mockServer *mockserver.MockServer) {
+	for _, testCase := range testCases { //nolint:gocritic
+		mockServer.StartForContainer(t)
+		runTest(t, &testCase, mockServer.Address)
 	}
 }
 
 // runTest Generates 1...n tests from possible combinations in a TestCase.
-func runTest(t *testing.T, testCase *TestCase) {
+func runTest(t *testing.T, testCase *TestCase, server string) {
+
 	if testing.Short() {
 		t.Skip("skipping e2e tests in short mode")
 	}
@@ -131,7 +141,7 @@ func runTest(t *testing.T, testCase *TestCase) {
 		}
 
 		t.Run(testName, func(t *testing.T) {
-			commandOutput := runTestCaseInContainer(t, ctx, dockerClient, testCase, testCaseRun, imageTag)
+			commandOutput := runTestCaseInContainer(t, ctx, dockerClient, testCase, testCaseRun, imageTag, server)
 			fmt.Println(commandOutput.Stdout)
 
 			fmt.Println("")
