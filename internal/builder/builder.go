@@ -194,6 +194,11 @@ func (i *CIFuzzBuilder) BuildCIFuzzAndDeps() error {
 		}
 	}
 
+	err = i.BuildDumper()
+	if err != nil {
+		return err
+	}
+
 	err = i.BuildListFuzzTestsTool()
 	if err != nil {
 		return err
@@ -280,6 +285,47 @@ func (i *CIFuzzBuilder) BuildProcessWrapper() error {
 	dest := filepath.Join(i.libDir(), "process_wrapper")
 	cmd := exec.Command(compiler, "-o", dest, "process_wrapper.c")
 	cmd.Dir = filepath.Join(i.projectDir, "pkg", "minijail", "process_wrapper", "src")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	log.Printf("Command: %s", cmd.String())
+	err = cmd.Run()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (i *CIFuzzBuilder) BuildDumper() error {
+	var err error
+	err = i.Lock()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = i.Unlock()
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
+	}()
+
+	// Build dumper
+	compiler := envutil.GetEnvWithPathSubstring(os.Environ(), "CC", "clang")
+	if compiler == "" {
+		compiler, err = exec.LookPath("clang")
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	dest := filepath.Join(i.libDir(), "dumper.o")
+	args := []string{"-c", "-o", dest, "dumper.c"}
+	if runtime.GOOS != "windows" {
+		args = append(args, "-fPIC")
+	}
+
+	cmd := exec.Command(compiler, args...)
+	cmd.Dir = filepath.Join(i.projectDir, "tools", "dumper")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	log.Printf("Command: %s", cmd.String())
@@ -422,10 +468,6 @@ func (i *CIFuzzBuilder) CopyFiles() error {
 	}
 
 	// Copy C/C++ source files to the src directory
-	err = copy.Copy(filepath.Join(i.projectDir, "tools", "dumper"), i.srcDir(), opts)
-	if err != nil {
-		return errors.WithStack(err)
-	}
 	err = copy.Copy(filepath.Join(i.projectDir, "tools", "launcher"), i.srcDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
