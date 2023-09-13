@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code-intelligence.com/cifuzz/e2e"
+	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 )
 
 var containerRemoteRunTests = &[]e2e.TestCase{
@@ -17,8 +18,9 @@ var containerRemoteRunTests = &[]e2e.TestCase{
 	},
 	{
 		Description:   "container remote-run command in a maven/gradle example folder is available and pushes it to a registry",
+		CIUser:        e2e.LoggedInCIUser,
 		Command:       "container remote-run",
-		Args:          []string{"--registry localhost:5000/test/cifuzz com.example.FuzzTestCase::myFuzzTest -v"},
+		Args:          []string{" --project test-project --registry localhost:5000/test/cifuzz com.example.FuzzTestCase::myFuzzTest -v"},
 		SampleFolder:  []string{"../../../examples/maven", "../../../examples/gradle"},
 		ToolsRequired: []string{"docker", "java", "maven"},
 		SkipOnOS:      "windows",
@@ -32,5 +34,8 @@ var containerRemoteRunTests = &[]e2e.TestCase{
 }
 
 func TestContainerRemoteRun(t *testing.T) {
-	e2e.RunTests(t, *containerRemoteRunTests)
+	mockServer := mockserver.New(t)
+	mockServer.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
+	mockServer.Handlers["/v3/runs"] = mockserver.ReturnResponse(t, mockserver.ContainerRemoteRunResponse)
+	e2e.RunTestsWithMockServer(t, *containerRemoteRunTests, mockServer)
 }

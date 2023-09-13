@@ -26,6 +26,9 @@ var ErrorDetailsJSON string
 //go:embed testdata/remote_findings.json
 var RemoteFindingsJSON string
 
+//go:embed testdata/container_remote_run.json
+var ContainerRemoteRunResponse string
+
 type MockServer struct {
 	Address  string
 	Handlers map[string]http.HandlerFunc
