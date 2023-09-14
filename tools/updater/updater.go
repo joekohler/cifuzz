@@ -16,7 +16,7 @@ import (
 func main() {
 
 	flags := pflag.NewFlagSet("updater", pflag.ExitOnError)
-	deps := flags.String("dependency", "", "which dependency to update eg. gradle-plugin, jazzerjs")
+	deps := flags.String("dependency", "", "which dependency to update eg. gradle-plugin, jazzer, jazzerjs")
 	version := flags.String("version", "", "target version to update to, for example 1.2.3")
 
 	if err := flags.Parse(os.Args); err != nil {
@@ -32,12 +32,34 @@ func main() {
 
 	switch *deps {
 	case "gradle-plugin":
-		updateGradlePluginVersion("examples/gradle/build.gradle", *version)
-		updateGradlePluginVersion("examples/gradle-kotlin/build.gradle.kts", *version)
-		updateGradlePluginVersion("examples/gradle-multi/testsuite/build.gradle.kts", *version)
-		updateGradlePluginVersion("pkg/messaging/instructions/gradle", *version)
-		updateGradlePluginVersion("pkg/messaging/instructions/gradlekotlin", *version)
-		updateGradlePluginVersion("internal/bundler/testdata/jazzer/gradle/multi-custom/testsuite/build.gradle.kts", *version)
+		re := regexp.MustCompile(`("com.code-intelligence.cifuzz"\)? version ")(?P<version>\d+.\d+.\d+.*)(")`)
+		paths := []string{
+			"examples/gradle/build.gradle",
+			"examples/gradle-kotlin/build.gradle.kts",
+			"examples/gradle-multi/testsuite/build.gradle.kts",
+			"pkg/messaging/instructions/gradle",
+			"pkg/messaging/instructions/gradlekotlin",
+			"internal/bundler/testdata/jazzer/gradle/multi-custom/testsuite/build.gradle.kts",
+		}
+		for _, path := range paths {
+			updateFile(path, *version, re)
+		}
+	case "jazzer":
+		re := regexp.MustCompile(`(<artifactId>jazzer-junit<\/artifactId>\s*<version>)(?P<version>\d+.\d+.\d+.*)(<\/version>)`)
+		paths := []string{
+			"examples/maven/pom.xml",
+			"integration-tests/errors/java/testdata/pom.xml",
+			"integration-tests/errors/java/testdata-sql-ldap/pom.xml",
+			"integration-tests/java-maven-spring/testdata/pom.xml",
+			"internal/bundler/testdata/jazzer/maven/pom.xml",
+			"pkg/messaging/instructions/maven",
+			"test/projects/maven/tests/pom.xml",
+			"test/projects/maven/util/pom.xml",
+			"tools/list-fuzz-tests/pom.xml",
+		}
+		for _, path := range paths {
+			updateFile(path, *version, re)
+		}
 	case "jazzerjs":
 		updateJazzerNpm("examples/nodejs", *version)
 		updateJazzerNpm("examples/nodejs-typescript", *version)
@@ -59,7 +81,7 @@ func updateJazzerNpm(path string, version string) {
 	}
 }
 
-func updateGradlePluginVersion(path string, version string) {
+func updateFile(path string, version string, re *regexp.Regexp) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		log.Error(err)
@@ -67,8 +89,7 @@ func updateGradlePluginVersion(path string, version string) {
 	}
 	buildFile := string(content)
 
-	re := regexp.MustCompile(`("com.code-intelligence.cifuzz"\)? version ")(?P<version>\d+.\d+.\d+.*)"`)
-	s := re.ReplaceAllString(buildFile, fmt.Sprintf(`${1}%s"`, version))
+	s := re.ReplaceAllString(buildFile, fmt.Sprintf(`${1}%s${3}`, version))
 
 	err = os.WriteFile(path, []byte(s), 0x644)
 	if err != nil {
