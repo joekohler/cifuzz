@@ -5,10 +5,7 @@ package execute
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,6 +18,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmd/run/adapter"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -147,57 +145,16 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 }
 
 func (c *executeCmd) run(metadata *archive.Metadata) error {
-	// Check if we're running as the user specified via the UID environment variable.
-	// If not, execute the command as that user.
-	uidStr := os.Getenv("CIFUZZ_UID")
-	if uidStr == "" {
-		return errors.New("CIFUZZ_UID environment variable not set")
-	}
-	uid, err := strconv.Atoi(uidStr)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if uid != os.Getuid() {
-		// Change the owner of the current working directory to the specified UID
-		// so that the fuzzer can write to the current working directory.
-		err = os.Chown(".", uid, -1)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		// Execute the current command as the user specified via the UID environment variable.
-		// This is useful when running cifuzz in a container, where the user inside the container
-		// may not have the same UID as the user on the host.
-		// Note: This is only supported on Linux.
-		err = syscall.Setuid(uid)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		path, err := exec.LookPath(os.Args[0])
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		log.Infof("Executing command as UID %d: %s", uid, strings.Join(os.Args, " "))
-		err = syscall.Exec(path, os.Args, os.Environ())
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
 	fuzzer, err := findFuzzer(c.opts.name, metadata)
 	if err != nil {
 		return err
 	}
 
-	// TODO: create or get real directory for seed corpus
-	corpusDirName := "corpus"
-	managedSeedDirName := "seed"
-	err = os.MkdirAll(managedSeedDirName, 0o755)
+	err = os.MkdirAll(container.ManagedSeedCorpusDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	err = os.MkdirAll(corpusDirName, 0o755)
+	err = os.MkdirAll(container.GeneratedCorpusDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -207,7 +164,12 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           fuzzer.ProjectDir,
 			PrintJSON:            c.opts.PrintJSON,
-			ManagedSeedCorpusDir: managedSeedDirName,
+			ManagedSeedCorpusDir: container.ManagedSeedCorpusDir,
+			// Saving findings is currently broken when the container is run
+			// as a non-root user and the build system is bazel. This is a
+			// quick workaround to avoid breaking the container when it's run
+			// in that configuration.
+			SkipSavingFinding: true,
 		})
 	if err != nil {
 		return err
@@ -222,7 +184,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		LibraryDirs:        fuzzer.LibraryPaths,
 		Verbose:            viper.GetBool("verbose"),
 		ReportHandler:      reportHandler,
-		GeneratedCorpusDir: corpusDirName,
+		GeneratedCorpusDir: container.GeneratedCorpusDir,
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
 	}

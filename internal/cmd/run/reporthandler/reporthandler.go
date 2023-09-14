@@ -32,6 +32,7 @@ type ReportHandlerOptions struct {
 	ManagedSeedCorpusDir string
 	UserSeedCorpusDirs   []string
 	PrintJSON            bool
+	SkipSavingFinding    bool
 }
 
 type ReportHandler struct {
@@ -200,7 +201,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	nameSeed := append(stacktrace.EncodeStackTrace(f.StackTrace), f.InputData...)
 	f.Name = names.GetDeterministicName(nameSeed)
 
-	if f.InputFile != "" {
+	if f.InputFile != "" && !h.SkipSavingFinding {
 		if h.ManagedSeedCorpusDir == "" {
 			// Handle the case that the seed corpus directory was not set. In
 			// the case of Java fuzz tests, the seed corpus directory is
@@ -219,9 +220,11 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	f.FuzzTest = h.FuzzTest
 
 	// Do not mutate f after this call.
-	err = f.Save(h.ProjectDir)
-	if err != nil {
-		return err
+	if !h.SkipSavingFinding {
+		err = f.Save(h.ProjectDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !print {

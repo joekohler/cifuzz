@@ -18,6 +18,9 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
+var ManagedSeedCorpusDir = "/tmp/managed-seed-corpus"
+var GeneratedCorpusDir = "/tmp/generated-corpus"
+
 func Create(imageID string, printJSON bool, bindMounts []string) (string, error) {
 	cli, err := GetDockerClient()
 	if err != nil {
@@ -42,8 +45,7 @@ func Create(imageID string, printJSON bool, bindMounts []string) (string, error)
 		Cmd:          []string{"--single-fuzz-test"},
 		AttachStdout: true,
 		AttachStderr: true,
-		// Tell the cifuzz execute command which UID it should use.
-		Env: []string{fmt.Sprintf("CIFUZZ_UID=%d", os.Getuid())},
+		User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 	}
 
 	if viper.GetBool("verbose") {

@@ -1,8 +1,6 @@
 package execute_test
 
 import (
-	"fmt"
-	"os"
 	"runtime"
 	"testing"
 
@@ -42,7 +40,6 @@ var executeTests = &[]e2e.TestCase{
 		Command:      "execute",
 		Args:         []string{"invalid.name"},
 		SampleFolder: []string{"folder-with-unpacked-bundle"},
-		Environment:  append(os.Environ(), fmt.Sprintf("CIFUZZ_UID=%d", os.Getuid())),
 		Assert: func(t *testing.T, output e2e.CommandOutput) {
 			output.Failed().ErrorContains("fuzzer 'invalid.name' not found in a bundle metadata file")
 		},

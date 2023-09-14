@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 )
@@ -23,7 +25,7 @@ func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string,
 	options.Args = append(options.Args,
 		"--docker-image", imageTag,
 		// Mount the corpus directory into the container
-		"--bind", corpusDir+":/cifuzz/corpus",
+		"--bind", fmt.Sprintf("%s:%s", corpusDir, container.GeneratedCorpusDir),
 	)
 
 	cifuzzRunner.Run(t, options)
