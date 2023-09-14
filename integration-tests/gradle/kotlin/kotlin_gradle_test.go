@@ -2,6 +2,7 @@ package kotlin
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -87,10 +88,18 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	t.Run("run", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 
+		t.Run("htmlCoverageReport", func(t *testing.T) {
+			// Produce a jacoco xml coverage report
+			testHTMLCoverageReport(t, cifuzz, projectDir)
+		})
 		t.Run("jacocoCoverageReport", func(t *testing.T) {
 			// Produce a jacoco xml coverage report
 			testJacocoXMLCoverageReport(t, cifuzz, projectDir)
 		})
+	})
+
+	t.Run("coverageVSCodePreset", func(t *testing.T) {
+		testCoverageVSCodePreset(t, cifuzz, projectDir)
 	})
 
 	t.Run("runWithoutFuzzTest", func(t *testing.T) {
@@ -186,16 +195,41 @@ func testRunWithConfigFile(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	})
 }
 
-func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
-	t.Helper()
-
+func testHTMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	cmd := executil.Command(cifuzz, "coverage", "-v",
-		"--output", "report", "com.example.FuzzTestCase")
+		"--output", "report", "--format", "html", "com.example.FuzzTestCase::myFuzzTest")
 	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	log.Printf("Command: %s", cmd.String())
+
+	output, err := cmd.CombinedOutput()
 	require.NoError(t, err)
+	assert.Contains(t, string(output),
+		fmt.Sprintf("Created coverage HTML report: %s", filepath.Join("report", "html")),
+	)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "report", "html", "index.html")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains coverage for
+	// com.example
+	reportBytes, err := os.ReadFile(reportPath)
+	require.NoError(t, err)
+	report := string(reportBytes)
+	require.Contains(t, report, "com.example")
+}
+
+func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
+	cmd := executil.Command(cifuzz, "coverage", "-v",
+		"--output", "report", "--format", "jacocoxml", "com.example.FuzzTestCase::myFuzzTest")
+	cmd.Dir = dir
+	log.Printf("Command: %s", cmd.String())
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+	assert.Contains(t, string(output),
+		fmt.Sprintf("Created jacoco.xml coverage report: %s", filepath.Join("report", "jacoco.xml")),
+	)
 
 	// Check that the coverage report was created
 	reportPath := filepath.Join(dir, "report", "jacoco.xml")
@@ -222,6 +256,22 @@ func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 			assert.Equal(t, 0, file.Coverage.BranchesHit)
 		}
 	}
+}
+
+func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
+	cmd := executil.Command(cifuzz, "coverage",
+		"-v",
+		"--preset=vscode",
+		"com.example.FuzzTestCase::myFuzzTest")
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "report", "jacoco.xml")
+	require.FileExists(t, reportPath)
 }
 
 // modifyFuzzTestToCallFunction modifies the fuzz test stub created by `cifuzz create` to actually call a function.

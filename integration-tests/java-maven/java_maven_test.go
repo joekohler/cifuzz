@@ -3,6 +3,7 @@ package maven
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -104,9 +105,13 @@ func TestIntegration_Maven(t *testing.T) {
 	t.Run("run", func(t *testing.T) {
 		testRun(t, cifuzzRunner)
 
+		t.Run("htmlCoverageReport", func(t *testing.T) {
+			// Produce a jacoco xml coverage report
+			testHTMLCoverageReport(t, cifuzz, projectDir)
+		})
 		t.Run("jacocoCoverageReport", func(t *testing.T) {
 			// Produce a jacoco xml coverage report
-			createJacocoXMLCoverageReport(t, cifuzz, projectDir)
+			testJacocoXMLCoverageReport(t, cifuzz, projectDir)
 		})
 	})
 
@@ -144,16 +149,39 @@ func TestIntegration_Maven(t *testing.T) {
 	})
 }
 
-func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
-	t.Helper()
-
+func testHTMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	cmd := executil.Command(cifuzz, "coverage", "-v",
-		"--output", "report", "com.example.FuzzTestCase")
+		"--output", "report", "--format", "html", "com.example.FuzzTestCase::myFuzzTest")
 	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	log.Printf("Command: %s", cmd.String())
+
+	output, err := cmd.CombinedOutput()
 	require.NoError(t, err)
+	assert.Contains(t, string(output), "Created coverage HTML report: report")
+
+	// Check that the coverage report was created
+	reportPath := filepath.Join(dir, "report", "index.html")
+	require.FileExists(t, reportPath)
+
+	// Check that the coverage report contains coverage for
+	// com.example
+	reportBytes, err := os.ReadFile(reportPath)
+	require.NoError(t, err)
+	report := string(reportBytes)
+	require.Contains(t, report, "com.example")
+}
+
+func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
+	cmd := executil.Command(cifuzz, "coverage", "-v",
+		"--output", "report", "--format", "jacocoxml", "com.example.FuzzTestCase::myFuzzTest")
+	cmd.Dir = dir
+	log.Printf("Command: %s", cmd.String())
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+	assert.Contains(t, string(output),
+		fmt.Sprintf("Created jacoco.xml coverage report: %s", filepath.Join("report", "jacoco.xml")),
+	)
 
 	// Check that the coverage report was created
 	reportPath := filepath.Join(dir, "report", "jacoco.xml")
@@ -180,12 +208,10 @@ func createJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 }
 
 func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
-	t.Helper()
-
 	cmd := executil.Command(cifuzz, "coverage",
 		"-v",
 		"--preset=vscode",
-		"com.example.FuzzTestCase")
+		"com.example.FuzzTestCase::myFuzzTest")
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
