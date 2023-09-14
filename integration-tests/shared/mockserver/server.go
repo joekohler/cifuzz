@@ -1,13 +1,17 @@
 package mockserver
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"runtime"
 	"testing"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -45,6 +49,44 @@ func (server *MockServer) Start(t *testing.T) {
 	require.NoError(t, err)
 
 	server.Address = fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port)
+
+	go func() {
+		err = http.Serve(listener, mux)
+		require.NoError(t, err)
+	}()
+}
+
+func (server *MockServer) StartForContainer(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode (requires docker)")
+	}
+	mux := http.NewServeMux()
+	for path, handler := range server.Handlers {
+		mux.Handle(path, handler)
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	networkID := "bridge"
+	// On Windows, the default network is 'nat'.
+	if runtime.GOOS == "windows" {
+		networkID = "nat"
+	}
+
+	networkInspect, err := cli.NetworkInspect(ctx, networkID, types.NetworkInspectOptions{
+		Verbose: false,
+	})
+	require.NoError(t, err)
+
+	addr := networkInspect.IPAM.Config[0].Gateway
+
+	listener, err := net.Listen("tcp4", ":0")
+	require.NoError(t, err)
+
+	server.Address = fmt.Sprintf("http://%s:%d", addr, listener.Addr().(*net.TCPAddr).Port)
 
 	go func() {
 		err = http.Serve(listener, mux)
