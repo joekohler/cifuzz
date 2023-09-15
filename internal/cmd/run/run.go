@@ -25,7 +25,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/util/sliceutil"
-	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type runCmd struct {
@@ -323,7 +322,7 @@ func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *re
 	project := c.opts.Project
 	if project == "" {
 		// ask user to select project
-		project, err = c.selectProject(projects, token)
+		project, err = dialog.ProjectPickerWithOptionNew(projects, "Select the project you want to upload findings to:", c.apiClient, token)
 		if err != nil {
 			return cmdutils.WrapSilentError(err)
 		}
@@ -383,53 +382,6 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 	log.Infof("You can view the findings at %s/dashboard/%s/findings?origin=cli", c.opts.Server, campaignRunName)
 
 	return nil
-}
-
-func (c *runCmd) selectProject(projects []*api.Project, token string) (string, error) {
-	// Let the user select a project
-	var displayNames []string
-	var names []string
-	for _, p := range projects {
-		displayNames = append(displayNames, p.DisplayName)
-		names = append(names, p.Name)
-	}
-	maxLen := stringutil.MaxLen(displayNames)
-	items := map[string]string{}
-	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
-		items[key] = names[i]
-	}
-
-	// add option to create a new project
-	items["<Create a new project>"] = "<<new>>"
-
-	// add option to cancel
-	items["<Cancel>"] = "<<cancel>>"
-
-	projectName, err := dialog.Select("Select the project you want to upload your findings to", items, true)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	switch projectName {
-	case "<<new>>":
-		// ask user for project name
-		projectName, err = dialog.Input("Enter the name of the project you want to create")
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		project, err := c.apiClient.CreateProject(projectName, token)
-		if err != nil {
-			return "", err
-		}
-		return project.Name, nil
-
-	case "<<cancel>>":
-		return "<<cancel>>", nil
-	}
-
-	return projectName, nil
 }
 
 func (c *runCmd) getFuzzTestNameForCampaignRun() string {

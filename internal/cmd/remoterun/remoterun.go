@@ -215,7 +215,7 @@ func (c *runRemoteCmd) run() error {
 		}
 
 		if c.opts.Interactive {
-			c.opts.ProjectName, err = c.selectProject(projects)
+			c.opts.ProjectName, err = dialog.ProjectPickerWithOptionNew(projects, "Select the project you want to start a fuzzing run for:", c.apiClient, token)
 			if err != nil {
 				return err
 			}
@@ -319,41 +319,4 @@ func (c *runRemoteCmd) run() error {
 	}
 
 	return nil
-}
-
-// selectProject lets the user select a project from a list of projects.
-func (c *runRemoteCmd) selectProject(projects []*api.Project) (string, error) {
-	// Let the user select a project
-	var displayNames []string
-	var names []string
-	for _, p := range projects {
-		displayNames = append(displayNames, p.DisplayName)
-		names = append(names, p.Name)
-	}
-	maxLen := stringutil.MaxLen(displayNames)
-	items := map[string]string{}
-	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
-		items[key] = names[i]
-	}
-
-	// add an option to cancel the command
-	items["<Cancel>"] = "<<cancel>>"
-
-	if len(items) == 1 {
-		err := errors.Errorf("No projects found. Please create a project first at %s.", c.opts.Server)
-		log.Error(err)
-		return "", cmdutils.WrapSilentError(err)
-	}
-
-	projectName, err := dialog.Select("Select the project you want to start a fuzzing run for", items, true)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	if projectName == "<<cancel>>" {
-		return "<<cancel>>", nil
-	}
-
-	return projectName, nil
 }

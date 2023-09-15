@@ -121,11 +121,11 @@ func (cmd *findingCmd) run(args []string) error {
 			if err != nil {
 				return err
 			}
-			cmd.opts.Project, err = cmd.selectProject(remoteProjects)
+			cmd.opts.Project, err = dialog.ProjectPicker(remoteProjects, "Select a remote project:")
 			if err != nil {
 				return err
 			}
-			if cmd.opts.Project != "<cancel>" {
+			if cmd.opts.Project != "<<cancel>>" {
 				remoteAPIFindings, err = apiClient.DownloadRemoteFindings(cmd.opts.Project, token)
 				if err != nil {
 					return err
@@ -373,29 +373,4 @@ func wrapLongStringToMultiline(s string, maxLineLength int) string {
 	}
 	result += currentLine
 	return result
-}
-
-func (c *findingCmd) selectProject(projects []*api.Project) (string, error) {
-	// Let the user select a project
-	var displayNames []string
-	var names []string
-	for _, p := range projects {
-		displayNames = append(displayNames, p.DisplayName)
-		names = append(names, p.Name)
-	}
-	maxLen := stringutil.MaxLen(displayNames)
-	items := map[string]string{}
-	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
-		items[key] = strings.TrimPrefix(names[i], "projects/")
-	}
-	// add option to cancel
-	items["<Cancel>"] = "<cancel>"
-
-	projectName, err := dialog.Select("Select a remote project:", items, true)
-	if err != nil {
-		return "<cancel>", err
-	}
-
-	return projectName, nil
 }

@@ -1,7 +1,6 @@
 package remoterun
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -18,7 +17,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type containerRemoteRunOpts struct {
@@ -132,10 +130,11 @@ func (c *containerRemoteRunCmd) run() error {
 		}
 
 		if c.opts.Interactive {
-			c.opts.Project, err = c.selectProject(projects)
+			c.opts.Project, err = dialog.ProjectPickerWithOptionNew(projects, "Select the project you want to start a fuzzing run for:", c.apiClient, token)
 			if err != nil {
 				return err
 			}
+			c.opts.Project = strings.TrimPrefix(c.opts.Project, "projects/")
 
 			if c.opts.Project == "<<cancel>>" {
 				log.Info("Container remote run cancelled.")
@@ -149,16 +148,7 @@ func (c *containerRemoteRunCmd) run() error {
 				return err
 			}
 		} else {
-			var projectNames []string
-			for _, p := range projects {
-				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
-			}
-			if len(projectNames) == 0 {
-				log.Warnf("No projects found. Please create a project first at %s.", c.opts.Server)
-				err = errors.New("Flag \"project\" must be set")
-				return cmdutils.WrapIncorrectUsageError(err)
-			}
-			err = errors.New("Flag \"project\" must be set. Valid projects:\n  " + strings.Join(projectNames, "\n  "))
+			err = errors.New("Flag 'project' must be set.")
 			return cmdutils.WrapIncorrectUsageError(err)
 		}
 	}
@@ -194,29 +184,4 @@ func (c *containerRemoteRunCmd) buildImage() (string, error) {
 	}
 
 	return container.BuildImageFromBundle(bundlePath)
-}
-
-func (c *containerRemoteRunCmd) selectProject(projects []*api.Project) (string, error) {
-	// Let the user select a project
-	var displayNames []string
-	var names []string
-	for _, p := range projects {
-		displayNames = append(displayNames, strings.TrimPrefix(p.DisplayName, "projects/"))
-		names = append(names, strings.TrimPrefix(p.Name, "projects/"))
-	}
-	maxLen := stringutil.MaxLen(displayNames)
-	items := map[string]string{}
-	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], names[i])
-		items[key] = names[i]
-	}
-	// add option to cancel
-	items["<Cancel>"] = "<cancel>"
-
-	projectName, err := dialog.Select("Select a remote project:", items, true)
-	if err != nil {
-		return "<cancel>", err
-	}
-
-	return projectName, nil
 }
