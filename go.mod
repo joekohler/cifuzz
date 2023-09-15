@@ -2,9 +2,6 @@ module code-intelligence.com/cifuzz
 
 go 1.21
 
-// TODO: Revert when https://github.com/pterm/pterm/issues/562 is fixed
-replace github.com/pterm/pterm v0.12.66 => github.com/adombeck/pterm v0.0.0-20230828123446-b137b9b68d82
-
 require (
 	atomicgo.dev/keyboard v0.2.9
 	github.com/Masterminds/semver v1.5.0
@@ -23,7 +20,7 @@ require (
 	github.com/otiai10/copy v1.9.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
-	github.com/pterm/pterm v0.12.66
+	github.com/pterm/pterm v0.12.68
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/u-root/u-root v0.11.1-0.20230701062237-921c08deecd7
