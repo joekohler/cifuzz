@@ -2,7 +2,6 @@ package remoterun
 
 import (
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -134,7 +133,6 @@ func (c *containerRemoteRunCmd) run() error {
 			if err != nil {
 				return err
 			}
-			c.opts.Project = strings.TrimPrefix(c.opts.Project, "projects/")
 
 			if c.opts.Project == "<<cancel>>" {
 				log.Info("Container remote run cancelled.")

@@ -342,7 +342,6 @@ func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *re
 	} else {
 		// check if project exists on server
 		found := false
-		project = "projects/" + project
 		for _, p := range projects {
 			if p.Name == project {
 				found = true

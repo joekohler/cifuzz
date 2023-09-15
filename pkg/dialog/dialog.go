@@ -2,10 +2,8 @@ package dialog
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"sort"
-	"strings"
 
 	"atomicgo.dev/keyboard/keys"
 	"github.com/pkg/errors"
@@ -120,13 +118,11 @@ You can change these values later by editing the file.`, true)
 	}
 
 	if persist {
-		project := strings.TrimPrefix(projectName, "projects/")
-
 		contents, err := os.ReadFile(config.ProjectConfigFile)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		updatedContents := config.EnsureProjectEntry(string(contents), project)
+		updatedContents := config.EnsureProjectEntry(string(contents), projectName)
 
 		err = os.WriteFile(config.ProjectConfigFile, []byte(updatedContents), 0o644)
 		if err != nil {
@@ -151,14 +147,8 @@ func ProjectPickerWithOptionNew(projects []*api.Project, prompt string, client *
 	maxLen := stringutil.MaxLen(displayNames)
 	items := map[string]string{}
 	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
-
-		// use QueryUnescape because project names can contain special characters
-		// and spaces
-		items[key], err = url.QueryUnescape(names[i])
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
+		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], names[i])
+		items[key] = names[i]
 	}
 
 	// add option to create a new project
@@ -206,14 +196,8 @@ func ProjectPicker(projects []*api.Project, prompt string) (string, error) {
 	maxLen := stringutil.MaxLen(displayNames)
 	items := map[string]string{}
 	for i := range displayNames {
-		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], strings.TrimPrefix(names[i], "projects/"))
-
-		// use QueryUnescape because project names can contain special characters
-		// and spaces
-		items[key], err = url.QueryUnescape(names[i])
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
+		key := fmt.Sprintf("%-*s [%s]", maxLen, displayNames[i], names[i])
+		items[key] = names[i]
 	}
 
 	// add option to cancel

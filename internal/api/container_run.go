@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -49,11 +50,21 @@ type Job struct {
 }
 
 // PostContainerRemoteRun posts a new container run to the CI Sense API at /v3/runs.
+// project does not need to have a projects/ prefix and needs to be
 func (client *APIClient) PostContainerRemoteRun(image string, project string, fuzzTests []string, token string) error {
 	tests := []*FuzzTest{}
 	for _, fuzzTest := range fuzzTests {
 		tests = append(tests, &FuzzTest{Name: fuzzTest})
 	}
+
+	// the /v3 project_external_id is the project name without the projects/
+	// prefix and url escaped
+	project = strings.TrimPrefix(project, "projects/")
+	project, err := url.QueryUnescape(project)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	containerRun := &ContainerRun{
 		Image:             image,
 		FuzzTests:         tests,

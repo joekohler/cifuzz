@@ -235,7 +235,7 @@ func (c *runRemoteCmd) run() error {
 		} else {
 			var projectNames []string
 			for _, p := range projects {
-				projectNames = append(projectNames, strings.TrimPrefix(p.Name, "projects/"))
+				projectNames = append(projectNames, p.Name)
 			}
 			if len(projectNames) == 0 {
 				log.Warnf("No projects found. Please create a project first at %s.", c.opts.Server)

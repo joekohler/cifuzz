@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -69,9 +71,15 @@ type Severity struct {
 
 // DownloadRemoteFindings downloads all remote findings for a given project from CI Sense.
 func (client *APIClient) DownloadRemoteFindings(project string, token string) (Findings, error) {
+	// This still uses the /v1 API so we need to use the old project ID format
+	// which is the project name prefixed with "projects/"
+	if !strings.HasPrefix(project, "projects/") {
+		project = fmt.Sprintf("projects/%s", project)
+	}
+
 	remoteFindings := Findings{}
 
-	url, err := url.JoinPath("v1", "projects", project, "findings")
+	url, err := url.JoinPath("v1", project, "findings")
 	if err != nil {
 		return remoteFindings, errors.WithStack(err)
 	}
@@ -103,6 +111,12 @@ func (client *APIClient) DownloadRemoteFindings(project string, token string) (F
 }
 
 func (client *APIClient) UploadFinding(project string, fuzzTarget string, campaignRunName string, fuzzingRunName string, finding *finding.Finding, token string) error {
+	// This still uses the /v1 API so we need to use the old project ID format
+	// which is the project name prefixed with "projects/"
+	if !strings.HasPrefix(project, "projects/") {
+		project = fmt.Sprintf("projects/%s", project)
+	}
+
 	// loop through the stack trace and create a list of breakpoints
 	breakPoints := []*BreakPoint{}
 	for _, stackFrame := range finding.StackTrace {
@@ -119,7 +133,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 	findings := &Findings{
 		Findings: []Finding{
 			{
-				Name:        project + "/findings/" + finding.Name,
+				Name:        project + finding.Name,
 				DisplayName: finding.Name,
 				FuzzTarget:  fuzzTarget,
 				FuzzingRun:  fuzzingRunName,
