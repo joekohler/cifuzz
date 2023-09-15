@@ -22,6 +22,7 @@ import (
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	integrateCmd "code-intelligence.com/cifuzz/internal/cmd/integrate"
 	loginCmd "code-intelligence.com/cifuzz/internal/cmd/login"
+	printflagsCmds "code-intelligence.com/cifuzz/internal/cmd/print-flags"
 	reloadCmd "code-intelligence.com/cifuzz/internal/cmd/reload"
 	remoteRunCmd "code-intelligence.com/cifuzz/internal/cmd/remoterun"
 	runCmd "code-intelligence.com/cifuzz/internal/cmd/run"
@@ -108,6 +109,10 @@ func New() (*cobra.Command, error) {
 	rootCmd.AddCommand(coverageCmd.New())
 	rootCmd.AddCommand(findingCmd.New())
 	rootCmd.AddCommand(integrateCmd.New())
+
+	for _, cmd := range printflagsCmds.New() {
+		rootCmd.AddCommand(cmd)
+	}
 
 	if runtime.GOOS != "windows" {
 		// The execute command is not supported on Windows
