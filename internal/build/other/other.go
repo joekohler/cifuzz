@@ -98,14 +98,14 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 	// Set CFLAGS, CXXFLAGS, LDFLAGS, and FUZZ_TEST_LDFLAGS which must
 	// be passed to the build commands by the build system.
 	if len(opts.Sanitizers) == 1 && opts.Sanitizers[0] == "coverage" {
-		err = b.setCoverageEnv()
+		b.env, err = SetCoverageEnv(b.env, b.RunfilesFinder)
 	} else {
 		for _, sanitizer := range opts.Sanitizers {
 			if sanitizer != "address" && sanitizer != "undefined" {
 				panic(fmt.Sprintf("Invalid sanitizer: %q", sanitizer))
 			}
 		}
-		err = b.setLibFuzzerEnv()
+		b.env, err = SetLibFuzzerEnv(b.env, b.RunfilesFinder)
 	}
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (b *Builder) Build(fuzzTest string) (*build.CBuildResult, error) {
 		return nil, cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 
-	executable, err := b.findFuzzTestExecutable(fuzzTest)
+	executable, err := findFuzzTestExecutable(fuzzTest)
 	if err != nil {
 		return nil, err
 	}
@@ -228,23 +228,22 @@ func (b *Builder) setCleanCommandEnv() error {
 	return nil
 }
 
-func (b *Builder) setLibFuzzerEnv() error {
+func SetLibFuzzerEnv(env []string, finder runfiles.RunfilesFinder) ([]string, error) {
 	var err error
-
-	b.env, err = setEnvWithDebugMsg(b.env, EnvBuildStep, "fuzzing")
+	env, err = setEnvWithDebugMsg(env, EnvBuildStep, "fuzzing")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set CFLAGS and CXXFLAGS
 	cflags := build.LibFuzzerCFlags()
-	b.env, err = setEnvWithDebugMsg(b.env, "CFLAGS", strings.Join(cflags, " "))
+	env, err = setEnvWithDebugMsg(env, "CFLAGS", strings.Join(cflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, "CXXFLAGS", strings.Join(cflags, " "))
+	env, err = setEnvWithDebugMsg(env, "CXXFLAGS", strings.Join(cflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ldflags := []string{
@@ -252,27 +251,27 @@ func (b *Builder) setLibFuzzerEnv() error {
 		// Link ASan and UBSan runtime
 		"-fsanitize=address,undefined",
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, "LDFLAGS", strings.Join(ldflags, " "))
+	env, err = setEnvWithDebugMsg(env, "LDFLAGS", strings.Join(ldflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Users should pass the environment variable FUZZ_TEST_CFLAGS or
 	// FUZZ_TEST_CXXFLAGS to the compiler command building the fuzz test.
-	cifuzzIncludePath, err := b.RunfilesFinder.CIFuzzIncludePath()
+	cifuzzIncludePath, err := finder.CIFuzzIncludePath()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// -I adds the include directory to the list of directories
 	// to be searched for header files
 	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Users should pass the environment variable FUZZ_TEST_LDFLAGS to
@@ -289,9 +288,9 @@ func (b *Builder) setLibFuzzerEnv() error {
 		fuzzTestLdflags = append(fuzzTestLdflags, "-Wl,--wrap=__sanitizer_set_death_callback")
 	}
 
-	dumper, err := b.RunfilesFinder.DumperPath()
+	dumper, err := finder.DumperPath()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fuzzTestLdflags = append(fuzzTestLdflags,
 		// Build with instrumentation for Fuzzing
@@ -299,39 +298,40 @@ func (b *Builder) setLibFuzzerEnv() error {
 		// Path to the dumper of CI Fuzz which ensures that non-fatal sanitizer
 		// findings still have an input attached
 		dumper)
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestLDFlags, strings.Join(fuzzTestLdflags, " "))
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestLDFlags, strings.Join(fuzzTestLdflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return env, nil
 }
 
-func (b *Builder) setCoverageEnv() error {
+func SetCoverageEnv(env []string, finder runfiles.RunfilesFinder) ([]string, error) {
 	var err error
 
-	b.env, err = setEnvWithDebugMsg(b.env, EnvBuildStep, "coverage")
+	env, err = setEnvWithDebugMsg(env, EnvBuildStep, "coverage")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set CFLAGS and CXXFLAGS. Note that these flags must not contain
 	// spaces, because the environment variables are space separated.
 	//
 	// Note: Keep in sync with share/cmake/cifuzz-functions.cmake
-	clangVersion, err := dependencies.Version(dependencies.Clang, b.ProjectDir)
+	clangVersion, err := dependencies.Version(dependencies.Clang, "")
+	//                                                            ^- projectDir can probably be empty
 	if err != nil {
 		log.Warnf("Failed to determine version of clang: %v", err)
 	}
 	cflags := build.CoverageCFlags(clangVersion)
 
-	b.env, err = setEnvWithDebugMsg(b.env, "CFLAGS", strings.Join(cflags, " "))
+	env, err = setEnvWithDebugMsg(env, "CFLAGS", strings.Join(cflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, "CXXFLAGS", strings.Join(cflags, " "))
+	env, err = setEnvWithDebugMsg(env, "CXXFLAGS", strings.Join(cflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ldflags := []string{
@@ -339,41 +339,41 @@ func (b *Builder) setCoverageEnv() error {
 		// Generate instrumented code to collect execution counts
 		"-fprofile-instr-generate",
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, "LDFLAGS", strings.Join(ldflags, " "))
+	env, err = setEnvWithDebugMsg(env, "LDFLAGS", strings.Join(ldflags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Users should pass the environment variable FUZZ_TEST_CFLAGS or
 	// FUZZ_TEST_CXXFLAGS to the compiler command building the fuzz test.
-	cifuzzIncludePath, err := b.RunfilesFinder.CIFuzzIncludePath()
+	cifuzzIncludePath, err := finder.CIFuzzIncludePath()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// -I adds the include directory to the list of directories
 	// to be searched for header files
 	fuzzTestCFlags := []string{fmt.Sprintf("-I%s", cifuzzIncludePath)}
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestCFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestCXXFlags, strings.Join(fuzzTestCFlags, " "))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Users should pass the environment variable FUZZ_TEST_LDFLAGS to
 	// the linker command building the fuzz test. We use it to link in libFuzzer
 	// in coverage builds to use its crash-resistant merge feature.
-	b.env, err = setEnvWithDebugMsg(b.env, EnvFuzzTestLDFlags, "-fsanitize=fuzzer")
+	env, err = setEnvWithDebugMsg(env, EnvFuzzTestLDFlags, "-fsanitize=fuzzer")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return env, nil
 }
 
-func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
+func findFuzzTestExecutable(fuzzTest string) (string, error) {
 	if exists, _ := fileutil.Exists(fuzzTest); exists {
 		absPath, err := filepath.Abs(fuzzTest)
 		if err != nil {
