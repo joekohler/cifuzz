@@ -19,21 +19,21 @@ type Project struct {
 }
 
 type ProjectResponse struct {
-	Name     string   `json:"name"`
-	Done     bool     `json:"done"`
-	Response Response `json:"response"`
+	Name     string    `json:"name"`
+	Done     bool      `json:"done"`
+	Response *Response `json:"response"`
 }
 
 type Response struct {
-	Type          string   `json:"@type"`
-	Name          string   `json:"name"`
-	DisplayName   string   `json:"display_name"`
-	Location      Location `json:"location"`
-	OwnerUsername string   `json:"owner_username"`
+	Type          string    `json:"@type"`
+	Name          string    `json:"name"`
+	DisplayName   string    `json:"display_name"`
+	Location      *Location `json:"location"`
+	OwnerUsername string    `json:"owner_username"`
 }
 
 type Location struct {
-	GitPath GitPath `json:"git_path"`
+	GitPath *GitPath `json:"git_path"`
 }
 
 type GitPath struct{}

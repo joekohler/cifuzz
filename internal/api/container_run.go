@@ -8,8 +8,8 @@ import (
 )
 
 type ContainerRun struct {
-	Image     string     `json:"image"`
-	FuzzTests []FuzzTest `json:"fuzz_tests,omitempty"`
+	Image     string      `json:"image"`
+	FuzzTests []*FuzzTest `json:"fuzz_tests,omitempty"`
 
 	// ProjectNid is the new project ID format used in responses from CI Sense.
 	// Future responses from the /v3 API will use these nano IDs and are usually
@@ -21,13 +21,13 @@ type ContainerRun struct {
 }
 
 type ContainerRunResponse struct {
-	Run   *Run   `json:"run,omitempty"`
-	Links []Link `json:"links,omitempty"`
+	Run   *Run    `json:"run,omitempty"`
+	Links []*Link `json:"links,omitempty"`
 }
 
 type FuzzTest struct {
 	Name string `json:"name"`
-	Jobs []Job  `json:"jobs,omitempty"`
+	Jobs []*Job `json:"jobs,omitempty"`
 }
 
 type Link struct {
@@ -37,9 +37,9 @@ type Link struct {
 }
 
 type Run struct {
-	Nid       string     `json:"nid,omitempty"`
-	Image     string     `json:"image,omitempty"`
-	FuzzTests []FuzzTest `json:"fuzz_tests,omitempty"`
+	Nid       string      `json:"nid,omitempty"`
+	Image     string      `json:"image,omitempty"`
+	FuzzTests []*FuzzTest `json:"fuzz_tests,omitempty"`
 }
 type Job struct {
 	Nid    string `json:"nid,omitempty"`
@@ -50,9 +50,9 @@ type Job struct {
 
 // PostContainerRemoteRun posts a new container run to the CI Sense API at /v3/runs.
 func (client *APIClient) PostContainerRemoteRun(image string, project string, fuzzTests []string, token string) error {
-	tests := []FuzzTest{}
+	tests := []*FuzzTest{}
 	for _, fuzzTest := range fuzzTests {
-		tests = append(tests, FuzzTest{Name: fuzzTest})
+		tests = append(tests, &FuzzTest{Name: fuzzTest})
 	}
 	containerRun := &ContainerRun{
 		Image:             image,

@@ -9,14 +9,14 @@ import (
 	"code-intelligence.com/cifuzz/pkg/messaging"
 )
 
-func getErrorDetailsAndToken(server string) (*[]finding.ErrorDetails, string, error) {
+func getErrorDetailsAndToken(server string) ([]*finding.ErrorDetails, string, error) {
 	token, err := GetValidToken(server)
 	if err != nil {
 		return nil, "", err
 	}
 	apiClient := api.NewClient(server)
 	errorDetails, err := apiClient.GetErrorDetails(token)
-	return &errorDetails, token, err
+	return errorDetails, token, err
 }
 
 // TryGetErrorDetailsAndToken tries to get a valid token for the specified
@@ -24,7 +24,7 @@ func getErrorDetailsAndToken(server string) (*[]finding.ErrorDetails, string, er
 // It returns the error details and the token if successful.
 // If there is no valid token or the server is unreachable, it prints a
 // warning. Only unexpected errors are returned.
-func TryGetErrorDetailsAndToken(server string) (*[]finding.ErrorDetails, string, error) {
+func TryGetErrorDetailsAndToken(server string) ([]*finding.ErrorDetails, string, error) {
 	errorDetails, token, err := getErrorDetailsAndToken(server)
 
 	var connErr *api.ConnectionError
@@ -59,7 +59,7 @@ func TryGetErrorDetailsAndToken(server string) (*[]finding.ErrorDetails, string,
 
 // TryGetErrorDetails does the same as TryGetErrorDetailsAndToken, but
 // only returns the error details.
-func TryGetErrorDetails(server string) (*[]finding.ErrorDetails, error) {
+func TryGetErrorDetails(server string) ([]*finding.ErrorDetails, error) {
 	errorDetails, _, err := TryGetErrorDetailsAndToken(server)
 	return errorDetails, err
 }

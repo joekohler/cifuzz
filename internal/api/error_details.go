@@ -11,12 +11,12 @@ import (
 )
 
 type errorDetailsJSON struct {
-	VersionSchema int                    `json:"version_schema"`
-	ErrorDetails  []finding.ErrorDetails `json:"error_details"`
+	VersionSchema int                     `json:"version_schema"`
+	ErrorDetails  []*finding.ErrorDetails `json:"error_details"`
 }
 
 // GetErrorDetails gets the error details from the API
-func (client *APIClient) GetErrorDetails(token string) ([]finding.ErrorDetails, error) {
+func (client *APIClient) GetErrorDetails(token string) ([]*finding.ErrorDetails, error) {
 	if token == "" {
 		panic("GetErrorDetails called with empty token")
 	}

@@ -1,12 +1,12 @@
 package api
 
 type FuzzingRun struct {
-	Name                    string                  `json:"name"`
-	DisplayName             string                  `json:"display_name"`
-	Status                  string                  `json:"status"`
-	Metrics                 []*Metrics              `json:"metrics,omitempty"`
-	FuzzerRunConfigurations FuzzerRunConfigurations `json:"fuzzer_run_configurations"`
-	FuzzTargetConfig        FuzzTargetConfig        `json:"fuzz_target_config"`
+	Name                    string                   `json:"name"`
+	DisplayName             string                   `json:"display_name"`
+	Status                  string                   `json:"status"`
+	Metrics                 []*Metrics               `json:"metrics,omitempty"`
+	FuzzerRunConfigurations *FuzzerRunConfigurations `json:"fuzzer_run_configurations"`
+	FuzzTargetConfig        *FuzzTargetConfig        `json:"fuzz_target_config"`
 }
 
 type Metrics struct {

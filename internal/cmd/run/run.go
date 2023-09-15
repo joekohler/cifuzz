@@ -32,7 +32,7 @@ type runCmd struct {
 
 	opts         *adapter.RunOptions
 	apiClient    *api.APIClient
-	errorDetails *[]finding.ErrorDetails
+	errorDetails []*finding.ErrorDetails
 
 	reportHandler *reporthandler.ReportHandler
 }

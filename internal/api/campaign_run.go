@@ -16,16 +16,16 @@ import (
 )
 
 type CampaignRunBody struct {
-	CampaignRun CampaignRun `json:"campaign_run"`
+	CampaignRun *CampaignRun `json:"campaign_run"`
 }
 
 type CampaignRun struct {
-	Name        string       `json:"name"`
-	DisplayName string       `json:"display_name"`
-	Campaign    Campaign     `json:"campaign"`
-	Runs        []FuzzingRun `json:"runs"`
-	Status      string       `json:"status"`
-	Timestamp   string       `json:"timestamp"`
+	Name        string        `json:"name"`
+	DisplayName string        `json:"display_name"`
+	Campaign    *Campaign     `json:"campaign"`
+	Runs        []*FuzzingRun `json:"runs"`
+	Status      string        `json:"status"`
+	Timestamp   string        `json:"timestamp"`
 }
 
 type Campaign struct {
@@ -60,7 +60,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 	apiFuzzTarget := APIFuzzTarget{
 		RelativePath: fuzzTarget,
 	}
-	fuzzTargetConfig := FuzzTargetConfig{
+	fuzzTargetConfig := &FuzzTargetConfig{
 		Name:        fuzzTargetConfigName,
 		DisplayName: fuzzTarget,
 	}
@@ -83,7 +83,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		Name:        fuzzingRunName,
 		DisplayName: "cifuzz-fuzzing-run",
 		Status:      "SUCCEEDED",
-		FuzzerRunConfigurations: FuzzerRunConfigurations{
+		FuzzerRunConfigurations: &FuzzerRunConfigurations{
 			Engine:       engine,
 			NumberOfJobs: 4,
 		},
@@ -95,13 +95,13 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
-	campaignRun := CampaignRun{
+	campaignRun := &CampaignRun{
 		Name:        campaignRunName,
 		DisplayName: "cifuzz-campaign-run",
-		Campaign: Campaign{
+		Campaign: &Campaign{
 			MaxRunTime: "120s",
 		},
-		Runs:      []FuzzingRun{fuzzingRun},
+		Runs:      []*FuzzingRun{&fuzzingRun},
 		Status:    "SUCCEEDED",
 		Timestamp: time.Now().Format("2006-01-02T15:04:05.999999999Z07:00"),
 	}

@@ -16,14 +16,14 @@ type Findings struct {
 }
 
 type Finding struct {
-	Name                  string      `json:"name"`
-	DisplayName           string      `json:"display_name"`
-	FuzzTarget            string      `json:"fuzz_target"`
-	FuzzingRun            string      `json:"fuzzing_run"`
-	CampaignRun           string      `json:"campaign_run"`
-	ErrorReport           ErrorReport `json:"error_report"`
-	Timestamp             string      `json:"timestamp"`
-	FuzzTargetDisplayName string      `json:"fuzz_target_display_name,omitempty"`
+	Name                  string       `json:"name"`
+	DisplayName           string       `json:"display_name"`
+	FuzzTarget            string       `json:"fuzz_target"`
+	FuzzingRun            string       `json:"fuzzing_run"`
+	CampaignRun           string       `json:"campaign_run"`
+	ErrorReport           *ErrorReport `json:"error_report"`
+	Timestamp             string       `json:"timestamp"`
+	FuzzTargetDisplayName string       `json:"fuzz_target_display_name,omitempty"`
 }
 
 type ErrorReport struct {
@@ -40,10 +40,10 @@ type ErrorReport struct {
 }
 
 type DebuggingInfo struct {
-	ExecutablePath string        `json:"executable_path,omitempty"`
-	RunArguments   []string      `json:"run_arguments,omitempty"`
-	BreakPoints    []BreakPoint  `json:"break_points,omitempty"`
-	Environment    []Environment `json:"environment,omitempty"`
+	ExecutablePath string         `json:"executable_path,omitempty"`
+	RunArguments   []string       `json:"run_arguments,omitempty"`
+	BreakPoints    []*BreakPoint  `json:"break_points,omitempty"`
+	Environment    []*Environment `json:"environment,omitempty"`
 }
 
 type BreakPoint struct {
@@ -104,9 +104,9 @@ func (client *APIClient) DownloadRemoteFindings(project string, token string) (F
 
 func (client *APIClient) UploadFinding(project string, fuzzTarget string, campaignRunName string, fuzzingRunName string, finding *finding.Finding, token string) error {
 	// loop through the stack trace and create a list of breakpoints
-	breakPoints := []BreakPoint{}
+	breakPoints := []*BreakPoint{}
 	for _, stackFrame := range finding.StackTrace {
-		breakPoints = append(breakPoints, BreakPoint{
+		breakPoints = append(breakPoints, &BreakPoint{
 			SourceFilePath: stackFrame.SourceFile,
 			Location: &FindingLocation{
 				Line:   stackFrame.Line,
@@ -124,7 +124,7 @@ func (client *APIClient) UploadFinding(project string, fuzzTarget string, campai
 				FuzzTarget:  fuzzTarget,
 				FuzzingRun:  fuzzingRunName,
 				CampaignRun: campaignRunName,
-				ErrorReport: ErrorReport{
+				ErrorReport: &ErrorReport{
 					Logs:      finding.Logs,
 					Details:   finding.Details,
 					Type:      string(finding.Type),

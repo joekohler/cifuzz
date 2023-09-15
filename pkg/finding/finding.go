@@ -309,7 +309,7 @@ func (f *Finding) ShortDescriptionColumns() []string {
 
 // LocalFindings parses the JSON files of all findings and returns the
 // result.
-func LocalFindings(projectDir string, errorDetails *[]ErrorDetails) ([]*Finding, error) {
+func LocalFindings(projectDir string, errorDetails []*ErrorDetails) ([]*Finding, error) {
 	findingsDir := filepath.Join(projectDir, nameFindingsDir)
 	entries, err := os.ReadDir(findingsDir)
 	if os.IsNotExist(err) {
@@ -340,7 +340,7 @@ func LocalFindings(projectDir string, errorDetails *[]ErrorDetails) ([]*Finding,
 // the result.
 // If the specified finding does not exist, a NotExistError is returned.
 // If the user is logged in, the error details are added to the finding.
-func LoadFinding(projectDir, findingName string, errorDetails *[]ErrorDetails) (*Finding, error) {
+func LoadFinding(projectDir, findingName string, errorDetails []*ErrorDetails) (*Finding, error) {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, findingName)
 	jsonPath := filepath.Join(findingDir, nameJSONFile)
 	bytes, err := os.ReadFile(jsonPath)
@@ -364,11 +364,11 @@ func LoadFinding(projectDir, findingName string, errorDetails *[]ErrorDetails) (
 
 // EnhanceWithErrorDetails adds more details to the finding by parsing the
 // error details file.
-func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) {
+func (f *Finding) EnhanceWithErrorDetails(errorDetails []*ErrorDetails) {
 	if errorDetails == nil {
 		return
 	}
-	for _, d := range *errorDetails {
+	for _, d := range errorDetails {
 		if (f.MoreDetails != nil && f.MoreDetails.ID == d.ID) ||
 			strings.Contains(
 				strings.ToLower(f.ShortDescriptionColumns()[0]),
@@ -380,7 +380,7 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails *[]ErrorDetails) {
 				originalID = f.MoreDetails.ID
 			}
 
-			f.MoreDetails = &d
+			f.MoreDetails = d
 
 			if originalID != "" {
 				f.MoreDetails.ID = originalID

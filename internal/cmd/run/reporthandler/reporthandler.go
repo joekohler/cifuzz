@@ -46,7 +46,7 @@ type ReportHandler struct {
 
 	LastMetrics  *report.FuzzingMetric
 	FirstMetrics *report.FuzzingMetric
-	ErrorDetails *[]finding.ErrorDetails
+	ErrorDetails []*finding.ErrorDetails
 
 	numSeedsAtInit uint
 
