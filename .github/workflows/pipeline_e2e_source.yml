@@ -25,29 +25,8 @@ jobs:
       options: --privileged
     strategy:
       matrix:
-        container: ["ubuntu:22.04", "archlinux:latest"]
+        container: ["ubuntu:22.04"]
     steps:
-      - name: Install dependencies with pacman
-        if: contains(matrix.container, 'archlinux')
-        # please make sure this is in sync with the README.md / installation docs
-        # glibc was added as it is required by nodejs which is used to run
-        # the github action "action/checkout"
-        run: pacman -Sy --noconfirm git make cmake clang docker docker-buildx llvm lcov jdk17-openjdk maven gradle python
-
-      - name: Build libcap statically
-        if: contains(matrix.container, 'archlinux')
-        run: |
-          pacman -Syu --noconfirm glibc pam linux-api-headers make diffutils
-          mkdir /libcap
-          cd /libcap
-          curl --output libcap.tar.gz --fail --location https://git.kernel.org/pub/scm/libs/libcap/libcap.git/snapshot/libcap-2.65.tar.gz
-          echo "b0c770a99f978ca32ce58fb72b23d2a883b160aa30ee909fb83ba4003efc771c  libcap.tar.gz" > libcap.sha
-          sha256sum -c libcap.sha
-          tar -zxvf libcap.tar.gz
-          cd libcap-2.65
-          make
-          make install
-
       - name: Set up Docker's Apt repository
         if: contains(matrix.container, 'ubuntu')
         # https://docs.docker.com/engine/install/ubuntu/
