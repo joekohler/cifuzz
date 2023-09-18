@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -24,7 +23,7 @@ import (
 )
 
 func TestIntegration_NodeTS_InitCreateRunCoverage(t *testing.T) {
-	if testing.Short() || runtime.GOOS == "windows" {
+	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
 
