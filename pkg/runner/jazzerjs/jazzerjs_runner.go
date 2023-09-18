@@ -64,6 +64,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	// ---------------------------
 	args = append(args, options.JazzerJSTestPathPatternFlag(r.TestPathPattern))
 	args = append(args, options.JazzerJSTestNamePatternFlag(r.TestNamePattern))
+	args = append(args, options.JestTestFailureExitCodeFlag(fuzzer_runner.LibFuzzerErrorExitCode))
 
 	env, err := r.FuzzerEnvironment()
 	if err != nil {

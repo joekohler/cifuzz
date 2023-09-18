@@ -8,6 +8,7 @@ const JazzerJSTestNamePattern string = "--testNamePattern"
 const JazzerJSTestPathPattern string = "--testPathPattern"
 const JazzerJSCoverageDirectory string = "--coverageDirectory"
 const JazzerJSCoverageReporters string = "--coverageReporters"
+const JestTestFailureExitCode string = "--testFailureExitCode"
 
 func JazzerJSTestNamePatternFlag(value string) string {
 	return JazzerJSTestNamePattern + fmt.Sprintf("='%s'", value)
@@ -23,4 +24,8 @@ func JazzerJSCoverageDirectoryFlag(value string) string {
 
 func JazzerJSCoverageReportersFlag(value string) string {
 	return JazzerJSCoverageReporters + fmt.Sprintf("='%s'", value)
+}
+
+func JestTestFailureExitCodeFlag(value int) string {
+	return JestTestFailureExitCode + fmt.Sprintf("='%d'", value)
 }
