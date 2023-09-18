@@ -21,7 +21,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -140,8 +139,6 @@ func (cmd *findingCmd) run(args []string) error {
 			log.Warnf(`You are authenticated but did not specify a remote project.
 Skipping remote findings because running in non-interactive mode.`)
 		}
-	} else {
-		log.Infof(messaging.UsageWarning())
 	}
 
 	localFindings, err := finding.LocalFindings(cmd.opts.ProjectDir, errorDetails)
