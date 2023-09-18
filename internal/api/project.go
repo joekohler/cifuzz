@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -82,11 +81,10 @@ func (client *APIClient) ListProjects(token string) ([]*Project, error) {
 			continue
 		}
 
-		// trim the projects/ prefix from the name because the API will phase it out soon.
-		// we don't want to trim it in all the places we use the name.
-		// We only need to prefix it in a few places (e.g. during finding upload)
-		// but it is easier to do that manually there than to strip it everywhere else.
-		p.Name = strings.TrimPrefix(p.Name, "projects/")
+		p.Name, err = ConvertProjectNameFromAPI(p.Name)
+		if err != nil {
+			return nil, err
+		}
 		filteredProjects = append(filteredProjects, p)
 	}
 

@@ -110,7 +110,59 @@ func NewClient(server string) *APIClient {
 	}
 }
 
+// ConvertProjectNameFromAPI converts a project name from the API format to a
+// format we can use internally.
+// The API format is projects/<project-name>, where <project-name> is URL encoded.
+// The internal format is <project-name>, where <project-name> is URL decoded.
+// We want to use the internal format internally because it's more user friendly and readable.
+func ConvertProjectNameFromAPI(projectName string) (string, error) {
+	projectName = strings.TrimPrefix(projectName, "projects/")
+
+	// unescape the name here so that we don't have to do it everywhere.
+	// We only need to escape it when we send it to the API.
+	projectName, err := url.QueryUnescape(projectName)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return projectName, nil
+}
+
+// ConvertProjectNameForUseWithAPIV1V2 converts a project name from the internal
+// format to the API format. The API format is projects/<project-name>, where
+// <project-name> is URL encoded.
+func ConvertProjectNameForUseWithAPIV1V2(projectName string) string {
+	// remove the projects/ prefix if it exists so that we can call PathEscape
+	if strings.HasPrefix(projectName, "projects/") {
+		projectName = strings.TrimPrefix(projectName, "projects/")
+	}
+	// escape the name here so that we don't have to do it everywhere.
+	// We only need to escape it when we send it to the API.
+	projectName = url.PathEscape(projectName)
+
+	// add the projects/ prefix because the API requires it
+	projectName = "projects/" + projectName
+
+	return projectName
+}
+
+// ConvertProjectNameForUseWithAPIV3 converts a project name to the v3 API
+// format. The API format is <project-name>, where <project-name> is URL
+// unescaped.
+func ConvertProjectNameForUseWithAPIV3(projectName string) (string, error) {
+	projectName = strings.TrimPrefix(projectName, "projects/")
+
+	projectName, err := url.QueryUnescape(projectName)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return projectName, nil
+}
+
 func (client *APIClient) UploadBundle(path string, projectName string, token string) (*Artifact, error) {
+
+	projectName = ConvertProjectNameForUseWithAPIV1V2(projectName)
+
 	signalHandlerCtx, cancelSignalHandler := context.WithCancel(context.Background())
 	routines, routinesCtx := errgroup.WithContext(context.Background())
 

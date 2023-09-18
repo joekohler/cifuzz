@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -343,7 +344,7 @@ func (c *runCmd) uploadFindings(fuzzTarget, buildSystem string, firstMetrics *re
 		// check if project exists on server
 		found := false
 		for _, p := range projects {
-			if p.Name == project {
+			if url.PathEscape(p.Name) == project {
 				found = true
 				break
 			}

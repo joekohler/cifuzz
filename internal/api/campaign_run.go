@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -50,11 +49,7 @@ func (client *APIClient) CreateCampaignRun(project string, token string, fuzzTar
 		return "", "", errors.WithStack(err)
 	}
 
-	// This still uses the /v1 API so we need to use the old project ID format
-	// which is the project name prefixed with "projects/"
-	if !strings.HasPrefix(project, "projects/") {
-		project = fmt.Sprintf("projects/%s", project)
-	}
+	project = ConvertProjectNameForUseWithAPIV1V2(project)
 
 	fuzzingRunName, err := url.JoinPath(project, "fuzzing_runs", fmt.Sprintf("cifuzz-fuzzing-run-%s", hex.EncodeToString(randBytes)))
 	if err != nil {

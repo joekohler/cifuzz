@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/url"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -57,12 +56,9 @@ func (client *APIClient) PostContainerRemoteRun(image string, project string, fu
 		tests = append(tests, &FuzzTest{Name: fuzzTest})
 	}
 
-	// the /v3 project_external_id is the project name without the projects/
-	// prefix and url escaped
-	project = strings.TrimPrefix(project, "projects/")
-	project, err := url.QueryUnescape(project)
+	project, err := ConvertProjectNameForUseWithAPIV3(project)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	containerRun := &ContainerRun{

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"atomicgo.dev/keyboard/keys"
 	"github.com/pkg/errors"
@@ -110,6 +111,9 @@ func ReadSecret(message string) (string, error) {
 // askToPersistProjectChoice asks the user if they want to persist their
 // project choice. If they do, it adds the project to the cifuzz.yaml file.
 func AskToPersistProjectChoice(projectName string) error {
+	// trim the projects/ prefix when saving the project name to cifuzz.yaml
+	projectName = strings.TrimPrefix(projectName, "projects/")
+
 	persist, err := Confirm(`Do you want to persist your choice?
 This will add a 'project' entry to your cifuzz.yaml.
 You can change these values later by editing the file.`, true)
@@ -174,13 +178,13 @@ func ProjectPickerWithOptionNew(projects []*api.Project, prompt string, client *
 		if err != nil {
 			return "", err
 		}
-		return project.Name, nil
+		projectName = project.Name
 
 	case "<<cancel>>":
 		return "<<cancel>>", nil
 	}
 
-	return projectName, nil
+	return api.ConvertProjectNameFromAPI(projectName)
 }
 
 // ProjectPicker lets the user select a project from a list of projects (usually fetched from the API).
@@ -212,5 +216,5 @@ func ProjectPicker(projects []*api.Project, prompt string) (string, error) {
 		return "<<cancel>>", nil
 	}
 
-	return projectName, nil
+	return api.ConvertProjectNameFromAPI(projectName)
 }

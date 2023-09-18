@@ -157,9 +157,10 @@ Skipping remote findings because running in non-interactive mode.`)
 		if err != nil {
 			return errors.Wrapf(err, "Could not parse timestamp %s", rf.Timestamp)
 		}
+		displayName := api.ConvertProjectNameForUseWithAPIV1V2(cmd.opts.Project)
 		remoteFindings = append(remoteFindings, &finding.Finding{
 			Origin:             "CI Sense",
-			Name:               strings.TrimPrefix(rf.Name, fmt.Sprintf("projects/%s/findings/", cmd.opts.Project)),
+			Name:               strings.TrimPrefix(rf.Name, fmt.Sprintf("%s/findings/", displayName)),
 			Type:               finding.ErrorType(rf.ErrorReport.Type),
 			InputData:          rf.ErrorReport.InputData,
 			Logs:               rf.ErrorReport.Logs,
