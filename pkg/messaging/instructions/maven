@@ -1,26 +1,35 @@
-Please make sure to add the following dependency to your
+Please make sure to add the following dependencies to your
 pom.xml to enable fuzz testing:
 
-    <dependency>
-      <groupId>com.code-intelligence</groupId>
-      <artifactId>jazzer-junit</artifactId>
-      <version>0.20.1</version>
-      <scope>test</scope>
-    </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-We highly recommend using cifuzz with JUnit >=5 to ensure
-easy IDE integration. You can add it with the following
-dependency to your pom.xml:
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.9.2</version>
-      <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>com.code-intelligence</groupId>
+            <artifactId>jazzer-junit</artifactId>
+            <version>0.20.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 For Jacoco coverage reports, please make sure to include the
-Jacoco plugin in the build section of your pom.xml. 
+Jacoco plugin in the build section of your pom.xml.
 
     <plugin>
         <groupId>org.jacoco</groupId>
@@ -34,18 +43,18 @@ https://www.jacoco.org/jacoco/trunk/doc/maven.html
 Also, please add the following profile in your profiles:
 
     <profile>
-      <id>cifuzz</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <configuration>
-              <formats>${cifuzz.report.format}</formats>
-              <outputDirectory>${cifuzz.report.output}</outputDirectory>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
+        <id>cifuzz</id>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <configuration>
+                        <formats>${cifuzz.report.format}</formats>
+                        <outputDirectory>${cifuzz.report.output}</outputDirectory>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
     </profile>
 
