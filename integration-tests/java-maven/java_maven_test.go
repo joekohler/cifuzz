@@ -57,8 +57,8 @@ func TestIntegration_Maven(t *testing.T) {
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
 		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<plugin>")[0], "\n"),
-		"    </dependencies>",
-		false,
+		"    </properties>",
+		true,
 	)
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
@@ -338,7 +338,7 @@ func testBundle(t *testing.T, dir string, cifuzz string, args ...string) {
 	jarPattern := filepath.Join(archiveDir, "runtime_deps", "*.jar")
 	jarMatches, err := zglob.Glob(jarPattern)
 	require.NoError(t, err)
-	assert.Equal(t, 11, len(jarMatches))
+	assert.Equal(t, 12, len(jarMatches))
 
 	classPattern := filepath.Join(archiveDir, "runtime_deps", "**", "*.class")
 	classMatches, err := zglob.Glob(classPattern)

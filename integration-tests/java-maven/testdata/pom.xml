@@ -15,11 +15,6 @@
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
-    <dependencies>
-        <!-- Use JUnit Jupiter for testing. -->
-
-    </dependencies>
-
     <profiles>
     </profiles>
 
