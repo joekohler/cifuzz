@@ -17,7 +17,7 @@ To integrate with your existing jest setup, please add this to your
           displayName: "test",
         },
         {
-          runner: "@jazzer.js/jest-runner",
+          testRunner: "@jazzer.js/jest-runner",
           displayName: {
             name: "Jazzer.js",
             color: "cyan",
