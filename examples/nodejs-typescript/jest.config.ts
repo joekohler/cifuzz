@@ -13,7 +13,7 @@ const config: Config = {
 				color: "cyan",
 			},
 			preset: "ts-jest",
-			runner: "@jazzer.js/jest-runner",
+			testRunner: "@jazzer.js/jest-runner",
 			testEnvironment: "node",
 			testMatch: ["<rootDir>/*.fuzz.[jt]s"],
 		},
