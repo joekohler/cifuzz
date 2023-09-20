@@ -1,8 +1,6 @@
 package reporthandler
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
@@ -22,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/desktop"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -198,12 +197,7 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 	// anymore, but in a subsequent run the fuzzer finds a different
 	// crashing input which causes the crash again. We do want to
 	// produce a distinct new finding in that case.
-	var b bytes.Buffer
-	err = gob.NewEncoder(&b).Encode(f.StackTrace)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	nameSeed := append(b.Bytes(), f.InputData...)
+	nameSeed := append(stacktrace.EncodeStackTrace(f.StackTrace), f.InputData...)
 	f.Name = names.GetDeterministicName(nameSeed)
 
 	if f.InputFile != "" {

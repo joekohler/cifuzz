@@ -167,7 +167,7 @@ func TestReportHandler_GenerateName(t *testing.T) {
 	}
 	err = h.Handle(findingReport)
 	require.NoError(t, err)
-	assert.Equal(t, "adoring_orangutan", findingReport.Finding.Name)
+	assert.Equal(t, "adventurous_pangolin", findingReport.Finding.Name)
 }
 
 func checkOutput(t *testing.T, r io.Reader, s ...string) {

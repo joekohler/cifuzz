@@ -224,3 +224,55 @@ func TestRemoveLastPart(t *testing.T) {
 	result = removeLastPart(result)
 	assert.Equal(t, "", result)
 }
+
+func TestEncodeStackTrace_Empty(t *testing.T) {
+	st := []*StackFrame{}
+	result := EncodeStackTrace(st)
+	assert.Empty(t, result)
+}
+
+func TestEncodeStackTrace_Single(t *testing.T) {
+	st := []*StackFrame{
+		{
+			SourceFile:  "foo.cpp",
+			Line:        1,
+			Column:      2,
+			FrameNumber: 1,
+			Function:    "bar",
+		},
+	}
+	expected := fmt.Sprintf("#%d|%s|%s|%d|%d", st[0].FrameNumber, st[0].Function, st[0].SourceFile, st[0].Line, st[0].Column)
+	result := EncodeStackTrace(st)
+	assert.Equal(t, expected, string(result))
+}
+
+func TestEncodeStackTrace(t *testing.T) {
+	st := []*StackFrame{
+		{
+			SourceFile:  "foo",
+			Line:        1,
+			Column:      1,
+			FrameNumber: 1,
+			Function:    "bar",
+		},
+		{
+			SourceFile:  "foo",
+			Line:        2,
+			Column:      2,
+			FrameNumber: 2,
+			Function:    "bar",
+		},
+		{
+			SourceFile:  "foo",
+			Line:        3,
+			Column:      3,
+			FrameNumber: 3,
+			Function:    "bar",
+		},
+	}
+	result := EncodeStackTrace(st)
+	// 42 because it is the answert to the ultimate question
+	// and it is the amount of characters that the encoded stacktrace
+	// should countain (27 chars + 15 separators)
+	assert.Len(t, result, 42)
+}

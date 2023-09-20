@@ -1,6 +1,7 @@
 package stacktrace
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -35,6 +36,14 @@ type StackFrame struct {
 	Column      uint32
 	FrameNumber uint32
 	Function    string
+}
+
+func EncodeStackTrace(stacktrace []*StackFrame) []byte {
+	out := []byte("")
+	for _, sf := range stacktrace {
+		out = append(out, fmt.Sprintf("#%d|%s|%s|%d|%d", sf.FrameNumber, sf.Function, sf.SourceFile, sf.Line, sf.Column)...)
+	}
+	return out
 }
 
 type ParserOptions struct {
