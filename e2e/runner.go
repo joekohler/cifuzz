@@ -56,8 +56,14 @@ type testCaseRunOptions struct {
 // RunTests Runs all test cases generated from the input combinations
 func RunTests(t *testing.T, testCases []TestCase, mockServer *mockserver.MockServer) {
 	for _, testCase := range testCases { //nolint:gocritic
-		mockServer.StartForContainer(t)
-		runTest(t, &testCase, mockServer.Address)
+		if mockServer != nil {
+			// we need to start the mock server with a different address and port, so
+			// that it is accessible from the container.
+			mockServer.StartForContainer(t)
+			runTest(t, &testCase, mockServer.Address)
+		} else {
+			runTest(t, &testCase, "")
+		}
 	}
 }
 
