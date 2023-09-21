@@ -1,11 +1,13 @@
 package finding_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"code-intelligence.com/cifuzz/e2e"
+	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
 )
 
 var findingTests = &[]e2e.TestCase{
@@ -98,5 +100,19 @@ var findingTests = &[]e2e.TestCase{
 }
 
 func TestFindingList(t *testing.T) {
-	e2e.RunTests(t, *findingTests, nil)
+	// skipping test on Windows because there seems to be a bug in the docker
+	// engine on Windows that causes network requests to fail:
+	// dial tcp 172.25.224.1:50116: connectex: A connection attempt failed
+	// because the connected party did not properly respond after a period of
+	// time, or established connection failed because connected host has failed
+	// to respond.
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test on Windows")
+	}
+
+	server := mockserver.New(t)
+	server.Handlers["/v1/projects"] = mockserver.ReturnResponseIfValidToken(t, mockserver.ProjectsJSON)
+	server.Handlers["/v2/error-details"] = mockserver.ReturnResponseIfValidToken(t, mockserver.ErrorDetailsJSON)
+
+	e2e.RunTests(t, *findingTests, server)
 }
