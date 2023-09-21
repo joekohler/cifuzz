@@ -65,9 +65,9 @@ var nodeInitTests = &[]e2e.TestCase{
 }
 
 func TestInit(t *testing.T) {
-	e2e.RunTests(t, *initTests)
+	e2e.RunTests(t, *initTests, nil)
 }
 
 func TestInitForNodejs(t *testing.T) {
-	e2e.RunTests(t, *nodeInitTests)
+	e2e.RunTests(t, *nodeInitTests, nil)
 }

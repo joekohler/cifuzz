@@ -23,5 +23,5 @@ var versionTests = &[]e2e.TestCase{
 }
 
 func TestVersion(t *testing.T) {
-	e2e.RunTests(t, *versionTests)
+	e2e.RunTests(t, *versionTests, nil)
 }

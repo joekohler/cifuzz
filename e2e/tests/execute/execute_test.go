@@ -48,5 +48,5 @@ func TestExecute(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("The execute command is not supported on Windows")
 	}
-	e2e.RunTests(t, *executeTests)
+	e2e.RunTests(t, *executeTests, nil)
 }

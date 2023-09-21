@@ -16,11 +16,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/cicheck"
 )
 
-const (
-	ciServerToUseForE2ETests = "https://app.staging.code-intelligence.com"
-	envvarWithE2EUserToken   = "E2E_TEST_CIFUZZ_API_TOKEN"
-)
-
 type Assertion func(*testing.T, CommandOutput)
 
 type CommandOutput struct {
@@ -59,15 +54,7 @@ type testCaseRunOptions struct {
 }
 
 // RunTests Runs all test cases generated from the input combinations
-func RunTests(t *testing.T, testCases []TestCase) {
-	TestUseLocalAPIToken(t)
-	for _, testCase := range testCases { //nolint:gocritic
-		runTest(t, &testCase, ciServerToUseForE2ETests)
-	}
-}
-
-// RunTestsWithMockServer Runs all test cases generated from the input combinations
-func RunTestsWithMockServer(t *testing.T, testCases []TestCase, mockServer *mockserver.MockServer) {
+func RunTests(t *testing.T, testCases []TestCase, mockServer *mockserver.MockServer) {
 	for _, testCase := range testCases { //nolint:gocritic
 		mockServer.StartForContainer(t)
 		runTest(t, &testCase, mockServer.Address)
@@ -109,14 +96,11 @@ func runTest(t *testing.T, testCase *TestCase, server string) {
 	}
 
 	if testCase.CIUser == LoggedInCIUser {
-		if os.Getenv(envvarWithE2EUserToken) == "" {
-			require.FailNow(t, "You are trying to test behavior that requires a connection to CI Sense. Please set "+envvarWithE2EUserToken+" envvar.")
-		}
-		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN="+os.Getenv(envvarWithE2EUserToken))
+		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN="+mockserver.ValidToken)
 	}
 
 	if testCase.CIUser == InvalidTokenCIUser {
-		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN=invalid")
+		testCase.Environment = append(testCase.Environment, "CIFUZZ_API_TOKEN="+mockserver.InvalidToken)
 	}
 
 	// Generate all the combinations we want to test

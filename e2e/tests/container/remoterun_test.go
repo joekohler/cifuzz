@@ -37,5 +37,5 @@ func TestContainerRemoteRun(t *testing.T) {
 	mockServer := mockserver.New(t)
 	mockServer.Handlers["/v1/projects"] = mockserver.ReturnResponse(t, mockserver.ProjectsJSON)
 	mockServer.Handlers["/v3/runs"] = mockserver.ReturnResponse(t, mockserver.ContainerRemoteRunResponse)
-	e2e.RunTestsWithMockServer(t, *containerRemoteRunTests, mockServer)
+	e2e.RunTests(t, *containerRemoteRunTests, mockServer)
 }

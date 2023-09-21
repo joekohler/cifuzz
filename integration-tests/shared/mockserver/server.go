@@ -17,6 +17,9 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+const ValidToken = "valid-token"
+const InvalidToken = "invalid-token"
+
 //go:embed testdata/projects.json
 var ProjectsJSON string
 

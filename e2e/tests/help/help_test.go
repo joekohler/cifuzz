@@ -49,5 +49,5 @@ var helpTests = &[]e2e.TestCase{
 }
 
 func TestHelp(t *testing.T) {
-	e2e.RunTests(t, *helpTests)
+	e2e.RunTests(t, *helpTests, nil)
 }

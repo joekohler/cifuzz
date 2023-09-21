@@ -29,5 +29,5 @@ var containerRunTests = &[]e2e.TestCase{
 }
 
 func TestContainerRun(t *testing.T) {
-	e2e.RunTests(t, *containerRunTests)
+	e2e.RunTests(t, *containerRunTests, nil)
 }

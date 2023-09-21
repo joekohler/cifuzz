@@ -98,5 +98,5 @@ var findingTests = &[]e2e.TestCase{
 }
 
 func TestFindingList(t *testing.T) {
-	e2e.RunTests(t, *findingTests)
+	e2e.RunTests(t, *findingTests, nil)
 }
