@@ -101,6 +101,16 @@ func ReturnResponse(t *testing.T, responseString string) http.HandlerFunc {
 	return CheckBodyAndReturnResponse(t, responseString, nil, nil)
 }
 
+func ReturnResponseIfValidToken(t *testing.T, responseString string) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Header.Get("Authorization") == "Bearer "+ValidToken {
+			CheckBodyAndReturnResponse(t, responseString, nil, nil)(w, req)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	}
+}
+
 func CheckBodyAndReturnResponse(t *testing.T, responseString string, expected []string, unexpected []string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		body, err := io.ReadAll(req.Body)
