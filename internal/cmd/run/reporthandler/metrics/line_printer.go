@@ -25,6 +25,9 @@ type LinePrinter struct {
 	startedAt time.Time
 }
 
+func (p *LinePrinter) Start() {
+}
+
 func (p *LinePrinter) PrintMetrics(metrics *report.FuzzingMetric) {
 	s := fmt.Sprint(
 		MetricsToString(metrics),

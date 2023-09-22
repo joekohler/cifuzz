@@ -32,14 +32,6 @@ func NewUpdatingPrinter(output io.Writer) (*UpdatingPrinter, error) {
 	}
 
 	p.ticker = time.NewTicker(time.Second)
-	go func() {
-		for range p.ticker.C {
-			if !p.SpinnerPrinter.IsActive {
-				break
-			}
-			p.Update()
-		}
-	}()
 
 	return p, nil
 }
@@ -53,7 +45,18 @@ type UpdatingPrinter struct {
 	lastMetrics *atomic.Value
 }
 
-func (p *UpdatingPrinter) Update() {
+func (p *UpdatingPrinter) Start() {
+	go func() {
+		for range p.ticker.C {
+			if !p.SpinnerPrinter.IsActive {
+				break
+			}
+			p.update()
+		}
+	}()
+}
+
+func (p *UpdatingPrinter) update() {
 	lastMetrics, ok := p.lastMetrics.Load().(*report.FuzzingMetric)
 	if ok {
 		lastMetrics.SecondsSinceLastFeature += 1
