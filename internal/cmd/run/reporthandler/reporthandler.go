@@ -119,6 +119,9 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 	if r.Status == report.RunStatusRunning && !h.initFinished {
 		log.Info("Successfully initialized fuzzer with seed inputs")
 		h.initFinished = true
+
+		// Start the printer now that the fuzzer is initialized
+		h.printer.Start()
 	}
 
 	if r.Metric != nil {
