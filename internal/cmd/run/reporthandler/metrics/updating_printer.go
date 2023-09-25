@@ -20,7 +20,6 @@ func NewUpdatingPrinter(output io.Writer) (*UpdatingPrinter, error) {
 	var err error
 	p := &UpdatingPrinter{
 		SpinnerPrinter: spinnerPrinter,
-		startedAt:      time.Now(),
 		output:         output,
 		lastMetrics:    &atomic.Value{},
 	}
@@ -46,6 +45,8 @@ type UpdatingPrinter struct {
 }
 
 func (p *UpdatingPrinter) Start() {
+	p.startedAt = time.Now()
+
 	go func() {
 		for range p.ticker.C {
 			if !p.SpinnerPrinter.IsActive {
