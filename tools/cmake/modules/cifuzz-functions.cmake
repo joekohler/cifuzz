@@ -9,6 +9,11 @@ function(enable_fuzz_testing)
   # metadata for renamed or removed targets doesn't linger around.
   file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/$<CONFIG>/.cifuzz")
 
+  # Mark the dumper.o object file as a generated object file
+  set_source_files_properties("${CIFUZZ_DUMPER}" PROPERTIES
+                              GENERATED TRUE
+                              EXTERNAL_OBJECT TRUE)
+
   # Conceptually, "building for fuzzing" is similar to a build type such as Release or RelWithDebInfo. We instead use
   # a cache variable that adds flags to a base configuration we assume to be RelWithDebInfo for multiple reasons:
   # 1. Custom build types require defining a potentially unknown set of cache variables and are thus hard to maintain.
@@ -259,7 +264,7 @@ function(add_fuzz_test name)
           target_link_options("${name}" PRIVATE -Wl,--wrap=__sanitizer_set_death_callback)
         endif()
       endif()
-      target_link_libraries("${name}" PRIVATE "${CIFUZZ_DUMPER}")
+      target_sources("${name}" PRIVATE "${CIFUZZ_DUMPER}")
     endif()
   else()
     message(FATAL_ERROR "cifuzz: Unsupported value for CIFUZZ_ENGINE: ${CIFUZZ_ENGINE}")
