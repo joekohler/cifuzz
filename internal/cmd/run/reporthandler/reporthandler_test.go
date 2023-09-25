@@ -111,28 +111,6 @@ func TestReportHandler_Finding(t *testing.T) {
 	checkOutput(t, logOutput, expectedOutputs...)
 }
 
-func TestReportHandler_CorpusDirs(t *testing.T) {
-	h, err := NewReportHandler("", &ReportHandlerOptions{})
-	require.NoError(t, err)
-
-	seedCorpusDir := "/seed/corpus/dir"
-	seedCorpusReport := &report.Report{
-		SeedCorpus: seedCorpusDir,
-	}
-	generatedCorpusDir := "/generated/corpus/dir"
-	generatedCorpusReport := &report.Report{
-		GeneratedCorpus: generatedCorpusDir,
-	}
-
-	err = h.Handle(seedCorpusReport)
-	require.NoError(t, err)
-	assert.Equal(t, seedCorpusDir, h.ManagedSeedCorpusDir)
-
-	err = h.Handle(generatedCorpusReport)
-	require.NoError(t, err)
-	assert.Equal(t, generatedCorpusDir, h.GeneratedCorpusDir)
-}
-
 func TestReportHandler_PrintJSON(t *testing.T) {
 	testDir := testutil.ChdirToTempDir(t, "report-handler-test-")
 	jsonOut := bytes.NewBuffer([]byte{})

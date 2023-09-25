@@ -89,19 +89,6 @@ func NewReportHandler(fuzzTest string, options *ReportHandlerOptions) (*ReportHa
 func (h *ReportHandler) Handle(r *report.Report) error {
 	var err error
 
-	if r.SeedCorpus != "" || r.GeneratedCorpus != "" {
-		// This report was only sent to update the seed corpus directory path
-		// which we use later to count the number of seeds. We don't want to
-		// print the report, so we return early.
-		if r.SeedCorpus != "" {
-			h.ManagedSeedCorpusDir = r.SeedCorpus
-		}
-		if r.GeneratedCorpus != "" {
-			h.GeneratedCorpusDir = r.GeneratedCorpus
-		}
-		return nil
-	}
-
 	if r.Status == report.RunStatusInitializing && !h.initStarted {
 		h.initStarted = true
 		h.numSeedsAtInit = r.NumSeeds

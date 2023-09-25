@@ -771,25 +771,6 @@ SUMMARY: libFuzzer: timeout`,
 			},
 		},
 		{
-			name:          "jazzer corpus dirs",
-			supportJazzer: true,
-			logs: fmt.Sprintf(`
-INFO: using inputs from: %s
-INFO: using inputs from: %s
-INFO: using inputs from: /tmp/jazzer-java-seeds5643680988214732014`,
-				filepath.Join(projectDir, ".cifuzz-corpus", "com.example.FuzzTestCase"),
-				filepath.Join(projectDir, "src", "test", "resources", "com.example.FuzzTestCase"),
-			),
-			expected: []*report.Report{
-				{
-					GeneratedCorpus: filepath.Join(projectDir, ".cifuzz-corpus", "com.example.FuzzTestCase"),
-				},
-				{
-					SeedCorpus: filepath.Join(projectDir, "src", "test", "resources", "com.example.FuzzTestCase"),
-				},
-			},
-		},
-		{
 			name:            "jazzer.js unhandled exception",
 			supportJazzerJS: true,
 			logs: fmt.Sprintf(`
