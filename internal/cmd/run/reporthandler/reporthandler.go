@@ -114,13 +114,20 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 		} else {
 			log.Info("Initializing fuzzer with ", pterm.FgLightCyan.Sprintf("%d", r.NumSeeds), " seed inputs")
 		}
+
+		// Start the updating printer to show metrics while the fuzzer runs
+		// the seeds
+		h.printer.Start()
 	}
 
 	if r.Status == report.RunStatusRunning && !h.initFinished {
 		log.Info("Successfully initialized fuzzer with seed inputs")
 		h.initFinished = true
 
-		// Start the printer now that the fuzzer is initialized
+		// Ensure that the updating printer is started. It should already
+		// have been started above during initialization, but we do it
+		// again here in case no INITIALIZING report was received.
+		// In case the printer is already started, this is a no-op.
 		h.printer.Start()
 	}
 

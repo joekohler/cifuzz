@@ -38,6 +38,7 @@ func NewUpdatingPrinter(output io.Writer) (*UpdatingPrinter, error) {
 type UpdatingPrinter struct {
 	*pterm.SpinnerPrinter
 	ticker    *time.Ticker
+	started   bool
 	startedAt time.Time
 	output    io.Writer
 
@@ -45,6 +46,10 @@ type UpdatingPrinter struct {
 }
 
 func (p *UpdatingPrinter) Start() {
+	if p.started {
+		return
+	}
+	p.started = true
 	p.startedAt = time.Now()
 
 	go func() {
