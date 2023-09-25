@@ -96,6 +96,15 @@ func TestIntegration_CMake(t *testing.T) {
 		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
 	})
 
+	t.Run("runBuildOnlyWithPlainSignatureTargetLinkLibraries", func(t *testing.T) {
+		// Replace the target_link_libraries call with a plain signature
+		// to make sure that the build still works.
+		shared.ReplaceStringInFile(t, cmakeLists,
+			"target_link_libraries(parser_fuzz_test PRIVATE parser)",
+			"target_link_libraries(parser_fuzz_test parser)")
+		cifuzzRunner.Run(t, &shared.RunOptions{Args: []string{"--build-only"}})
+	})
+
 	t.Run("runWithAdditionalArgs", func(t *testing.T) {
 		testRunWithAdditionalArgs(t, cifuzzRunner)
 	})

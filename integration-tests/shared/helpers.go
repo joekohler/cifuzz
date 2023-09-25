@@ -79,6 +79,35 @@ func AppendLines(t *testing.T, filePath string, linesToAdd []string) {
 	require.NoError(t, err)
 }
 
+func ReplaceStringInFile(t *testing.T, filePath string, old, new string) {
+	f, err := os.OpenFile(filePath, os.O_RDWR, 0700)
+	require.NoError(t, err)
+	defer f.Close()
+
+	// Replace string in file
+	replaced := false
+	scanner := bufio.NewScanner(f)
+	var lines []string
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), old) {
+			log.Printf("Replacing %s with %s in %s", old, new, filePath)
+			lines = append(lines, strings.ReplaceAll(scanner.Text(), old, new))
+			replaced = true
+		} else {
+			lines = append(lines, scanner.Text())
+		}
+	}
+	require.True(t, replaced, fmt.Sprintf("couldn't find %s in %s", old, filePath))
+
+	// Write the new content of pom.xml back to filePath.
+	err = f.Truncate(0)
+	require.NoError(t, err)
+	_, err = f.Seek(0, io.SeekStart)
+	require.NoError(t, err)
+	_, err = f.WriteString(strings.Join(lines, "\n") + "\n")
+	require.NoError(t, err)
+}
+
 func CopyTestDockerDirForE2E(t *testing.T, dockerfile string) string {
 	t.Helper()
 	fileutil.ForceLongPathTempDir()
