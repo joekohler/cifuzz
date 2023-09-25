@@ -137,6 +137,10 @@ func TestIntegration_Maven(t *testing.T) {
 		testRunWrongFuzzTest(t, cifuzzRunner)
 	})
 
+	t.Run("runWithAdditionalSeedCorpus", func(t *testing.T) {
+		testRunWithAdditionalSeedCorpus(t, cifuzzRunner)
+	})
+
 	t.Run("runWithAdditionalArgs", func(t *testing.T) {
 		// Check if adding additional jazzer parameters via flags is respected
 		shared.TestAdditionalJazzerParameters(t, cifuzz, projectDir)
@@ -490,4 +494,30 @@ func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 			regexp.MustCompile(`High: Remote Code Execution`),
 		},
 	})
+}
+
+func testRunWithAdditionalSeedCorpus(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Create a temporary empty seed corpus directory
+	seedCorpusDir, err := os.MkdirTemp("", "additional-seeds-")
+	require.NoError(t, err)
+
+	expectedOutputs := []*regexp.Regexp{
+		// Check that the crash is found
+		regexp.MustCompile(`High: Remote Code Execution`),
+		// Check that the seed corpus directory is used
+		regexp.MustCompile(fmt.Sprintf(`using inputs from: %s`, seedCorpusDir)),
+	}
+
+	// Run with additional seed corpus directory
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		FuzzTest:        "",
+		ExpectedOutputs: expectedOutputs,
+		Args:            []string{"--seed-corpus", seedCorpusDir},
+	})
+
+	// Regression for CLI-1307: The additional seed corpus directory should
+	// not be modified, so check that it is still empty.
+	entries, err := os.ReadDir(seedCorpusDir)
+	require.NoError(t, err)
+	require.Empty(t, entries)
 }
