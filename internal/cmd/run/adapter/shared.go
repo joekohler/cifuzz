@@ -45,12 +45,13 @@ func wrapBuild[BR BuildResultType](opts *RunOptions, build func(*RunOptions) (*B
 func prepareCorpusDir(opts *RunOptions, buildResult *build.BuildResult) error {
 	switch opts.BuildSystem {
 	case config.BuildSystemCMake, config.BuildSystemBazel, config.BuildSystemOther:
-		// The generated corpus dir has to be created before starting the fuzzing run.
+		// The generated corpus dir has to be created before starting the
+		// fuzzing run, else libFuzzer will fail with a
+		// "The required directory ... does not exist" error.
 		err := os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
 
 		// Ensure that symlinks are resolved to be able to add minijail
 		// bindings for the corpus dirs.
@@ -77,15 +78,26 @@ func prepareCorpusDir(opts *RunOptions, buildResult *build.BuildResult) error {
 			}
 		}
 	case config.BuildSystemMaven, config.BuildSystemGradle:
-		// The seed corpus dir has to be created before starting the fuzzing run.
-		// Otherwise jazzer will store the findings in the project dir.
-		// It is not necessary to create the corpus dir. Jazzer will do that for us.
-		err := os.MkdirAll(cmdutils.JazzerSeedCorpus(opts.FuzzTest, opts.ProjectDir), 0o755)
+		buildResult.SeedCorpus = cmdutils.JazzerSeedCorpus(opts.FuzzTest, opts.ProjectDir)
+		buildResult.GeneratedCorpus = cmdutils.JazzerGeneratedCorpus(opts.FuzzTest, opts.TargetMethod, opts.ProjectDir)
+
+		// The seed corpus dir has to be created before starting the fuzzing run,
+		// else Jazzer will store the findings in the project dir.
+		err := os.MkdirAll(buildResult.SeedCorpus, 0o755)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// The generated corpus dir has to be created before starting the
+		// fuzzing run, else libFuzzer will fail with a
+		// "The required directory ... does not exist" error.
+		err = os.MkdirAll(buildResult.GeneratedCorpus, 0o755)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
+	log.Infof("Storing generated corpus in %s", fileutil.PrettifyPath(buildResult.GeneratedCorpus))
 	return nil
 }
 
