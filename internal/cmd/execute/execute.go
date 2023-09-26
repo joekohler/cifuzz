@@ -4,6 +4,7 @@ package execute
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -159,17 +160,25 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		return errors.WithStack(err)
 	}
 
+	printerOutput := os.Stdout
+	jsonOutput := io.Discard
+	if c.opts.PrintJSON {
+		printerOutput = os.Stderr
+		jsonOutput = os.Stdout
+	}
+
 	reportHandler, err := reporthandler.NewReportHandler(
 		getFuzzerName(fuzzer),
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           fuzzer.ProjectDir,
-			PrintJSON:            c.opts.PrintJSON,
 			ManagedSeedCorpusDir: container.ManagedSeedCorpusDir,
 			// Saving findings is currently broken when the container is run
 			// as a non-root user and the build system is bazel. This is a
 			// quick workaround to avoid breaking the container when it's run
 			// in that configuration.
 			SkipSavingFinding: true,
+			PrinterOutput:     printerOutput,
+			JSONOutput:        jsonOutput,
 		})
 	if err != nil {
 		return err

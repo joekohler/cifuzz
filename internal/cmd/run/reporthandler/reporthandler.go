@@ -31,7 +31,8 @@ type ReportHandlerOptions struct {
 	GeneratedCorpusDir   string
 	ManagedSeedCorpusDir string
 	UserSeedCorpusDirs   []string
-	PrintJSON            bool
+	JSONOutput           io.Writer
+	PrinterOutput        io.Writer
 	SkipSavingFinding    bool
 }
 
@@ -50,8 +51,6 @@ type ReportHandler struct {
 
 	numSeedsAtInit uint
 
-	jsonOutput io.Writer
-
 	FuzzTest string
 	Findings []*finding.Finding
 }
@@ -61,29 +60,27 @@ func NewReportHandler(fuzzTest string, options *ReportHandlerOptions) (*ReportHa
 	h := &ReportHandler{
 		ReportHandlerOptions: options,
 		startedAt:            time.Now(),
-		jsonOutput:           os.Stdout,
 		FuzzTest:             fuzzTest,
 	}
 
-	// When --json was used, we don't want anything but JSON output on
-	// stdout, so we make the printer use stderr.
-	var printerOutput *os.File
-	if h.PrintJSON {
-		printerOutput = os.Stderr
-	} else {
-		printerOutput = os.Stdout
+	if options.JSONOutput == nil {
+		h.JSONOutput = io.Discard
+	}
+	if options.PrinterOutput == nil {
+		h.PrinterOutput = io.Discard
 	}
 
 	// Use an updating printer if the output stream is a TTY
 	// and plain style is not enabled
-	if term.IsTerminal(int(printerOutput.Fd())) && !log.PlainStyle() {
-		h.printer, err = metrics.NewUpdatingPrinter(printerOutput)
+
+	if file, ok := h.PrinterOutput.(*os.File); ok && term.IsTerminal(int(file.Fd())) && !log.PlainStyle() {
+		h.printer, err = metrics.NewUpdatingPrinter(h.PrinterOutput)
 		if err != nil {
 			return nil, err
 		}
 		h.usingUpdatingPrinter = true
 	} else {
-		h.printer = metrics.NewLinePrinter(printerOutput)
+		h.printer = metrics.NewLinePrinter(h.PrinterOutput)
 	}
 
 	return h, nil
@@ -147,40 +144,47 @@ func (h *ReportHandler) Handle(r *report.Report) error {
 			h.PrintFindingInstruction()
 		}
 
-		err = h.handleFinding(r.Finding, !h.PrintJSON)
+		err = h.handleFinding(r.Finding)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Print report as JSON if the --json flag was specified
-	if h.PrintJSON {
-		var jsonString string
-		// Print with color if the output stream is a TTY
-		if file, ok := h.jsonOutput.(*os.File); !ok || !term.IsTerminal(int(file.Fd())) {
-			bytes, err := prettyjson.Marshal(r)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			jsonString = string(bytes)
-		} else {
-			jsonString, err = stringutil.ToJSONString(r)
-			if err != nil {
-				return err
-			}
-		}
-		if h.usingUpdatingPrinter {
-			// Clear the updating printer
-			h.printer.(*metrics.UpdatingPrinter).Clear()
-		}
-		_, _ = fmt.Fprintln(h.jsonOutput, jsonString)
-		return nil
+	if h.JSONOutput != io.Discard && h.usingUpdatingPrinter {
+		// Clear the updating printer
+		h.printer.(*metrics.UpdatingPrinter).Clear()
+	}
+
+	err = h.writeJSONReport(r)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
+func (h *ReportHandler) writeJSONReport(r *report.Report) error {
+	var jsonString string
+	var err error
+	// Print with color if the output stream is a TTY
+	if file, ok := h.JSONOutput.(*os.File); !ok || !term.IsTerminal(int(file.Fd())) {
+		bytes, err := prettyjson.Marshal(r)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		jsonString = string(bytes)
+	} else {
+		jsonString, err = stringutil.ToJSONString(r)
+		if err != nil {
+			return err
+		}
+	}
+	_, _ = fmt.Fprintln(h.JSONOutput, jsonString)
+
+	return nil
+}
+
+func (h *ReportHandler) handleFinding(f *finding.Finding) error {
 	var err error
 
 	f.CreatedAt = time.Now()
@@ -237,9 +241,6 @@ func (h *ReportHandler) handleFinding(f *finding.Finding, print bool) error {
 		}
 	}
 
-	if !print {
-		return nil
-	}
 	log.Finding(f.ShortDescriptionWithName())
 
 	desktop.Notify("cifuzz finding", f.ShortDescriptionWithName())

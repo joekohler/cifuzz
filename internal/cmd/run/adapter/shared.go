@@ -90,6 +90,13 @@ func prepareCorpusDir(opts *RunOptions, buildResult *build.BuildResult) error {
 }
 
 func createReportHandler(opts *RunOptions, buildResult *build.BuildResult) (*reporthandler.ReportHandler, error) {
+	printerOutput := os.Stdout
+	jsonOutput := io.Discard
+	if opts.PrintJSON {
+		printerOutput = os.Stderr
+		jsonOutput = os.Stdout
+	}
+
 	// Initialize the report handler. Only do this right before we start
 	// the fuzz test, because this is storing a timestamp which is used
 	// to figure out how long the fuzzing run is running.
@@ -98,9 +105,10 @@ func createReportHandler(opts *RunOptions, buildResult *build.BuildResult) (*rep
 		&reporthandler.ReportHandlerOptions{
 			ProjectDir:           opts.ProjectDir,
 			UserSeedCorpusDirs:   opts.SeedCorpusDirs,
-			PrintJSON:            opts.PrintJSON,
 			ManagedSeedCorpusDir: buildResult.SeedCorpus,
 			GeneratedCorpusDir:   buildResult.GeneratedCorpus,
+			PrinterOutput:        printerOutput,
+			JSONOutput:           jsonOutput,
 		},
 	)
 }

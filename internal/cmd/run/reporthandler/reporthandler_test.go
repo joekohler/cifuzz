@@ -135,11 +135,12 @@ func TestReportHandler_CorpusDirs(t *testing.T) {
 
 func TestReportHandler_PrintJSON(t *testing.T) {
 	testDir := testutil.ChdirToTempDir(t, "report-handler-test-")
-	h, err := NewReportHandler("", &ReportHandlerOptions{ProjectDir: testDir, PrintJSON: true})
-	require.NoError(t, err)
-
 	jsonOut := bytes.NewBuffer([]byte{})
-	h.jsonOutput = jsonOut
+	h, err := NewReportHandler("", &ReportHandlerOptions{
+		ProjectDir: testDir,
+		JSONOutput: jsonOut,
+	})
+	require.NoError(t, err)
 
 	findingLogs := []string{"Oops", "The program crashed"}
 	findingReport := &report.Report{
@@ -155,7 +156,7 @@ func TestReportHandler_PrintJSON(t *testing.T) {
 
 func TestReportHandler_GenerateName(t *testing.T) {
 	testDir := testutil.ChdirToTempDir(t, "report-handler-test-")
-	h, err := NewReportHandler("", &ReportHandlerOptions{ProjectDir: testDir, PrintJSON: true})
+	h, err := NewReportHandler("", &ReportHandlerOptions{ProjectDir: testDir})
 	require.NoError(t, err)
 
 	findingLogs := []string{"Oops", "The program crashed"}
