@@ -1,6 +1,7 @@
 name: Installer Pipeline
 
 on:
+  merge_group:
   pull_request:
     branches:
       - main
