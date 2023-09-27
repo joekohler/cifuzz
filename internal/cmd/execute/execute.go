@@ -28,9 +28,10 @@ import (
 )
 
 type executeOpts struct {
-	PrintJSON           bool `mapstructure:"print-json"`
-	SingleFuzzTest      bool `mapstructure:"single-fuzz-test"`
-	PrintBundleMetadata bool `mapstructure:"print-bundle-metadata"`
+	PrintJSON           bool   `mapstructure:"print-json"`
+	SingleFuzzTest      bool   `mapstructure:"single-fuzz-test"`
+	PrintBundleMetadata bool   `mapstructure:"print-bundle-metadata"`
+	JSONOutputFilePath  string `mapstructure:"json-output-file"`
 
 	name string
 }
@@ -62,9 +63,11 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
 			cmdutils.ViperMustBindPFlag("print-bundle-metadata", cmd.Flags().Lookup("print-bundle-metadata"))
 			cmdutils.ViperMustBindPFlag("stop-signal-file", cmd.Flags().Lookup("stop-signal-file"))
+			cmdutils.ViperMustBindPFlag("json-output-file", cmd.Flags().Lookup("json-output-file"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
 			opts.PrintBundleMetadata = viper.GetBool("print-bundle-metadata")
 			opts.PrintJSON = viper.GetBool("print-json")
+			opts.JSONOutputFilePath = viper.GetString("json-output-file")
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			if signalFile := viper.GetString("stop-signal-file"); signalFile != "" {
@@ -79,14 +82,6 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			metadata, err := getMetadata()
 			if err != nil {
 				return err
-			}
-
-			if opts.PrintBundleMetadata {
-				metadataJSON, err := stringutil.ToJSONString(metadata)
-				if err != nil {
-					return err
-				}
-				fmt.Println(metadataJSON)
 			}
 
 			// If there are no arguments provided, provide a helpful message and list all available fuzzers.
@@ -113,6 +108,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
 	cmd.Flags().Bool("print-bundle-metadata", false, "Print the bundle metadata as JSON.")
 	cmd.Flags().String("stop-signal-file", "", "CI Fuzz will create a file 'cifuzz-execution-finished' upon exit")
+	cmd.Flags().String("json-output-file", "", "Print output as JSON to the specified file (implies --json)")
 
 	// Note: If a flag should be configurable via viper as well (i.e.
 	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
@@ -125,6 +121,45 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 }
 
 func (c *executeCmd) run(metadata *archive.Metadata) error {
+	var jsonOutput, printerOutput io.Writer
+
+	// Set the output streams depending on the flags.
+	if c.opts.JSONOutputFilePath != "" {
+		// --json-output-file implies --json
+		c.opts.PrintJSON = true
+
+		// Create the output file
+		f, err := os.Create(c.opts.JSONOutputFilePath)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer f.Close()
+		// Write JSON output to the file and printer output to stdout.
+		jsonOutput = f
+		printerOutput = os.Stdout
+	} else if c.opts.PrintJSON {
+		// Write JSON output to stdout and printer output to stderr.
+		jsonOutput = os.Stdout
+		printerOutput = os.Stderr
+	} else {
+		// Don't write JSON output and write printer output to stdout.
+		jsonOutput = io.Discard
+		printerOutput = os.Stdout
+	}
+
+	if c.opts.PrintBundleMetadata {
+		var metadataOutput io.Writer
+		if c.opts.PrintJSON {
+			metadataOutput = jsonOutput
+		} else {
+			metadataOutput = os.Stdout
+		}
+		err := printMetadata(metadata, metadataOutput)
+		if err != nil {
+			return err
+		}
+	}
+
 	fuzzer, err := findFuzzer(c.opts.name, metadata)
 	if err != nil {
 		return err
@@ -137,13 +172,6 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	err = os.MkdirAll(container.GeneratedCorpusDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
-	}
-
-	printerOutput := os.Stdout
-	jsonOutput := io.Discard
-	if c.opts.PrintJSON {
-		printerOutput = os.Stderr
-		jsonOutput = os.Stdout
 	}
 
 	reportHandler, err := reporthandler.NewReportHandler(
@@ -250,6 +278,18 @@ func getMetadata() (*archive.Metadata, error) {
 	}
 
 	return metadata, nil
+}
+
+func printMetadata(metadata *archive.Metadata, output io.Writer) error {
+	metadataJSON, err := stringutil.ToJSONString(metadata)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(output, metadataJSON)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func printNotice(metadata *archive.Metadata) error {
