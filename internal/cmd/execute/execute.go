@@ -91,28 +91,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 
 			// If there are no arguments provided, provide a helpful message and list all available fuzzers.
 			if len(args) == 0 && !opts.SingleFuzzTest {
-				_ = pterm.DefaultBigText.WithLetters(
-					putils.LettersFromStringWithStyle("Fuzz", pterm.FgCyan.ToStyle()),
-					putils.LettersFromString(" "),
-					putils.LettersFromStringWithStyle("Container", pterm.FgLightMagenta.ToStyle())).
-					Render()
-
-				fmt.Println("")
-				fmt.Printf("This container is based on: %s\n", metadata.RunEnvironment.Docker)
-				fmt.Println("")
-
-				fmt.Printf("Available fuzzers:\n")
-				for _, fuzzer := range metadata.Fuzzers {
-					fuzzerName := fuzzer.Name
-					if fuzzerName == "" {
-						fuzzerName = fuzzer.Name
-					}
-					fmt.Printf("  %s\n", fuzzerName)
-					fmt.Printf("    using: %s\n", fuzzer.Engine)
-					fmt.Printf("    run fuzz test with: cifuzz execute %s\n", fuzzerName)
-					fmt.Println("")
-				}
-				return nil
+				return printNotice(metadata)
 			}
 
 			if opts.SingleFuzzTest && len(args) > 0 {
@@ -271,6 +250,31 @@ func getMetadata() (*archive.Metadata, error) {
 	}
 
 	return metadata, nil
+}
+
+func printNotice(metadata *archive.Metadata) error {
+	_ = pterm.DefaultBigText.WithLetters(
+		putils.LettersFromStringWithStyle("Fuzz", pterm.FgCyan.ToStyle()),
+		putils.LettersFromString(" "),
+		putils.LettersFromStringWithStyle("Container", pterm.FgLightMagenta.ToStyle())).
+		Render()
+
+	fmt.Println("")
+	fmt.Printf("This container is based on: %s\n", metadata.RunEnvironment.Docker)
+	fmt.Println("")
+
+	fmt.Printf("Available fuzzers:\n")
+	for _, fuzzer := range metadata.Fuzzers {
+		fuzzerName := fuzzer.Name
+		if fuzzerName == "" {
+			fuzzerName = fuzzer.Name
+		}
+		fmt.Printf("  %s\n", fuzzerName)
+		fmt.Printf("    using: %s\n", fuzzer.Engine)
+		fmt.Printf("    run fuzz test with: cifuzz execute %s\n", fuzzerName)
+		fmt.Println("")
+	}
+	return nil
 }
 
 // getFuzzerName returns the fuzzer name. Some Fuzzer define Name (jazzer) and some define Target (libfuzzer).
