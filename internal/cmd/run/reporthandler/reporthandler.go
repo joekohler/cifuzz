@@ -167,7 +167,7 @@ func (h *ReportHandler) writeJSONReport(r *report.Report) error {
 	var jsonString string
 	var err error
 	// Print with color if the output stream is a TTY
-	if file, ok := h.JSONOutput.(*os.File); !ok || !term.IsTerminal(int(file.Fd())) {
+	if file, ok := h.JSONOutput.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
 		bytes, err := prettyjson.Marshal(r)
 		if err != nil {
 			return errors.WithStack(err)
@@ -180,7 +180,6 @@ func (h *ReportHandler) writeJSONReport(r *report.Report) error {
 		}
 	}
 	_, _ = fmt.Fprintln(h.JSONOutput, jsonString)
-
 	return nil
 }
 
