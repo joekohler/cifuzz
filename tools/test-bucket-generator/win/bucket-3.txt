@@ -1,3 +1,2 @@
-code-intelligence.com/cifuzz/integration-tests/bazel
+code-intelligence.com/cifuzz/integration-tests/gradle/kotlin
 code-intelligence.com/cifuzz/integration-tests/nodejs
-code-intelligence.com/cifuzz/internal/bundler
