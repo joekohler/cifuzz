@@ -1,7 +1,6 @@
 package init_test
 
 import (
-	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,8 +28,7 @@ var initTests = &[]e2e.TestCase{
 			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
 			assert.Contains(t, output.Stdall, "<artifactId>jazzer-junit</artifactId>")
 			assert.NotContains(t, output.Stdall, "Failed to create config")
-			matches, _ := fs.Glob(output.Workdir, "cifuzz.yaml")
-			assert.Len(t, matches, 1, "There should be a cifuzz.yaml config")
+			output.FileExists("cifuzz.yaml")
 		},
 	},
 }
@@ -46,8 +44,7 @@ var nodeInitTests = &[]e2e.TestCase{
 			assert.Contains(t, output.Stdall, "To use jazzer.js, add a dev-dependency to @jazzer.js/jest-runner")
 			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
 			assert.NotContains(t, output.Stdall, "Failed to create config")
-			matches, _ := fs.Glob(output.Workdir, "cifuzz.yaml")
-			assert.Len(t, matches, 1, "There should be a cifuzz.yaml config")
+			output.FileExists("cifuzz.yaml")
 		},
 	},
 	{
@@ -62,8 +59,7 @@ var nodeInitTests = &[]e2e.TestCase{
 			assert.Contains(t, output.Stdall, "To introduce the fuzz function types globally, add the following import to globals.d.ts:")
 			assert.Contains(t, output.Stdall, "Configuration saved in cifuzz.yaml")
 			assert.NotContains(t, output.Stdall, "Failed to create config")
-			matches, _ := fs.Glob(output.Workdir, "cifuzz.yaml")
-			assert.Len(t, matches, 1, "There should be a cifuzz.yaml config")
+			output.FileExists("cifuzz.yaml")
 		},
 	},
 }

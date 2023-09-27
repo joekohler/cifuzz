@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"fmt"
+	"io/fs"
+	"os"
 	"strings"
 
 	"github.com/stretchr/testify/require"
@@ -45,5 +47,12 @@ func (co *CommandOutput) NoOutput() *CommandOutput {
 
 func (co *CommandOutput) NoError() *CommandOutput {
 	require.Empty(co.t, co.Stderr)
+	return co
+}
+
+func (co *CommandOutput) FileExists(path string) *CommandOutput {
+	stat, err := fs.Stat(co.Workdir, path)
+	require.NotErrorIs(co.t, err, os.ErrNotExist)
+	require.False(co.t, stat.IsDir())
 	return co
 }

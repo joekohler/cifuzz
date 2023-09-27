@@ -44,6 +44,15 @@ var executeTests = &[]e2e.TestCase{
 			output.Failed().ErrorContains("fuzzer 'invalid.name' not found in a bundle metadata file")
 		},
 	},
+	{
+		Description:  "execute command with --json-output-file flag to create a file containing the json output",
+		Command:      "execute",
+		Args:         []string{"com.example.FuzzTestCase --json-output-file test.json"},
+		SampleFolder: []string{"folder-with-unpacked-bundle"},
+		Assert: func(t *testing.T, output e2e.CommandOutput) {
+			output.FileExists("test.json")
+		},
+	},
 }
 
 func TestExecute(t *testing.T) {
