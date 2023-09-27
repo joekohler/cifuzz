@@ -13,17 +13,8 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
-var testBaseDir string
-
-func TestMain(m *testing.M) {
-	var cleanup func()
-	testBaseDir, cleanup = testutil.ChdirToTempDir("finding-test-")
-	defer cleanup()
-
-	m.Run()
-}
-
 func TestFinding_Save_LoadFinding(t *testing.T) {
+	testBaseDir := testutil.ChdirToTempDir(t, "finding-test-")
 	testDir, err := os.MkdirTemp(testBaseDir, "save-test-")
 	require.NoError(t, err)
 
@@ -55,6 +46,7 @@ func TestFinding_Save_LoadFinding(t *testing.T) {
 
 func TestFinding_MoveInputFile(t *testing.T) {
 	var err error
+	testBaseDir := testutil.ChdirToTempDir(t, "finding-test-")
 	projectDir := testutil.MkdirTemp(t, testBaseDir, "move-test-project-dir-")
 	seedCorpusDir := testutil.MkdirTemp(t, testBaseDir, "move-test-seed-corpus-")
 
@@ -86,6 +78,7 @@ func TestFinding_MoveInputFile(t *testing.T) {
 }
 
 func TestGetLocalFindings(t *testing.T) {
+	testBaseDir := testutil.ChdirToTempDir(t, "finding-test-")
 	finding := testFinding()
 
 	err := finding.Save(testBaseDir)

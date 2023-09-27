@@ -22,8 +22,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInitCmd(t *testing.T) {
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemCMake)
-	defer cleanup()
+	testDir := testutil.BootstrapExampleProjectForTest(t, "init-cmd-test", config.BuildSystemCMake)
 
 	// remove cifuzz.yaml from example project
 	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
@@ -40,8 +39,7 @@ func TestInitCmd(t *testing.T) {
 
 // TestInitCmdForNodeWithJSLanguageArg tests the init command for Node.js projects (JS).
 func TestInitCmdForNodeWithJSLanguageArg(t *testing.T) {
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemNodeJS)
-	defer cleanup()
+	testDir := testutil.BootstrapExampleProjectForTest(t, "init-cmd-test", config.BuildSystemNodeJS)
 
 	// remove cifuzz.yaml from example project
 	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))
@@ -55,8 +53,7 @@ func TestInitCmdForNodeWithJSLanguageArg(t *testing.T) {
 
 // TestInitCmdForNodeWithTSLanguageArg tests the init command for Node.js projects (TS).
 func TestInitCmdForNodeWithTSLanguageArg(t *testing.T) {
-	testDir, cleanup := testutil.BootstrapExampleProjectForTest("init-cmd-test", config.BuildSystemNodeJS)
-	defer cleanup()
+	testDir := testutil.BootstrapExampleProjectForTest(t, "init-cmd-test", config.BuildSystemNodeJS)
 
 	// remove cifuzz.yaml from example project
 	err := os.Remove(filepath.Join(testDir, "cifuzz.yaml"))

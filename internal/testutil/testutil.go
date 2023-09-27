@@ -58,7 +58,7 @@ func RegisterTestDepOnCIFuzz() {
 }
 
 // ChdirToTempDir creates and changes the working directory to new tmp dir
-func ChdirToTempDir(prefix string) (tempDir string, cleanup func()) { //nolint:nonamedreturns
+func ChdirToTempDir(t *testing.T, prefix string) string {
 	ChdirMutex.Lock()
 	oldWd, err := os.Getwd()
 	if err != nil {
@@ -79,7 +79,7 @@ func ChdirToTempDir(prefix string) (tempDir string, cleanup func()) { //nolint:n
 		os.Exit(1)
 	}
 
-	cleanup = func() {
+	t.Cleanup(func() {
 		err = os.Chdir(oldWd)
 		if err != nil {
 			log.Printf("Failed to change working directory back to %s: %+v", oldWd, err)
@@ -87,9 +87,9 @@ func ChdirToTempDir(prefix string) (tempDir string, cleanup func()) { //nolint:n
 		}
 		ChdirMutex.Unlock()
 		fileutil.Cleanup(testTempDir)
-	}
+	})
 
-	return testTempDir, cleanup
+	return testTempDir
 }
 
 // CheckOutput checks that the strings are contained in the reader output

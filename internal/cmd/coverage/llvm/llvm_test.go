@@ -59,8 +59,7 @@ func TestIntegration_LLVM(t *testing.T) {
 			require.NoError(t, err)
 			includePath := filepath.Join(repoRoot, "include")
 
-			tmpDir, cleanup := testutil.ChdirToTempDir("llvm-coverage-gen")
-			defer cleanup()
+			tmpDir := testutil.ChdirToTempDir(t, "llvm-coverage-gen")
 
 			// copy testdata project to tmp directory
 			err = copy.Copy(testdataDir, tmpDir)

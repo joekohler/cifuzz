@@ -196,8 +196,7 @@ func Test_findFuzzer(t *testing.T) {
 }
 
 func TestStopSignalFile(t *testing.T) {
-	dir, cleanup := testutil.BootstrapExampleProjectForTest("execute-stop-signal-test", config.BuildSystemCMake)
-	defer cleanup()
+	dir := testutil.BootstrapExampleProjectForTest(t, "execute-stop-signal-test", config.BuildSystemCMake)
 
 	// We don't care if this command fails, it should create the file in any case
 	// nolint
