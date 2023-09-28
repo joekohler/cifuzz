@@ -33,6 +33,19 @@
 			<version>0.21.1</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.jacoco</groupId>
+			<artifactId>org.jacoco.cli</artifactId>
+			<version>0.8.8</version>
+			<classifier>nodeps</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.jacoco</groupId>
+			<artifactId>org.jacoco.agent</artifactId>
+			<version>0.8.8</version>
+			<classifier>runtime</classifier>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<profiles>
