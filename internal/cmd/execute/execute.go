@@ -283,7 +283,8 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	// Create the coverage report
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
-		log.Warn("Coverage report generation is not yet supported for Java fuzz tests")
+		jazzerRunner := runner.(*jazzer.Runner)
+		return jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath)
 	default:
 		// libFuzzer fuzz tests have a separate coverage binary which
 		// is used to produce coverage data. The coverage binary is
@@ -301,8 +302,6 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		return gen.GenerateCoverageReportInFuzzContainer(context.Background(), coverageBinary.Path,
 			c.opts.CoverageOutputPath, coverageBinary.LibraryPaths)
 	}
-
-	return nil
 }
 
 // getMetadata returns the bundle metadata from the bundle.yaml file.
