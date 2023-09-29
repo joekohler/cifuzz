@@ -3,6 +3,7 @@
 package execute
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -16,10 +17,12 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	"code-intelligence.com/cifuzz/internal/cmd/run/adapter"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/container"
+	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -33,6 +36,7 @@ type executeOpts struct {
 	PrintBundleMetadata bool   `mapstructure:"print-bundle-metadata"`
 	JSONOutputFilePath  string `mapstructure:"json-output-file"`
 	GeneratedCorpusDir  string `mapstructure:"generated-corpus-dir"`
+	CoverageOutputPath  string `mapstructure:"coverage-output-path"`
 
 	name string
 }
@@ -63,11 +67,13 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			bindFlags()
 			cmdutils.ViperMustBindPFlag("single-fuzz-test", cmd.Flags().Lookup("single-fuzz-test"))
 			cmdutils.ViperMustBindPFlag("print-bundle-metadata", cmd.Flags().Lookup("print-bundle-metadata"))
+			cmdutils.ViperMustBindPFlag("coverage-output-path", cmd.Flags().Lookup("coverage-output-path"))
 			cmdutils.ViperMustBindPFlag("stop-signal-file", cmd.Flags().Lookup("stop-signal-file"))
 			cmdutils.ViperMustBindPFlag("json-output-file", cmd.Flags().Lookup("json-output-file"))
 			cmdutils.ViperMustBindPFlag("generated-corpus-dir", cmd.Flags().Lookup("generated-corpus-dir"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
 			opts.PrintBundleMetadata = viper.GetBool("print-bundle-metadata")
+			opts.CoverageOutputPath = viper.GetString("coverage-output-path")
 			opts.PrintJSON = viper.GetBool("print-json")
 			opts.JSONOutputFilePath = viper.GetString("json-output-file")
 			opts.GeneratedCorpusDir = viper.GetString("generated-corpus-dir")
@@ -110,6 +116,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 
 	cmd.Flags().Bool("single-fuzz-test", false, "Run the only fuzz test in the bundle (without specifying the fuzz test name).")
 	cmd.Flags().Bool("print-bundle-metadata", false, "Print the bundle metadata as JSON.")
+	cmd.Flags().String("coverage-output-path", "", "Produce an LCOV coverage report at the specified path after running the fuzz test.")
 	cmd.Flags().String("stop-signal-file", "", "CI Fuzz will create a file 'cifuzz-execution-finished' upon exit")
 	cmd.Flags().String("json-output-file", "", "Print output as JSON to the specified file (implies --json)")
 	cmd.Flags().String("generated-corpus-dir", "/tmp/generated-corpus", "The directory where inputs which increased the coverage are stored. The user running the container must have write access to this directory.")
@@ -257,7 +264,39 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		runner = libfuzzer.NewRunner(runnerOpts)
 	}
 
-	return adapter.ExecuteFuzzerRunner(runner)
+	err = adapter.ExecuteFuzzerRunner(runner)
+	if err != nil {
+		return err
+	}
+
+	if c.opts.CoverageOutputPath == "" {
+		// If no coverage output path is specified, we're done.
+		return nil
+	}
+
+	// Create the coverage report
+	switch fuzzer.Engine {
+	case "JAVA_LIBFUZZER":
+		log.Warn("Coverage report generation is not yet supported for Java fuzz tests")
+	default:
+		// libFuzzer fuzz tests have a separate coverage binary which
+		// is used to produce coverage data. The coverage binary is
+		// specified in the bundle metadata.
+		coverageBinary, err := findCoverageBinary(c.opts.name, metadata)
+		if err != nil {
+			return err
+		}
+		seedCorpusDirs := append(runnerOpts.SeedCorpusDirs, runnerOpts.GeneratedCorpusDir, container.ManagedSeedCorpusDir)
+		gen := &llvmCoverage.CoverageGenerator{
+			OutputFormat:   coverage.FormatLCOV,
+			SeedCorpusDirs: seedCorpusDirs,
+			Stderr:         os.Stderr,
+		}
+		return gen.GenerateCoverageReportInFuzzContainer(context.Background(), coverageBinary.Path,
+			c.opts.CoverageOutputPath, coverageBinary.LibraryPaths)
+	}
+
+	return nil
 }
 
 // getMetadata returns the bundle metadata from the bundle.yaml file.
@@ -331,13 +370,29 @@ func getFuzzerName(fuzzer *archive.Fuzzer) string {
 
 // findFuzzer returns the fuzzer with the given name in Fuzzers list in Bundle Metadata.
 func findFuzzer(nameToFind string, bundleMetadata *archive.Metadata) (*archive.Fuzzer, error) {
-	// libFuzzer fuzz tests contain two entries in the metadata file, one
-	// for fuzzing and one for coverage. We want the fuzzing entries, which
-	// are listed first.
+	return findBinary(nameToFind, bundleMetadata, false)
+}
+
+func findCoverageBinary(nameToFind string, bundleMetadata *archive.Metadata) (*archive.Fuzzer, error) {
+	return findBinary(nameToFind, bundleMetadata, true)
+}
+
+func findBinary(nameToFind string, bundleMetadata *archive.Metadata, isCoverageBinary bool) (*archive.Fuzzer, error) {
+	// libFuzzer fuzz tests contain two entries in the metadata file,
+	// one for the fuzz test and one for the coverage binary. The
+	// coverage binary has the engine set to "LLVM_COV".
 	fuzzers := make(map[string]*archive.Fuzzer)
 	for _, fuzzer := range bundleMetadata.Fuzzers {
 		name := getFuzzerName(fuzzer)
-		if _, ok := fuzzers[name]; !ok {
+		// If we're looking for the coverage binary, add the fuzzer to
+		// the map if it has engine set to "LLVM_COV".
+		if isCoverageBinary && fuzzer.Engine == "LLVM_COV" {
+			fuzzers[name] = fuzzer
+		}
+		// If we're looking for the fuzz test binary, add the fuzzer
+		// to the map if it has engine set to anything other than
+		// "LLVM_COV".
+		if !isCoverageBinary && fuzzer.Engine != "LLVM_COV" {
 			fuzzers[name] = fuzzer
 		}
 	}

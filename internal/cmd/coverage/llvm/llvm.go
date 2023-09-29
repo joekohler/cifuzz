@@ -2,6 +2,7 @@ package llvm
 
 import (
 	"bytes"
+	"context"
 	"debug/macho"
 	"fmt"
 	"io"
@@ -26,6 +27,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
+	fuzzer_runner "code-intelligence.com/cifuzz/pkg/runner"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -49,6 +51,7 @@ type CoverageGenerator struct {
 	BuildStderr     io.Writer
 
 	coverageBinary string
+	libraryDirs    []string
 	runtimeDeps    []string
 	tmpDir         string
 	outputDir      string
@@ -81,9 +84,13 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 }
 
 func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
+	log.Infof("Running %s on corpus", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(cov.FuzzTest))
+	log.Debugf("Executable: %s", cov.coverageBinary)
+
+	ctx := context.Background()
 	defer fileutil.Cleanup(cov.tmpDir)
 
-	err := cov.run()
+	err := cov.run(ctx)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && cov.UseSandbox {
@@ -92,11 +99,86 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 		return "", err
 	}
 
-	reportPath, err := cov.report()
+	reportPath, err := cov.report(ctx)
 	if err != nil {
 		return "", err
 	}
 	return reportPath, nil
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReportInFuzzContainer(ctx context.Context, coverageBinary string,
+	outputPath string, libraryDirs []string) error {
+
+	log.Infof("Creating coverage report for %s", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(coverageBinary))
+
+	var err error
+	cov.coverageBinary = coverageBinary
+	cov.libraryDirs = libraryDirs
+
+	// ensure a finder is set
+	if cov.runfilesFinder == nil {
+		cov.runfilesFinder = runfiles.Finder
+	}
+
+	cov.tmpDir, err = os.MkdirTemp("", "llvm-coverage-")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	cov.outputDir = filepath.Join(cov.tmpDir, "output")
+	err = os.Mkdir(cov.outputDir, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	exists, err := fileutil.Exists("cas")
+	if err != nil {
+		return err
+	}
+	if exists {
+		// Add all files in the "cas" directory to the runtime deps slice
+		err = filepath.Walk("cas", func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cov.runtimeDeps = append(cov.runtimeDeps, path)
+			return nil
+		})
+		// filepath.Walk returns an error created by us so it already has a
+		// stack trace and we don't want to add another one here
+		// nolint: wrapcheck
+		if err != nil {
+			return err
+		}
+	}
+
+	err = cov.run(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = cov.indexRawProfile(ctx)
+	if err != nil {
+		return err
+	}
+
+	lcovReportSummary, err := cov.lcovReportSummary(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(outputPath), 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = os.WriteFile(outputPath, []byte(lcovReportSummary), 0o644)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func (cov *CoverageGenerator) build() error {
@@ -176,10 +258,8 @@ func (cov *CoverageGenerator) build() error {
 	return nil
 }
 
-func (cov *CoverageGenerator) run() error {
+func (cov *CoverageGenerator) run(ctx context.Context) error {
 	var err error
-	log.Infof("Running %s on corpus", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(cov.FuzzTest))
-	log.Debugf("Executable: %s", cov.coverageBinary)
 
 	corpusDirs := cov.SeedCorpusDirs
 
@@ -201,6 +281,12 @@ func (cov *CoverageGenerator) run() error {
 	env, err = envutil.Setenv(env, "NO_CIFUZZ", "1")
 	if err != nil {
 		return err
+	}
+	if len(cov.libraryDirs) > 0 {
+		env, err = fuzzer_runner.SetLDLibraryPath(env, cov.libraryDirs)
+		if err != nil {
+			return err
+		}
 	}
 
 	dirWithEmptyFile := filepath.Join(cov.outputDir, "empty-file-corpus")
@@ -234,16 +320,18 @@ func (cov *CoverageGenerator) run() error {
 	// always logs any error we encounter.
 	// This line is responsible for empty inputs being skipped:
 	// https://github.com/llvm/llvm-project/blob/c7c0ce7d9ebdc0a49313bc77e14d1e856794f2e0/compiler-rt/lib/fuzzer/FuzzerIO.cpp#L127
-	_ = cov.runFuzzer(append(args, "-runs=0"), []string{dirWithEmptyFile}, env)
+	_ = cov.runFuzzer(ctx, append(args, "-runs=0"), []string{dirWithEmptyFile}, env)
 
 	// We use libFuzzer's crash-resistant merge mode to merge all corpus directories into an empty directory, which
 	// makes libFuzzer go over all inputs in a subprocess that is restarted in case it crashes. With LLVM's continuous
 	// mode (see rawProfilePattern) and since the LLVM coverage information is automatically appended to the existing
 	// .profraw file, we collect complete coverage information even if the target crashes on an input in the corpus.
-	return cov.runFuzzer(append(args, "-merge=1"), append([]string{emptyDir}, corpusDirs...), env)
+	return cov.runFuzzer(ctx, append(args, "-merge=1"), append([]string{emptyDir}, corpusDirs...), env)
 }
 
-func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, env []string) error {
+func (cov *CoverageGenerator) runFuzzer(ctx context.Context, preCorpusArgs []string,
+	corpusDirs []string, env []string) error {
+
 	var err error
 	args := []string{cov.coverageBinary}
 	args = append(args, preCorpusArgs...)
@@ -274,7 +362,7 @@ func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []str
 		args = mj.Args
 	}
 
-	cmd := executil.Command(args[0], args[1:]...)
+	cmd := executil.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Env, err = envutil.Copy(os.Environ(), env)
 	if err != nil {
 		return err
@@ -303,13 +391,13 @@ func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []str
 	return err
 }
 
-func (cov *CoverageGenerator) report() (string, error) {
-	err := cov.indexRawProfile()
+func (cov *CoverageGenerator) report(ctx context.Context) (string, error) {
+	err := cov.indexRawProfile(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	lcovReportSummary, err := cov.lcovReportSummary()
+	lcovReportSummary, err := cov.lcovReportSummary(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -323,13 +411,13 @@ func (cov *CoverageGenerator) report() (string, error) {
 	reportPath := ""
 	switch cov.OutputFormat {
 	case "html":
-		reportPath, err = cov.generateHTMLReport()
+		reportPath, err = cov.generateHTMLReport(ctx)
 		if err != nil {
 			return "", err
 		}
 
 	case "lcov":
-		reportPath, err = cov.generateLcovReport()
+		reportPath, err = cov.generateLcovReport(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -338,7 +426,7 @@ func (cov *CoverageGenerator) report() (string, error) {
 	return reportPath, nil
 }
 
-func (cov *CoverageGenerator) indexRawProfile() error {
+func (cov *CoverageGenerator) indexRawProfile(ctx context.Context) error {
 	rawProfileFiles, err := cov.rawProfileFiles()
 	if err != nil {
 		return err
@@ -355,7 +443,7 @@ func (cov *CoverageGenerator) indexRawProfile() error {
 	}
 
 	args := append([]string{"merge", "-sparse", "-o", cov.indexedProfilePath()}, rawProfileFiles...)
-	cmd := exec.Command(llvmProfData, args...)
+	cmd := exec.CommandContext(ctx, llvmProfData, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
@@ -383,14 +471,14 @@ func (cov *CoverageGenerator) rawProfilePattern(supportsContinuousMode bool) str
 	return filepath.Join(cov.outputDir, basePattern)
 }
 
-func (cov *CoverageGenerator) generateHTMLReport() (string, error) {
+func (cov *CoverageGenerator) generateHTMLReport(ctx context.Context) (string, error) {
 	args := []string{"export", "-format=lcov"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
 		return "", err
 	}
 	args = append(args, ignoreCIFuzzIncludesArgs...)
-	report, err := cov.runLlvmCov(args)
+	report, err := cov.runLlvmCov(ctx, args)
 	if err != nil {
 		return "", err
 	}
@@ -447,7 +535,7 @@ func (cov *CoverageGenerator) generateHTMLReport() (string, error) {
 	return cov.OutputPath, nil
 }
 
-func (cov *CoverageGenerator) runLlvmCov(args []string) (string, error) {
+func (cov *CoverageGenerator) runLlvmCov(ctx context.Context, args []string) (string, error) {
 	llvmCov, err := cov.runfilesFinder.LLVMCovPath()
 	if err != nil {
 		return "", err
@@ -471,7 +559,7 @@ func (cov *CoverageGenerator) runLlvmCov(args []string) (string, error) {
 		}
 	}
 
-	cmd := exec.Command(llvmCov, args...)
+	cmd := exec.CommandContext(ctx, llvmCov, args...)
 	cmd.Stderr = os.Stderr
 	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 	output, err := cmd.Output()
@@ -481,14 +569,14 @@ func (cov *CoverageGenerator) runLlvmCov(args []string) (string, error) {
 	return string(output), nil
 }
 
-func (cov *CoverageGenerator) generateLcovReport() (string, error) {
+func (cov *CoverageGenerator) generateLcovReport(ctx context.Context) (string, error) {
 	args := []string{"export", "-format=lcov"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
 		return "", err
 	}
 	args = append(args, ignoreCIFuzzIncludesArgs...)
-	report, err := cov.runLlvmCov(args)
+	report, err := cov.runLlvmCov(ctx, args)
 	if err != nil {
 		return "", err
 	}
@@ -512,14 +600,14 @@ func (cov *CoverageGenerator) generateLcovReport() (string, error) {
 	return outputPath, nil
 }
 
-func (cov *CoverageGenerator) lcovReportSummary() (string, error) {
+func (cov *CoverageGenerator) lcovReportSummary(ctx context.Context) (string, error) {
 	args := []string{"export", "-format=lcov", "-summary-only"}
 	ignoreCIFuzzIncludesArgs, err := cov.getIgnoreCIFuzzIncludesArgs()
 	if err != nil {
 		return "", err
 	}
 	args = append(args, ignoreCIFuzzIncludesArgs...)
-	output, err := cov.runLlvmCov(args)
+	output, err := cov.runLlvmCov(ctx, args)
 	if err != nil {
 		return "", err
 	}

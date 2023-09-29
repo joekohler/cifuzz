@@ -54,6 +54,12 @@ type RunnerOptions struct {
 	Timeout            time.Duration
 	UseMinijail        bool
 	Verbose            bool
+	// The path to the coverage binary to use to produce a coverage
+	// report after the fuzzer has finished. If empty, no coverage
+	// report is produced.
+	CoverageBinary      string
+	CoverageLibraryDirs []string
+	CoverageOutputPath  string
 }
 
 func (options *RunnerOptions) ValidateOptions() error {

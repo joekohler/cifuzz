@@ -16,27 +16,31 @@ import (
 func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string, options *RunOptions) {
 	buildDockerImage(t, imageTag, cifuzzRunner.DefaultWorkDir)
 
-	// Create a temporary directory which we mount as the generated corpus
-	// directory into the container
-	corpusDir := testutil.MkdirTemp(t, "", "cifuzz-container-run-corpus-*")
+	// Create a temporary directory which we mount into the container to
+	// be able to access the generated corpus files and the coverage
+	// report.
+	outputDir := testutil.MkdirTemp(t, "", "cifuzz-container-run-output-*")
 
-	generatedCorpusDir := "/corpus"
 	options.Command = []string{"container", "run"}
 	options.Args = append(options.Args,
 		"--docker-image", imageTag,
-		// Mount the corpus directory into the container
-		"--bind", fmt.Sprintf("%s:%s", corpusDir, generatedCorpusDir),
-		// Specify the generated corpus dir as a container argument. This
+		// Mount the output directory into the container
+		"--bind", fmt.Sprintf("%s:/output", outputDir),
+		// All other arguments are passed to the fuzz container. This
 		// requires two "--" because arguments after the first "--" are
 		// used as build system arguments and arguments after the second
 		// "--" are used as container arguments.
-		"--", "--", "--generated-corpus-dir", generatedCorpusDir,
+		"--", "--",
+		// Specify the generated corpus dir
+		"--generated-corpus-dir", "/output/generated-corpus",
+		// Produce an LCOV coverage report
+		"--coverage-output-path", "/output/coverage.lcov",
 	)
 
 	cifuzzRunner.Run(t, options)
 
 	// Check that files were created in the corpus directory
-	entries, err := os.ReadDir(corpusDir)
+	entries, err := os.ReadDir(filepath.Join(outputDir, "generated-corpus"))
 	require.NoError(t, err)
 	require.NotEmpty(t, entries)
 
@@ -44,6 +48,10 @@ func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string,
 	for _, entry := range entries {
 		require.False(t, entry.IsDir())
 	}
+
+	// Check that the LCOV coverage report was created
+	_, err = os.Stat(filepath.Join(outputDir, "coverage.lcov"))
+	require.NoError(t, err)
 }
 
 func buildDockerImage(t *testing.T, tag, dir string) {
