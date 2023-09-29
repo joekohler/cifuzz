@@ -48,7 +48,8 @@ type CoverageGenerator struct {
 	BuildStdout     io.Writer
 	BuildStderr     io.Writer
 
-	buildResult    *build.CBuildResult
+	coverageBinary string
+	runtimeDeps    []string
 	tmpDir         string
 	outputDir      string
 	runfilesFinder runfiles.RunfilesFinder
@@ -99,6 +100,7 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 }
 
 func (cov *CoverageGenerator) build() error {
+	var buildResult *build.CBuildResult
 	switch cov.BuildSystem {
 	case config.BuildSystemCMake:
 		builder, err := cmake.NewBuilder(&cmake.BuilderOptions{
@@ -126,9 +128,7 @@ func (cov *CoverageGenerator) build() error {
 		if err != nil {
 			return err
 		}
-		cov.buildResult = buildResults[0]
-		return nil
-
+		buildResult = buildResults[0]
 	case config.BuildSystemOther:
 		if runtime.GOOS == "windows" {
 			return errors.New("CMake is the only supported build system on Windows")
@@ -150,38 +150,38 @@ func (cov *CoverageGenerator) build() error {
 			return err
 		}
 
-		buildResult, err := builder.Build(cov.FuzzTest)
+		buildResult, err = builder.Build(cov.FuzzTest)
 		if err != nil {
 			return err
 		}
-		cov.buildResult = buildResult
-		return nil
-
+	default:
+		return errors.New("unknown build system")
 	}
-	return errors.New("unknown build system")
+
+	cov.coverageBinary = buildResult.Executable
+	cov.runtimeDeps = buildResult.RuntimeDeps
+
+	// Use the seed corpus directory and generated corpus directory if
+	// they exist.
+	for _, path := range []string{buildResult.SeedCorpus, buildResult.GeneratedCorpus} {
+		exists, err := fileutil.Exists(path)
+		if err != nil {
+			return err
+		}
+		if exists {
+			cov.SeedCorpusDirs = append(cov.SeedCorpusDirs, path)
+		}
+	}
+
+	return nil
 }
 
 func (cov *CoverageGenerator) run() error {
+	var err error
 	log.Infof("Running %s on corpus", pterm.Style{pterm.Reset, pterm.FgLightBlue}.Sprint(cov.FuzzTest))
-	log.Debugf("Executable: %s", cov.buildResult.Executable)
+	log.Debugf("Executable: %s", cov.coverageBinary)
 
-	// Use user-specified seed corpus dirs (if any), the default seed
-	// corpus (if it exists), and the generated corpus (if it exists).
 	corpusDirs := cov.SeedCorpusDirs
-	exists, err := fileutil.Exists(cov.buildResult.SeedCorpus)
-	if err != nil {
-		return err
-	}
-	if exists {
-		corpusDirs = append(corpusDirs, cov.buildResult.SeedCorpus)
-	}
-	exists, err = fileutil.Exists(cov.buildResult.GeneratedCorpus)
-	if err != nil {
-		return err
-	}
-	if exists {
-		corpusDirs = append(corpusDirs, cov.buildResult.GeneratedCorpus)
-	}
 
 	// Ensure that symlinks are resolved to be able to add minijail
 	// bindings for the corpus dirs.
@@ -192,8 +192,7 @@ func (cov *CoverageGenerator) run() error {
 		}
 	}
 
-	executable := cov.buildResult.Executable
-	conModeSupport := binary.SupportsLlvmProfileContinuousMode(executable)
+	conModeSupport := binary.SupportsLlvmProfileContinuousMode(cov.coverageBinary)
 	var env []string
 	env, err = envutil.Setenv(env, "LLVM_PROFILE_FILE", cov.rawProfilePattern(conModeSupport))
 	if err != nil {
@@ -246,14 +245,14 @@ func (cov *CoverageGenerator) run() error {
 
 func (cov *CoverageGenerator) runFuzzer(preCorpusArgs []string, corpusDirs []string, env []string) error {
 	var err error
-	args := []string{cov.buildResult.Executable}
+	args := []string{cov.coverageBinary}
 	args = append(args, preCorpusArgs...)
 	args = append(args, corpusDirs...)
 
 	if cov.UseSandbox {
 		bindings := []*minijail.Binding{
 			// The fuzz target must be accessible
-			{Source: cov.buildResult.Executable},
+			{Source: cov.coverageBinary},
 		}
 
 		for _, dir := range corpusDirs {
@@ -347,7 +346,7 @@ func (cov *CoverageGenerator) indexRawProfile() error {
 	if len(rawProfileFiles) == 0 {
 		// The rawProfilePattern parameter only governs whether we add "%c",
 		// which doesn't affect the actual raw profile location.
-		return errors.Errorf("%s did not generate .profraw files at %s", cov.buildResult.Executable, cov.rawProfilePattern(false))
+		return errors.Errorf("%s did not generate .profraw files at %s", cov.coverageBinary, cov.rawProfilePattern(false))
 	}
 
 	llvmProfData, err := cov.runfilesFinder.LLVMProfDataPath()
@@ -457,13 +456,13 @@ func (cov *CoverageGenerator) runLlvmCov(args []string) (string, error) {
 	// Add all runtime dependencies of the fuzz test to the binaries
 	// processed by llvm-cov to include them in the coverage report
 	args = append(args, "-instr-profile="+cov.indexedProfilePath())
-	args = append(args, cov.buildResult.Executable)
-	if archArg, err := cov.archFlagIfNeeded(cov.buildResult.Executable); err != nil {
+	args = append(args, cov.coverageBinary)
+	if archArg, err := cov.archFlagIfNeeded(cov.coverageBinary); err != nil {
 		return "", err
 	} else if archArg != "" {
 		args = append(args, archArg)
 	}
-	for _, path := range cov.buildResult.RuntimeDeps {
+	for _, path := range cov.runtimeDeps {
 		args = append(args, "-object="+path)
 		if archArg, err := cov.archFlagIfNeeded(path); err != nil {
 			return "", err
@@ -542,11 +541,11 @@ func (cov *CoverageGenerator) rawProfileFiles() ([]string, error) {
 }
 
 func (cov *CoverageGenerator) indexedProfilePath() string {
-	return filepath.Join(cov.tmpDir, filepath.Base(cov.buildResult.Executable)+".profdata")
+	return filepath.Join(cov.tmpDir, filepath.Base(cov.coverageBinary)+".profdata")
 }
 
 func (cov *CoverageGenerator) executableName() string {
-	executable := cov.buildResult.Executable
+	executable := cov.coverageBinary
 	// Remove .exe file extension on Windows
 	if runtime.GOOS == "windows" {
 		executable = strings.TrimSuffix(executable, filepath.Ext(executable))
