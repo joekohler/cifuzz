@@ -35,6 +35,7 @@ func ExecuteFuzzerRunner(runner FuzzerRunner) error {
 	routines, routinesCtx := errgroup.WithContext(signalHandlerCtx)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer signal.Stop(sigs)
 	var signalErr error
 	routines.Go(func() error {
 		select {

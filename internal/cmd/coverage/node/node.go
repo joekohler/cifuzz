@@ -115,6 +115,7 @@ func (cov *CoverageGenerator) runNPXCommand(args []string, stdout, stderr io.Wri
 	// terminate progress group if receiving exit signals
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer signal.Stop(sigs)
 	go func() {
 		<-sigs
 		err := cmd.TerminateProcessGroup()

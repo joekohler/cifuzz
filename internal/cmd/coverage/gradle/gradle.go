@@ -113,6 +113,7 @@ func (runner *GradleRunnerImpl) RunCommand(args []string) error {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer signal.Stop(sigs)
 	go func() {
 		<-sigs
 		err = cmd.TerminateProcessGroup()
