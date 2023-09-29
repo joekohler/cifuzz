@@ -137,7 +137,7 @@ Attach to it with:
 
 Run the original command in the container with:
 
-   eval $CMD
+    eval $CMD
 
 Press Ctrl+C to stop the container.`, id)
 	}
