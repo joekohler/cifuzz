@@ -61,8 +61,13 @@ func main() {
 			updateFile(path, *version, re)
 		}
 	case "jazzerjs":
+		re := regexp.MustCompile(`(@jazzer.js\/jest-runner@)(?P<version>\d+.\d+.\d+)`)
+
 		updateJazzerNpm("examples/nodejs", *version)
+		updateFile("pkg/messaging/instructions/nodejs", *version, re)
+
 		updateJazzerNpm("examples/nodejs-typescript", *version)
+		updateFile("pkg/messaging/instructions/nodets", *version, re)
 	default:
 		log.Error(errors.New("unsupported dependency selected"))
 		os.Exit(1)
