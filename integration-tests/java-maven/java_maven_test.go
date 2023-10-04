@@ -57,13 +57,13 @@ func TestIntegration_Maven(t *testing.T) {
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
 		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<plugin>")[0], "\n"),
-		"    </dependencies>",
+		"\t</dependencies>",
 		false,
 	)
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
 		strings.Split("<profile>"+strings.Split(strings.Join(linesToAdd, "\n"), "<profile>")[1], "\n"),
-		"    </profiles>",
+		"\t</profiles>",
 		false,
 	)
 
