@@ -78,8 +78,7 @@ function missingTestsForModifiedFiles() {
 			const filePath = dirname(x);
 			const testFile = basename(x).replace(".go", "_test.go");
 			return (
-				!modifiedTestFiles.includes(`${filePath}/${testFile}`) &&
-				!createdTestFiles.includes(`${filePath}/${testFile}`)
+				!modifiedTestFiles.includes(`${filePath}/${testFile}`) && !createdTestFiles.includes(`${filePath}/${testFile}`)
 			);
 		});
 
