@@ -27,6 +27,7 @@ type containerRunOpts struct {
 	Server        string   `mapstructure:"server"`
 	ContainerPath string   `mapstructure:"container"`
 	BindMounts    []string `mapstructure:"bind-mounts"`
+	BuildOnly     bool     `mapstructure:"build-only"`
 }
 
 type containerRunCmd struct {
@@ -107,6 +108,7 @@ container is built and run locally instead of being pushed to a CI Sense server.
 	cmd.Flags().StringVar(&opts.ContainerPath, "container", "", "Path of an existing container to start a run with.")
 	cmd.Flags().StringArrayVar(&opts.BindMounts, "bind", nil, "Bind mount a directory from the host into the container. "+
 		"Format: --bind <src-path>:<dest-path>")
+	cmd.Flags().BoolVar(&opts.BuildOnly, "build-only", false, "Only build the container image, don't run it.")
 
 	// For now the --bind flag is only used for tests, so we hide it from the help output.
 	err := cmd.Flags().MarkHidden("bind")
@@ -138,13 +140,22 @@ func (c *containerRunCmd) run() error {
 		buildOutput = c.ErrOrStderr()
 	}
 	buildPrinter := logging.NewBuildPrinter(buildOutput, log.ContainerBuildInProgressMsg)
-	containerID, err := c.buildContainerFromImage(buildOutput)
+	imageID, err := c.buildContainerImage(buildOutput)
 	if err != nil {
 		buildPrinter.StopOnError(log.ContainerBuildInProgressErrorMsg)
 		return err
 	}
 
 	buildPrinter.StopOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
+
+	if c.opts.BuildOnly {
+		return nil
+	}
+
+	containerID, err := container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts)
+	if err != nil {
+		return err
+	}
 
 	err = container.Run(containerID, c.OutOrStdout(), c.ErrOrStderr())
 	if err != nil {
@@ -154,7 +165,7 @@ func (c *containerRunCmd) run() error {
 	return nil
 }
 
-func (c *containerRunCmd) buildContainerFromImage(buildOutput io.Writer) (string, error) {
+func (c *containerRunCmd) buildContainerImage(buildOutput io.Writer) (string, error) {
 	err := bundle.SetUpBundleLogging(buildOutput, c.ErrOrStderr(), &c.opts.Opts)
 	if err != nil {
 		return "", err
@@ -166,10 +177,5 @@ func (c *containerRunCmd) buildContainerFromImage(buildOutput io.Writer) (string
 		return "", errors.WithMessage(err, "Failed to create bundle")
 	}
 
-	imageID, err := container.BuildImageFromBundle(bundlePath)
-	if err != nil {
-		return "", errors.WithMessagef(err, "Failed to build image from bundle %s", bundlePath)
-	}
-
-	return container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts)
+	return container.BuildImageFromBundle(bundlePath)
 }
