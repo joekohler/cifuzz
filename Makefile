@@ -155,7 +155,7 @@ lint: deps/dev
 .PHONY: fmt
 fmt: deps/dev
 	find . -type f -name "*.go" -not -path "./.git/*" -print0 | xargs -0 -n1 goimports-reviser -project-name $(project) -file-path
-	npx prettier --loglevel=warn --write .
+	npx prettier --plugin=@prettier/plugin-xml --print-width=120 --xml-whitespace-sensitivity=preserve --log-level=warn --write .
 
 .PHONY: fmt/check
 fmt/check: deps/dev
@@ -169,7 +169,7 @@ fmt/check: deps/dev
 		echo -e >&2 "Unformatted files:\n$${DIFF}"; \
 		exit 1; \
 	fi;
-	npx prettier --loglevel=warn --check .
+	npx prettier --plugin=@prettier/plugin-xml --print-width=120 --xml-whitespace-sensitivity=preserve --log-level=warn --check .
 
 .PHONY: tidy
 tidy:
