@@ -22,7 +22,7 @@ import (
 )
 
 // TODO: use file info of cmake instead of this regex
-var cmakeFuzzTestFileNamePattern = regexp.MustCompile(`add_fuzz_test\((?P<fuzzTest>[a-zA-Z0-9_.+=,@~-]+)\s(?P<file>[a-zA-Z0-9_.+=,@~-]+)\)`)
+var cmakeFuzzTestFileNamePattern = regexp.MustCompile(`add_fuzz_test\((?P<fuzzTest>[a-zA-Z0-9_.+=,@~-]+)\s(?P<file>[a-zA-Z0-9/\_.+=,@~-]+)\)`)
 
 // resolve determines the corresponding fuzz test name to a given source file.
 // The path has to be relative to the project directory.

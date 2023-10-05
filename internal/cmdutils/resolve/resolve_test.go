@@ -82,11 +82,27 @@ func testResolveBazel(t *testing.T, pwd string) {
 }
 
 func testResolveCMake(t *testing.T, pwd string) {
+	// fuzz test is declared in CMakeLists in same directory
 	fuzzTestName := "fuzz_test_1"
 
 	// relative path
 	srcFile := filepath.Join("src", "fuzz_test_1", "fuzz_test.cpp")
 	resolved, err := resolve(srcFile, config.BuildSystemCMake, pwd)
+	assert.NoError(t, err)
+	assert.Equal(t, fuzzTestName, resolved)
+
+	// absolute path
+	srcFile = filepath.Join(pwd, srcFile)
+	resolved, err = resolve(srcFile, config.BuildSystemCMake, pwd)
+	require.NoError(t, err)
+	require.Equal(t, fuzzTestName, resolved)
+
+	// fuzz test is declared in CMakeLists in parent directory
+	fuzzTestName = "fuzz_test_2"
+
+	// relative path
+	srcFile = filepath.Join("src", "fuzz_test_2", "fuzz_test.cpp")
+	resolved, err = resolve(srcFile, config.BuildSystemCMake, pwd)
 	assert.NoError(t, err)
 	assert.Equal(t, fuzzTestName, resolved)
 
