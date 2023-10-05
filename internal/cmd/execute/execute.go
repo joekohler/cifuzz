@@ -32,6 +32,7 @@ type executeOpts struct {
 	SingleFuzzTest      bool   `mapstructure:"single-fuzz-test"`
 	PrintBundleMetadata bool   `mapstructure:"print-bundle-metadata"`
 	JSONOutputFilePath  string `mapstructure:"json-output-file"`
+	GeneratedCorpusDir  string `mapstructure:"generated-corpus-dir"`
 
 	name string
 }
@@ -64,10 +65,12 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 			cmdutils.ViperMustBindPFlag("print-bundle-metadata", cmd.Flags().Lookup("print-bundle-metadata"))
 			cmdutils.ViperMustBindPFlag("stop-signal-file", cmd.Flags().Lookup("stop-signal-file"))
 			cmdutils.ViperMustBindPFlag("json-output-file", cmd.Flags().Lookup("json-output-file"))
+			cmdutils.ViperMustBindPFlag("generated-corpus-dir", cmd.Flags().Lookup("generated-corpus-dir"))
 			opts.SingleFuzzTest = viper.GetBool("single-fuzz-test")
 			opts.PrintBundleMetadata = viper.GetBool("print-bundle-metadata")
 			opts.PrintJSON = viper.GetBool("print-json")
 			opts.JSONOutputFilePath = viper.GetString("json-output-file")
+			opts.GeneratedCorpusDir = viper.GetString("generated-corpus-dir")
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			if signalFile := viper.GetString("stop-signal-file"); signalFile != "" {
@@ -109,6 +112,7 @@ It is currently only intended for use with the 'cifuzz container' subcommand.
 	cmd.Flags().Bool("print-bundle-metadata", false, "Print the bundle metadata as JSON.")
 	cmd.Flags().String("stop-signal-file", "", "CI Fuzz will create a file 'cifuzz-execution-finished' upon exit")
 	cmd.Flags().String("json-output-file", "", "Print output as JSON to the specified file (implies --json)")
+	cmd.Flags().String("generated-corpus-dir", "/tmp/generated-corpus", "The directory where inputs which increased the coverage are stored. The user running the container must have write access to this directory.")
 
 	// Note: If a flag should be configurable via viper as well (i.e.
 	//       via cifuzz.yaml and CIFUZZ_* environment variables), bind
@@ -169,7 +173,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	err = os.MkdirAll(container.GeneratedCorpusDir, 0o755)
+	err = os.MkdirAll(c.opts.GeneratedCorpusDir, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -200,7 +204,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		LibraryDirs:        fuzzer.LibraryPaths,
 		Verbose:            viper.GetBool("verbose"),
 		ReportHandler:      reportHandler,
-		GeneratedCorpusDir: container.GeneratedCorpusDir,
+		GeneratedCorpusDir: c.opts.GeneratedCorpusDir,
 		EnvVars:            []string{"NO_CIFUZZ=1"},
 		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
 	}

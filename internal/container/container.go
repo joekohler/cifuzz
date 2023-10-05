@@ -19,7 +19,6 @@ import (
 )
 
 var ManagedSeedCorpusDir = "/tmp/managed-seed-corpus"
-var GeneratedCorpusDir = "/tmp/generated-corpus"
 
 func Create(imageID string, printJSON bool, bindMounts []string, args []string) (string, error) {
 	cli, err := GetDockerClient()

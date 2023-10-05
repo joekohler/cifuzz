@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/util/envutil"
 )
@@ -21,11 +20,17 @@ func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string,
 	// directory into the container
 	corpusDir := testutil.MkdirTemp(t, "", "cifuzz-container-run-corpus-*")
 
+	generatedCorpusDir := "/corpus"
 	options.Command = []string{"container", "run"}
 	options.Args = append(options.Args,
 		"--docker-image", imageTag,
 		// Mount the corpus directory into the container
-		"--bind", fmt.Sprintf("%s:%s", corpusDir, container.GeneratedCorpusDir),
+		"--bind", fmt.Sprintf("%s:%s", corpusDir, generatedCorpusDir),
+		// Specify the generated corpus dir as a container argument. This
+		// requires two "--" because arguments after the first "--" are
+		// used as build system arguments and arguments after the second
+		// "--" are used as container arguments.
+		"--", "--", "--generated-corpus-dir", generatedCorpusDir,
 	)
 
 	cifuzzRunner.Run(t, options)
