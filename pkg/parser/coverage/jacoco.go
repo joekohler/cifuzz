@@ -2,6 +2,7 @@ package coverage
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -147,6 +148,52 @@ func ParseJacocoXMLIntoLCOVReport(in io.Reader) (*LCOVReport, error) {
 	}
 
 	return lcovReport, nil
+}
+
+// ParseJacocoXMLIntoSummary takes a jacoco xml report and turns it into
+// the `Overview` struct. The parsing is as forgiving
+// as possible. It will output debug/error logs instead of
+// failing, with the goal to gather as much information as
+// possible
+func ParseJacocoXMLIntoSummary(in io.Reader) *Summary {
+	coverageSummary := &Summary{
+		Total: Overview{},
+	}
+
+	output, err := io.ReadAll(in)
+	if err != nil {
+		log.Errorf(err, "Unable to read jacoco.xml report: %v", err)
+		return coverageSummary
+	}
+
+	if len(output) == 0 {
+		log.Debugf("Empty jacoco.xml, returning empty coverage summary")
+		return coverageSummary
+	}
+
+	report := &JacocoXMLReport{}
+	err = xml.Unmarshal(output, report)
+	if err != nil {
+		log.Errorf(err, "Unable to parse jacoco.xml report: %v", err)
+		return coverageSummary
+	}
+
+	var currentFile *FileCoverage
+	for _, xmlPackage := range report.Packages {
+		for _, sourcefile := range xmlPackage.SourceFiles {
+			currentFile = &FileCoverage{
+				Filename: fmt.Sprintf("%s/%s", xmlPackage.Name, sourcefile.Name),
+				Coverage: Overview{},
+			}
+			for _, counter := range sourcefile.Counter {
+				countJacoco(&coverageSummary.Total, &counter)
+				countJacoco(&currentFile.Coverage, &counter)
+			}
+			coverageSummary.Files = append(coverageSummary.Files, currentFile)
+		}
+	}
+
+	return coverageSummary
 }
 
 func countJacoco(c *Overview, counter *JacocoCounter) {

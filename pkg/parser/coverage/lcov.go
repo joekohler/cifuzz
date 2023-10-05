@@ -2,6 +2,7 @@ package coverage
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -283,4 +284,45 @@ func ParseLCOVFileIntoLCOVReport(in io.Reader) (*LCOVReport, error) {
 	}
 
 	return report, nil
+}
+
+// ParseLCOVReportIntoSummary takes a lcov report and turns it
+// into the `Summary` struct. It will print the summary in verbose mode
+// in JSON format if possible.
+func ParseLCOVReportIntoSummary(in io.Reader) (*Summary, error) {
+	summary := &Summary{
+		Total: Overview{},
+	}
+
+	report, err := ParseLCOVFileIntoLCOVReport(in)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sf := range report.SourceFiles {
+		currentFile := &FileCoverage{
+			Filename: sf.Name,
+			Coverage: sf.Overview,
+		}
+		summary.Files = append(summary.Files, currentFile)
+	}
+
+	for _, f := range summary.Files {
+		summary.Total.LinesHit += f.Coverage.LinesHit
+		summary.Total.LinesFound += f.Coverage.LinesFound
+		summary.Total.BranchesFound += f.Coverage.BranchesFound
+		summary.Total.BranchesHit += f.Coverage.BranchesHit
+		summary.Total.FunctionsFound += f.Coverage.FunctionsFound
+		summary.Total.FunctionsHit += f.Coverage.FunctionsHit
+	}
+
+	// This is not an essential step, so we don't fail on error
+	out, err := json.MarshalIndent(summary, "", "    ")
+	if err != nil {
+		log.Errorf(errors.WithStack(err), "Unable to convert coverage summary to json: %v", err)
+	} else {
+		log.Debugf("Successfully created coverage summary: %s", string(out))
+	}
+
+	return summary, nil
 }

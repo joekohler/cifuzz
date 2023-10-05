@@ -178,3 +178,58 @@ end_of_record`
 	require.Error(t, err)
 	assert.Empty(t, report)
 }
+
+func TestParseLCOVIntoSummary(t *testing.T) {
+	report := `SF:bar.cpp
+FNH:2
+FNF:21
+BRH:1
+BRF:23
+LH:100
+LF:200
+end_of_record
+SF:foo.cpp
+FNH:1
+FNF:1
+BRH:9
+BRF:10
+LH:50
+LF:50
+end_of_record
+`
+	summary, err := ParseLCOVReportIntoSummary(strings.NewReader(report))
+	require.NoError(t, err)
+
+	require.Len(t, summary.Files, 2, "incorrect number of files")
+
+	assert.Equal(t, 3, summary.Total.FunctionsHit, "incorrect number of total functions hit")
+	assert.Equal(t, 22, summary.Total.FunctionsFound, "incorrect number of total functions found")
+	assert.Equal(t, 10, summary.Total.BranchesHit, "incorrect number of total branches hit")
+	assert.Equal(t, 33, summary.Total.BranchesFound, "incorrect number of total branches found")
+	assert.Equal(t, 150, summary.Total.LinesHit, "incorrect number of total lines hit")
+	assert.Equal(t, 250, summary.Total.LinesFound, "incorrect number of total lines found")
+
+	assert.Equal(t, 2, summary.Files[0].Coverage.FunctionsHit, "incorrect number of functions hit (0)")
+	assert.Equal(t, 21, summary.Files[0].Coverage.FunctionsFound, "incorrect number of functions found (0)")
+	assert.Equal(t, 1, summary.Files[0].Coverage.BranchesHit, "incorrect number of branches hit (0)")
+	assert.Equal(t, 23, summary.Files[0].Coverage.BranchesFound, "incorrect number of branches found (0)")
+	assert.Equal(t, 100, summary.Files[0].Coverage.LinesHit, "incorrect number of lines hit (0)")
+	assert.Equal(t, 200, summary.Files[0].Coverage.LinesFound, "incorrect number of lines found (0)")
+
+	assert.Equal(t, 1, summary.Files[1].Coverage.FunctionsHit, "incorrect number of functions hit (1)")
+	assert.Equal(t, 1, summary.Files[1].Coverage.FunctionsFound, "incorrect number of functions found (1)")
+	assert.Equal(t, 9, summary.Files[1].Coverage.BranchesHit, "incorrect number of branches hit (1)")
+	assert.Equal(t, 10, summary.Files[1].Coverage.BranchesFound, "incorrect number of branches found (1)")
+	assert.Equal(t, 50, summary.Files[1].Coverage.LinesHit, "incorrect number of lines hit (1)")
+	assert.Equal(t, 50, summary.Files[1].Coverage.LinesFound, "incorrect number of lines found (1)")
+}
+
+func TestParseLCOVIntoSummary_EmptyReport(t *testing.T) {
+	report := ""
+	summary, err := ParseLCOVReportIntoSummary(strings.NewReader(report))
+	require.NoError(t, err)
+	assert.Len(t, summary.Files, 0, "summary should not have any source files")
+	assert.Empty(t, summary.Total.BranchesFound, "summary shouldn't have any found branches")
+	assert.Empty(t, summary.Total.LinesFound, "summary shouldn't have any found lines")
+	assert.Empty(t, summary.Total.FunctionsFound, "summary shouldn't have any found functions")
+}

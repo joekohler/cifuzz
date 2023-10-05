@@ -17,10 +17,10 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/archiveutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -192,7 +192,7 @@ func testJacocoXMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	reportFile, err := os.Open(reportPath)
 	require.NoError(t, err)
 	defer reportFile.Close()
-	summary := summary.ParseJacocoXML(reportFile)
+	summary := coverage.ParseJacocoXMLIntoSummary(reportFile)
 	for _, file := range summary.Files {
 		if file.Filename == "com/example/ExploreMe.java" {
 			assert.Equal(t, 2, file.Coverage.FunctionsHit)

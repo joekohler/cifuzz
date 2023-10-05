@@ -12,10 +12,10 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
+	parser "code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -118,7 +118,7 @@ pom.xml can disrupt the JaCoCo execution and have to be prefixed with '@{argline
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
-	summary.ParseJacocoXML(reportFile).PrintTable(cov.Stderr)
+	parser.ParseJacocoXMLIntoSummary(reportFile).PrintTable(cov.Stderr)
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
 		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil

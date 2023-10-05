@@ -12,10 +12,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/options"
+	parser "code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -72,7 +72,11 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
-	summary.ParseLcov(reportFile).PrintTable(cov.Stderr)
+	summary, err := parser.ParseLCOVReportIntoSummary(reportFile)
+	if err != nil {
+		return "", err
+	}
+	summary.PrintTable(cov.Stderr)
 
 	// the index.html file is located in the subfolder lcov-report
 	if cov.OutputFormat == "html" {

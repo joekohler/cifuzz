@@ -1,4 +1,4 @@
-package summary
+package coverage
 
 import (
 	"io"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCoverage_PrintTable(t *testing.T) {
+func TestSummary_PrintTable(t *testing.T) {
 	rPipe, wPipe, err := os.Pipe()
 	require.NoError(t, err)
 
@@ -23,7 +23,9 @@ FNH:1
 FNF:1
 end_of_record
 `
-	ParseLcov(strings.NewReader(report)).PrintTable(wPipe)
+	summary, err := ParseLCOVReportIntoSummary(strings.NewReader(report))
+	require.NoError(t, err)
+	summary.PrintTable(wPipe)
 
 	wPipe.Close()
 	pipeOut, err := io.ReadAll(rPipe)

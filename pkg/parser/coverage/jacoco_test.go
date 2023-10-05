@@ -103,3 +103,54 @@ func TestParseJacocoXMLIntoLCOVReport_Empty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, report.SourceFiles, 0)
 }
+
+func TestParseJacocoIntoSummary(t *testing.T) {
+	reportData := `
+<report name="maven-example">
+    <package name="com/example">
+        <sourcefile name="ExploreMe.java">
+            <counter type="LINE" missed="100" covered="100"/>
+            <counter type="BRANCH" missed="22" covered="1"/>
+            <counter type="METHOD" missed="19" covered="2"/>
+        </sourcefile>
+        <sourcefile name="App.java">
+            <counter type="LINE" missed="0" covered="50"/>
+            <counter type="BRANCH" missed="1" covered="9"/>
+            <counter type="METHOD" missed="0" covered="1"/>
+        </sourcefile>
+    </package>
+</report>
+`
+	summary := ParseJacocoXMLIntoSummary(strings.NewReader(reportData))
+
+	require.Len(t, summary.Files, 2, "incorrect number of files")
+	assert.Equal(t, 3, summary.Total.FunctionsHit, "incorrect number of total functions hit")
+	assert.Equal(t, 22, summary.Total.FunctionsFound, "incorrect number of total functions found")
+	assert.Equal(t, 10, summary.Total.BranchesHit, "incorrect number of total branches hit")
+	assert.Equal(t, 33, summary.Total.BranchesFound, "incorrect number of total branches found")
+	assert.Equal(t, 150, summary.Total.LinesHit, "incorrect number of total lines hit")
+	assert.Equal(t, 250, summary.Total.LinesFound, "incorrect number of total lines found")
+
+	assert.Equal(t, 2, summary.Files[0].Coverage.FunctionsHit, "incorrect number of functions hit (0)")
+	assert.Equal(t, 21, summary.Files[0].Coverage.FunctionsFound, "incorrect number of functions found (0)")
+	assert.Equal(t, 1, summary.Files[0].Coverage.BranchesHit, "incorrect number of branches hit (0)")
+	assert.Equal(t, 23, summary.Files[0].Coverage.BranchesFound, "incorrect number of branches found (0)")
+	assert.Equal(t, 100, summary.Files[0].Coverage.LinesHit, "incorrect number of lines hit (0)")
+	assert.Equal(t, 200, summary.Files[0].Coverage.LinesFound, "incorrect number of lines found (0)")
+
+	assert.Equal(t, 1, summary.Files[1].Coverage.FunctionsHit, "incorrect number of functions hit (1)")
+	assert.Equal(t, 1, summary.Files[1].Coverage.FunctionsFound, "incorrect number of functions found (1)")
+	assert.Equal(t, 9, summary.Files[1].Coverage.BranchesHit, "incorrect number of branches hit (1)")
+	assert.Equal(t, 10, summary.Files[1].Coverage.BranchesFound, "incorrect number of branches found (1)")
+	assert.Equal(t, 50, summary.Files[1].Coverage.LinesHit, "incorrect number of lines hit (1)")
+	assert.Equal(t, 50, summary.Files[1].Coverage.LinesFound, "incorrect number of lines found (1)")
+}
+
+func TestParseJacocoIntoSummary_Empty(t *testing.T) {
+	summary := ParseJacocoXMLIntoSummary(strings.NewReader(""))
+
+	assert.Len(t, summary.Files, 0, "incorrect number of files")
+	assert.Empty(t, summary.Total.BranchesFound, "incorrect number of total branches found")
+	assert.Empty(t, summary.Total.LinesFound, "incorrect number of total functions found")
+	assert.Empty(t, summary.Total.FunctionsFound, "incorrect number of total lines found")
+}

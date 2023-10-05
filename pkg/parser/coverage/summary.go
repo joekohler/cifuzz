@@ -1,4 +1,4 @@
-package summary
+package coverage
 
 import (
 	"fmt"
@@ -10,26 +10,17 @@ import (
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
-type CoverageSummary struct {
-	Total *Coverage
+type Summary struct {
+	Total Overview
 	Files []*FileCoverage
 }
 
 type FileCoverage struct {
 	Filename string
-	Coverage *Coverage
+	Coverage Overview
 }
 
-type Coverage struct {
-	FunctionsFound int
-	FunctionsHit   int
-	BranchesFound  int
-	BranchesHit    int
-	LinesFound     int
-	LinesHit       int
-}
-
-func (cs *CoverageSummary) PrintTable(writer io.Writer) {
+func (cs *Summary) PrintTable(writer io.Writer) {
 	formatCell := func(hit, found int) string {
 		percent := 100.0
 		if found != 0 {

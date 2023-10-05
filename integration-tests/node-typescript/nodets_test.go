@@ -15,8 +15,8 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/shared"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -274,7 +274,8 @@ func testLcovCoverageReport(t *testing.T, cifuzz, dir, fuzzTest string) {
 	reportFile, err := os.Open(reportPath)
 	require.NoError(t, err)
 	defer reportFile.Close()
-	summary := summary.ParseLcov(reportFile)
+	summary, err := coverage.ParseLCOVReportIntoSummary(reportFile)
+	require.NoError(t, err)
 	assert.Equal(t, 2, len(summary.Files))
 	for _, file := range summary.Files {
 		if file.Filename == "ExploreMe.ts" {

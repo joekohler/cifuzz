@@ -19,12 +19,12 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/cmake"
 	"code-intelligence.com/cifuzz/internal/build/other"
-	"code-intelligence.com/cifuzz/internal/cmd/coverage/summary"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/binary"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/minijail"
+	"code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -315,7 +315,11 @@ func (cov *CoverageGenerator) report() (string, error) {
 		return "", err
 	}
 	reportReader := strings.NewReader(lcovReportSummary)
-	summary.ParseLcov(reportReader).PrintTable(cov.Stderr)
+	summary, err := coverage.ParseLCOVReportIntoSummary(reportReader)
+	if err != nil {
+		return "", err
+	}
+	summary.PrintTable(cov.Stderr)
 
 	reportPath := ""
 	switch cov.OutputFormat {
