@@ -11,7 +11,6 @@ code-intelligence.com/cifuzz/integration-tests/shared/mockserver
 code-intelligence.com/cifuzz/internal/cmd/bundle
 code-intelligence.com/cifuzz/internal/cmd/execute
 code-intelligence.com/cifuzz/internal/cmd/coverage/maven
-code-intelligence.com/cifuzz/internal/cmd/coverage/summary
 code-intelligence.com/cifuzz/util/executil
 code-intelligence.com/cifuzz/internal/bundler/archive
 code-intelligence.com/cifuzz/internal/cmd/create
