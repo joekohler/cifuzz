@@ -37,6 +37,7 @@ type Opts struct {
 	FuzzTests       []string  `mapstructure:"-"`
 	OutputPath      string    `mapstructure:"-"`
 	BuildSystemArgs []string  `mapstructure:"-"`
+	ContainerArgs   []string  `mapstructure:"-"`
 	Stdout          io.Writer `mapstructure:"-"`
 	Stderr          io.Writer `mapstructure:"-"`
 	BuildStdout     io.Writer `mapstructure:"-"`

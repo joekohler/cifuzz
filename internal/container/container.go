@@ -21,7 +21,7 @@ import (
 var ManagedSeedCorpusDir = "/tmp/managed-seed-corpus"
 var GeneratedCorpusDir = "/tmp/generated-corpus"
 
-func Create(imageID string, printJSON bool, bindMounts []string) (string, error) {
+func Create(imageID string, printJSON bool, bindMounts []string, args []string) (string, error) {
 	cli, err := GetDockerClient()
 	if err != nil {
 		return "", err
@@ -37,12 +37,14 @@ func Create(imageID string, printJSON bool, bindMounts []string) (string, error)
 	// managed seed corpus.
 	bindMounts = append(bindMounts, fmt.Sprintf("%[1]s:%[1]s", workDir))
 
+	args = append([]string{"--single-fuzz-test"}, args...)
+
 	hostConfig := &container.HostConfig{
 		Binds: bindMounts,
 	}
 	containerConfig := &container.Config{
 		Image:        imageID,
-		Cmd:          []string{"--single-fuzz-test"},
+		Cmd:          args,
 		AttachStdout: true,
 		AttachStderr: true,
 		User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),

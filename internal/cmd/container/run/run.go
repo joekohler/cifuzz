@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/messaging"
+	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 type containerRunOpts struct {
@@ -47,23 +49,39 @@ func newWithOptions(opts *containerRunOpts) *cobra.Command {
 	var bindFlags func()
 
 	cmd := &cobra.Command{
-		Use:   "run",
+		Use:   "run [flags] <fuzz test> [--] [<build system arg>...] [--] [<container arg>...] ",
 		Short: "Build and run a Fuzz Test container image locally",
 		Long: `This command builds and runs a Fuzz Test container image locally.
 It can be used as a containerized version of the 'cifuzz bundle' command, where the
 container is built and run locally instead of being pushed to a CI Sense server.`,
 		ValidArgsFunction: completion.ValidFuzzTests,
-		Args:              cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Bind viper keys to flags. We can't do this in the New
 			// function, because that would re-bind viper keys which
 			// were bound to the flags of other commands before.
 			bindFlags()
 
-			var argsToPass []string
+			// Check correct number of fuzz test args (exactly one)
+			var lenFuzzTestArgs int
+			var buildSystemArgs []string
 			if cmd.ArgsLenAtDash() != -1 {
-				argsToPass = args[cmd.ArgsLenAtDash():]
+				lenFuzzTestArgs = cmd.ArgsLenAtDash()
+				buildSystemArgs = args[cmd.ArgsLenAtDash():]
 				args = args[:cmd.ArgsLenAtDash()]
+			} else {
+				lenFuzzTestArgs = len(args)
+			}
+			if lenFuzzTestArgs != 1 {
+				msg := fmt.Sprintf("Exactly one <fuzz test> argument must be provided, got %d", lenFuzzTestArgs)
+				return cmdutils.WrapIncorrectUsageError(errors.New(msg))
+			}
+
+			var containerArgs []string
+			// If the args contain another '--', treat all args after it as
+			// container args.
+			if index := stringutil.Index(buildSystemArgs, "--"); index != -1 {
+				containerArgs = buildSystemArgs[index+1:]
+				buildSystemArgs = buildSystemArgs[:index]
 			}
 
 			err := config.FindAndParseProjectConfig(opts)
@@ -76,7 +94,8 @@ container is built and run locally instead of being pushed to a CI Sense server.
 				return err
 			}
 			opts.FuzzTests = fuzzTests
-			opts.BuildSystemArgs = argsToPass
+			opts.BuildSystemArgs = buildSystemArgs
+			opts.ContainerArgs = containerArgs
 
 			return opts.Validate()
 		},
@@ -152,7 +171,7 @@ func (c *containerRunCmd) run() error {
 		return nil
 	}
 
-	containerID, err := container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts)
+	containerID, err := container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts, c.opts.ContainerArgs)
 	if err != nil {
 		return err
 	}
