@@ -72,6 +72,21 @@ jobs:
           files: cifuzz_installer_*
           fail_on_unmatched_files: true
 
+  error_notification:
+    name: Error Notification
+    runs-on: ubuntu-latest
+    # send a slack notification if one of the jobs in `needs` failed
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    needs: [version, installer, tag_container_image, create_release]
+    steps:
+      - name: Send error notification to slack
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: "C046LFH588L" # cifuzz-notifications channel
+          slack-message: "RELEASE ERROR: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   slack_notification:
     name: Slack Notification
     runs-on: ubuntu-latest
