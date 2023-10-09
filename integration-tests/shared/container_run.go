@@ -7,13 +7,43 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mattn/go-zglob"
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/testutil"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string, options *RunOptions) {
+	// Remove inputs from the inputs directory (if it was created by a
+	// previous test) to be able to test that new seeds are created in
+	// the generated corpus (they won't be created if the fuzzer exits
+	// early because it finds a crash while initializing with the
+	// existing seeds).
+	// We use zglob to find all inputs directories because the directory
+	// name depends on the language and fuzz test name.
+	cInputDirs, err := zglob.Glob(filepath.Join(cifuzzRunner.DefaultWorkDir, "**", "*inputs"))
+	require.NoError(t, err)
+	javaInputDirs, err := zglob.Glob(filepath.Join(cifuzzRunner.DefaultWorkDir, "**", "*Inputs"))
+	require.NoError(t, err)
+	for _, inputsDir := range append(cInputDirs, javaInputDirs...) {
+		exists, err := fileutil.Exists(inputsDir)
+		require.NoError(t, err)
+		if exists {
+			log.Printf("Removing inputs from %s", inputsDir)
+			// Remove all files in the inputs directory
+			err = os.RemoveAll(inputsDir)
+			require.NoError(t, err)
+			// Create an empty inputs directory, because some of the
+			// tests (e.g. the build system other test) require the
+			// inputs directory to exist.
+			err = os.Mkdir(inputsDir, 0755)
+			require.NoError(t, err)
+		}
+	}
+
 	// Build the cifuzz base image which is used by the container run
 	// command to ensure that the base image contains the latest version
 	// of the cifuzz binary.
@@ -76,11 +106,21 @@ func BuildDockerImage(t *testing.T, tag string, buildDir string) {
 func buildCIFuzzBaseImage(t *testing.T) {
 	var err error
 
-	cwd, err := os.Getwd()
+	dir, err := os.Getwd()
 	require.NoError(t, err)
 
+	// Find the integration-tests directory
+	for {
+		if filepath.Base(dir) == "integration-tests" {
+			break
+		}
+		dir = filepath.Dir(dir)
+	}
+	// Go one level up to get the cifuzz directory
+	dir = filepath.Dir(dir)
+
 	cmd := exec.Command("make", "build-container-image")
-	cmd.Dir = filepath.Join(cwd, "..", "..")
+	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	t.Logf("Command: %s", cmd.String())

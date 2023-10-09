@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -146,6 +147,10 @@ func TestIntegration_Maven(t *testing.T) {
 
 	t.Run("runWithUpload", func(t *testing.T) {
 		testRunWithUpload(t, cifuzzRunner)
+	})
+
+	t.Run("containerRun", func(t *testing.T) {
+		testContainerRun(t, cifuzzRunner)
 	})
 }
 
@@ -469,5 +474,18 @@ func testRunWrongFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		FuzzTest:        "com.example.FuzzTestCase::wrongFuzzTest",
 		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
 		ExpectError:     true,
+	})
+}
+
+func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// TODO: Fix the test on Windows and macOS
+	if runtime.GOOS != "linux" {
+		t.Skip("TODO: This test is currently broken on Windows and macOS")
+	}
+
+	shared.TestContainerRun(t, cifuzzRunner, "", &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`High: Remote Code Execution`),
+		},
 	})
 }
