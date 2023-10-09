@@ -20,6 +20,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/fileutil"
 	"code-intelligence.com/cifuzz/util/stringutil"
@@ -205,6 +206,7 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 	t.Helper()
+	var err error
 
 	fuzzTest := "my_fuzz_test"
 
@@ -215,9 +217,10 @@ func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = cifuzzEnv(dir)
+	cmd.Env, err = envutil.Copy(os.Environ(), cifuzzEnv(dir))
+	require.NoError(t, err)
 	t.Logf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
-	err := cmd.Run()
+	err = cmd.Run()
 	require.NoError(t, err)
 
 	// Check that the coverage report was created
@@ -235,6 +238,7 @@ func testHTMLCoverageReport(t *testing.T, cifuzz string, dir string) {
 
 func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 	t.Helper()
+	var err error
 
 	fuzzTest := "crashing_fuzz_test"
 	reportPath := filepath.Join(dir, fuzzTest+".lcov")
@@ -247,8 +251,9 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = cifuzzEnv(dir)
-	err := cmd.Run()
+	cmd.Env, err = envutil.Copy(os.Environ(), cifuzzEnv(dir))
+	require.NoError(t, err)
+	err = cmd.Run()
 	require.NoError(t, err)
 
 	// Check that the coverage report was created
@@ -306,9 +311,9 @@ func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 
 func cifuzzEnv(workDir string) []string {
 	if runtime.GOOS == "linux" {
-		return append(os.Environ(), "LD_LIBRARY_PATH="+filepath.Join(workDir, "build"))
+		return []string{"LD_LIBRARY_PATH=" + filepath.Join(workDir, "build")}
 	} else if runtime.GOOS == "darwin" {
-		return append(os.Environ(), "DYLD_LIBRARY_PATH="+workDir)
+		return []string{"DYLD_LIBRARY_PATH=" + workDir}
 	}
 	return nil
 }

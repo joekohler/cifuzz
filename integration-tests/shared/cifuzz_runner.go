@@ -147,13 +147,12 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		opts.Command = []string{"run"}
 	}
 
-	if opts.Env == nil {
-		opts.Env = os.Environ()
-	}
-	opts.Env, err = envutil.Setenv(opts.Env, "CIFUZZ_INTERACTIVE", "false")
+	env := opts.Env
+	env, err = envutil.Setenv(env, "CIFUZZ_INTERACTIVE", "false")
 	require.NoError(t, err)
-	opts.Env, err = envutil.Setenv(opts.Env, "CIFUZZ_NO_NOTIFICATIONS", "true")
+	env, err = envutil.Setenv(env, "CIFUZZ_NO_NOTIFICATIONS", "true")
 	require.NoError(t, err)
+	_, env = testutil.SetupCoverage(t, env, "integration")
 
 	if opts.WorkDir == "" {
 		opts.WorkDir = r.DefaultWorkDir
@@ -180,7 +179,8 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 		args...,
 	)
 	cmd.Dir = opts.WorkDir
-	_, cmd.Env = testutil.SetupCoverage(t, opts.Env, "integration")
+	cmd.Env, err = envutil.Copy(os.Environ(), env)
+	require.NoError(t, err)
 	stdoutPipe, err := cmd.StdoutTeePipe(os.Stdout)
 	require.NoError(t, err)
 	stderrPipe, err := cmd.StderrTeePipe(os.Stderr)
@@ -190,7 +190,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	log.Printf("Command: %s", envutil.QuotedCommandWithEnv(cmd.Args, cmd.Env))
+	log.Printf("Command: %s", envutil.QuotedCommandWithEnv(cmd.Args, env))
 	err = cmd.Start()
 	require.NoError(t, err)
 

@@ -67,9 +67,6 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, expectedErrorExp *regexp.Regexp, args ...string) {
 	server := startMockServer(t)
 
-	env, err := envutil.Setenv(os.Environ(), "CIFUZZ_API_TOKEN", "test-token")
-	require.NoError(t, err)
-
 	args = append([]string{
 		"--project", "test-project",
 		"--server", server.Address,
@@ -80,7 +77,7 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, e
 	cifuzzRunner.Run(t, &RunOptions{
 		Command: []string{"remote-run"},
 		Args:    args,
-		Env:     env,
+		Env:     []string{"CIFUZZ_API_TOKEN=test-token"},
 		ExpectedOutputs: []*regexp.Regexp{
 			expectedErrorExp,
 		},

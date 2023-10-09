@@ -24,7 +24,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
-	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/executil"
 )
 
@@ -394,20 +393,16 @@ func testRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testRunWithAsanOptions(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	env, err := envutil.Setenv(os.Environ(), "ASAN_OPTIONS", "print_stats=1:atexit=1")
-	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		Env:                          env,
+		Env:                          []string{"ASAN_OPTIONS=print_stats=1:atexit=1"},
 		ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(`Stats:`)},
 		TerminateAfterExpectedOutput: false,
 	})
 }
 
 func testRunWithSecretEnvVar(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	env, err := envutil.Setenv(os.Environ(), "SECRET", "verysecret")
-	require.NoError(t, err)
 	cifuzzRunner.Run(t, &shared.RunOptions{
-		Env:              env,
+		Env:              []string{"SECRET=verysecret"},
 		UnexpectedOutput: regexp.MustCompile(`verysecret`),
 	})
 }

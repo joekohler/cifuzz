@@ -3,7 +3,6 @@ package cpp
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -97,7 +96,7 @@ func TestIntegration_CPPErrors(t *testing.T) {
 			}, tc.args...)
 			cifuzzRunner.Run(t, &shared.RunOptions{
 				FuzzTest: fmt.Sprintf("%s_fuzztest", tc.id),
-				Env:      append(os.Environ(), tc.env...),
+				Env:      tc.env,
 				Args:     runArgs,
 			})
 

@@ -188,13 +188,14 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 	}
 }
 
-func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, cifuzzEnv []string, args ...string) (*archive.Metadata, string) {
+func TestRunBundle(t *testing.T, dir string, cifuzz string, bundlePath string, env []string, args ...string) (*archive.Metadata, string) {
 	// Bundle all fuzz tests into an archive.
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
-	env, err := envutil.Setenv(cifuzzEnv, "BAR", "bar")
+	env, err := envutil.Setenv(env, "BAR", "bar")
 	require.NoError(t, err)
-	cmd.Env = env
+	cmd.Env, err = envutil.Copy(os.Environ(), env)
+	require.NoError(t, err)
 	log.Printf("Command: %s", cmd.String())
 
 	// Terminate the cifuzz process when we receive a termination signal
