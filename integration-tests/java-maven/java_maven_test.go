@@ -147,6 +147,10 @@ func TestIntegration_Maven(t *testing.T) {
 	t.Run("runWithUpload", func(t *testing.T) {
 		testRunWithUpload(t, cifuzzRunner)
 	})
+
+	t.Run("containerRun", func(t *testing.T) {
+		testContainerRun(t, cifuzzRunner)
+	})
 }
 
 func testHTMLCoverageReport(t *testing.T, cifuzz, dir string) {
@@ -469,5 +473,13 @@ func testRunWrongFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 		FuzzTest:        "com.example.FuzzTestCase::wrongFuzzTest",
 		ExpectedOutputs: []*regexp.Regexp{expectedOutputExp},
 		ExpectError:     true,
+	})
+}
+
+func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	shared.TestContainerRun(t, cifuzzRunner, "", &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`High: Remote Code Execution`),
+		},
 	})
 }
