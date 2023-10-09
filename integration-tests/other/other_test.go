@@ -314,6 +314,7 @@ func testRunWithDefaultDict(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	tag := "cifuzz-test-container-run-other:latest"
 
+	shared.BuildDockerImage(t, tag, cifuzzRunner.DefaultWorkDir)
 	shared.TestContainerRun(t, cifuzzRunner, tag, &shared.RunOptions{
 		Env: cifuzzEnv(cifuzzRunner.DefaultWorkDir),
 		ExpectedOutputs: []*regexp.Regexp{
