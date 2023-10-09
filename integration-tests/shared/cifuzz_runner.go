@@ -190,7 +190,7 @@ func (r *CIFuzzRunner) Run(t *testing.T, opts *RunOptions) {
 	// (else the test won't stop).
 	TerminateOnSignal(t, cmd)
 
-	log.Printf("Command: %s", cmd.String())
+	log.Printf("Command: %s", envutil.QuotedCommandWithEnv(cmd.Args, cmd.Env))
 	err = cmd.Start()
 	require.NoError(t, err)
 
