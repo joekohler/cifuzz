@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
+	"code-intelligence.com/cifuzz/internal/version"
 	"code-intelligence.com/cifuzz/pkg/log"
 )
 
@@ -217,6 +218,18 @@ func SetUpBundleLogging(stdout, stderr io.Writer, opts *bundler.Opts) error {
 	opts.BundleBuildLogFile = filepath.Join(logDir, fmt.Sprintf("%s.log", logSuffix))
 
 	log.VerboseSecondaryOutput, err = os.OpenFile(opts.BundleBuildLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// This information is useful for debugging, but we print it in the root
+	// command before we initialize the bundle log file, so we add them here
+	// manually to the file
+	_, err = fmt.Fprintf(log.VerboseSecondaryOutput, "cifuzz version %s\n", version.Version)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = fmt.Fprintf(log.VerboseSecondaryOutput, "Running on %s/%s\n", runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return errors.WithStack(err)
 	}
