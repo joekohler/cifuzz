@@ -14,7 +14,10 @@ import (
 )
 
 func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string, options *RunOptions) {
-	buildDockerImage(t, imageTag, cifuzzRunner.DefaultWorkDir)
+	// Build the cifuzz base image which is used by the container run
+	// command to ensure that the base image contains the latest version
+	// of the cifuzz binary.
+	buildCIFuzzBaseImage(t)
 
 	// Create a temporary directory which we mount into the container to
 	// be able to access the generated corpus files and the coverage
@@ -54,7 +57,23 @@ func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string,
 	require.NoError(t, err)
 }
 
-func buildDockerImage(t *testing.T, tag, dir string) {
+func BuildDockerImage(t *testing.T, tag string, buildDir string) {
+	var err error
+	cmd := exec.Command("docker", "build", "-t", tag, buildDir)
+	cmd.Env, err = envutil.Setenv(os.Environ(), "DOCKER_BUILDKIT", "1")
+	require.NoError(t, err)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	t.Logf("Command: %s", cmd.String())
+	err = cmd.Run()
+	require.NoError(t, err)
+}
+
+// This is not a test but a helper function so gocritic should not
+// complain that it's not of the form TestXXX(t *testing.T).
+//
+//nolint:gocritic
+func buildCIFuzzBaseImage(t *testing.T) {
 	var err error
 
 	cwd, err := os.Getwd()
@@ -62,15 +81,6 @@ func buildDockerImage(t *testing.T, tag, dir string) {
 
 	cmd := exec.Command("make", "build-container-image")
 	cmd.Dir = filepath.Join(cwd, "..", "..")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	t.Logf("Command: %s", cmd.String())
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	cmd = exec.Command("docker", "build", "-t", tag, dir)
-	cmd.Env, err = envutil.Setenv(os.Environ(), "DOCKER_BUILDKIT", "1")
-	require.NoError(t, err)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	t.Logf("Command: %s", cmd.String())
