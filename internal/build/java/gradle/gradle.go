@@ -1,6 +1,7 @@
 package gradle
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"os/exec"
@@ -12,11 +13,13 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
+)
+
+const (
+	PluginMissingErrorMsg string = "Failed to access CI Fuzz gradle plugin"
 )
 
 var (
@@ -76,16 +79,9 @@ func NewBuilder(opts *BuilderOptions) (*Builder, error) {
 }
 
 func (b *Builder) Build() (*build.BuildResult, error) {
-	gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(b.ProjectDir)
-	if err != nil {
-		return nil, err
-	}
-
 	version, err := b.GradlePluginVersion()
 	if err != nil {
-		log.ErrorMsg(errors.New("Failed to access CI Fuzz gradle plugin"))
-		log.Print(messaging.Instructions(string(gradleBuildLanguage)))
-		return nil, cmdutils.WrapSilentError(err)
+		return nil, err
 	}
 	log.Debugf("Found gradle plugin version: %s", version)
 
@@ -109,8 +105,22 @@ func (b *Builder) GradlePluginVersion() (string, error) {
 		return "", err
 	}
 	log.Debugf("Command: %s", cmd.String())
+
+	// Write cmd.Stderr to a buffer to catch if an error is caused by a
+	// missing plugin. In that case we want to print a help message,
+	// in all other cases we want to return the error and display the full
+	// error output from the command.
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	output, err := cmd.Output()
 	if err != nil {
+		if strings.Contains(stderr.String(), "Task 'cifuzzPrintPluginVersion' not found") {
+			return "", errors.New(PluginMissingErrorMsg)
+		}
+		_, writeErr := b.Stderr.Write(stderr.Bytes())
+		if writeErr != nil {
+			log.Errorf(errors.WithStack(writeErr), "Failed to write command output to stderr: %v", writeErr.Error())
+		}
 		return "", errors.WithStack(err)
 	}
 

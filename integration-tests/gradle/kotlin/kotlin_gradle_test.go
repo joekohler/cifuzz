@@ -15,6 +15,7 @@ import (
 
 	"code-intelligence.com/cifuzz/integration-tests/gradle"
 	"code-intelligence.com/cifuzz/integration-tests/shared"
+	gradleBuild "code-intelligence.com/cifuzz/internal/build/java/gradle"
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	initCmd "code-intelligence.com/cifuzz/internal/cmd/init"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -47,6 +48,16 @@ func TestIntegration_GradleKotlin(t *testing.T) {
 	allStderrLines := cifuzzRunner.Command(t, "init", nil)
 	require.Contains(t, strings.Join(allStderrLines, " "), initCmd.GradleMultiProjectWarningMsg)
 	require.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
+
+	// Check that correct error occurs if plugin is missing
+	t.Run("runWithoutPlugin", func(t *testing.T) {
+		cifuzzRunner.Run(t, &shared.RunOptions{
+			ExpectedOutputs:              []*regexp.Regexp{regexp.MustCompile(gradleBuild.PluginMissingErrorMsg)},
+			TerminateAfterExpectedOutput: true,
+			ExpectError:                  true,
+		})
+	})
+
 	linesToAdd := shared.FilterForInstructions(allStderrLines)
 	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle.kts"), linesToAdd, "plugins", true)
 

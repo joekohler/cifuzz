@@ -9,8 +9,10 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 )
 
 type GradleAdapter struct {
@@ -24,8 +26,19 @@ func (r *GradleAdapter) CheckDependencies(projectDir string) error {
 }
 
 func (r *GradleAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
+	gradleBuildLanguage, err := config.DetermineGradleBuildLanguage(opts.ProjectDir)
+	if err != nil {
+		return nil, err
+	}
+
 	buildResult, err := wrapBuild[build.BuildResult](opts, r.build)
 	if err != nil {
+		if err.Error() == gradle.PluginMissingErrorMsg {
+			log.Print(messaging.Instructions(string(gradleBuildLanguage)))
+			log.ErrorMsg(err)
+			return nil, cmdutils.WrapSilentError(err)
+		}
+
 		return nil, err
 	}
 
