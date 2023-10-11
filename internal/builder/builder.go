@@ -468,6 +468,10 @@ func (i *CIFuzzBuilder) CopyFiles() error {
 	}
 
 	// Copy C/C++ source files to the src directory
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "dumper"), i.srcDir(), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	err = copy.Copy(filepath.Join(i.projectDir, "tools", "launcher"), i.srcDir(), opts)
 	if err != nil {
 		return errors.WithStack(err)
