@@ -132,8 +132,8 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		// --json-output-file implies --json
 		c.opts.PrintJSON = true
 
-		// Create the output file
-		f, err := os.Create(c.opts.JSONOutputFilePath)
+		// Create the output file in write-only mode.
+		f, err := os.OpenFile(c.opts.JSONOutputFilePath, os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
 			return errors.WithStack(err)
 		}
