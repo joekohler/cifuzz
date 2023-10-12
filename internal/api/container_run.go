@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -49,8 +50,10 @@ type Job struct {
 }
 
 // PostContainerRemoteRun posts a new container run to the CI Sense API at /v3/runs.
-// project does not need to have a projects/ prefix and needs to be
-func (client *APIClient) PostContainerRemoteRun(image string, project string, fuzzTests []string, token string) error {
+// project does not need to have a projects/ prefix and needs to be url encoded.
+func (client *APIClient) PostContainerRemoteRun(image string, project string, fuzzTests []string, token string) (*ContainerRunResponse, error) {
+	var response ContainerRunResponse
+
 	tests := []*FuzzTest{}
 	for _, fuzzTest := range fuzzTests {
 		tests = append(tests, &FuzzTest{Name: fuzzTest})
@@ -58,7 +61,7 @@ func (client *APIClient) PostContainerRemoteRun(image string, project string, fu
 
 	project, err := ConvertProjectNameForUseWithAPIV3(project)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	containerRun := &ContainerRun{
@@ -69,22 +72,33 @@ func (client *APIClient) PostContainerRemoteRun(image string, project string, fu
 
 	body, err := json.Marshal(containerRun)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	url, err := url.JoinPath("/v3", "runs")
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
+
 	resp, err := client.sendRequest("POST", url, body, token)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return responseToAPIError(resp)
+		return nil, responseToAPIError(resp)
 	}
 
-	return nil
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = json.Unmarshal(respBody, &response)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &response, nil
 }

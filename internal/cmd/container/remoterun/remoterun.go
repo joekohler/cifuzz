@@ -1,6 +1,9 @@
 package remoterun
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -21,7 +24,8 @@ import (
 type containerRemoteRunOpts struct {
 	bundler.Opts `mapstructure:",squash"`
 	Interactive  bool   `mapstructure:"interactive"`
-	Server       string `mapstructure:"server"`  // CI Sense
+	Server       string `mapstructure:"server"` // CI Sense
+	PrintJSON    bool   `mapstructure:"print-json"`
 	Project      string `mapstructure:"project"` // CI Sense
 	Registry     string `mapstructure:"registry"`
 }
@@ -151,7 +155,13 @@ func (c *containerRemoteRunCmd) run() error {
 		}
 	}
 
-	buildPrinter := logging.NewBuildPrinter(os.Stdout, log.ContainerBuildInProgressMsg)
+	buildOutput := c.OutOrStdout()
+	if c.opts.PrintJSON {
+		// We only want JSON output on stdout, so we print the build
+		// output to stderr.
+		buildOutput = c.ErrOrStderr()
+	}
+	buildPrinter := logging.NewBuildPrinter(buildOutput, log.ContainerBuildInProgressMsg)
 	imageID, err := c.buildImage()
 	if err != nil {
 		buildPrinter.StopOnError(log.ContainerBuildInProgressErrorMsg)
@@ -166,10 +176,37 @@ func (c *containerRemoteRunCmd) run() error {
 	}
 
 	imageID = c.opts.Registry + ":" + imageID
-	err = c.apiClient.PostContainerRemoteRun(imageID, c.opts.Project, c.opts.FuzzTests, token)
+	response, err := c.apiClient.PostContainerRemoteRun(imageID, c.opts.Project, c.opts.FuzzTests, token)
 	if err != nil {
 		return err
 	}
+
+	responseJSON, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if c.opts.PrintJSON {
+		_, _ = fmt.Fprintln(os.Stdout, string(responseJSON))
+	}
+
+	path, err := url.JoinPath(c.opts.Server, "dashboard", "projects", c.opts.Project, "runs")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	values := url.Values{}
+	values.Add("origin", "cli")
+
+	addr, err := url.Parse(path)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	addr.RawQuery = values.Encode()
+
+	log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
+    %s
+`, addr.String())
 
 	return nil
 }
