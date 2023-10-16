@@ -17,6 +17,8 @@ type BuildResult struct {
 	GeneratedCorpus string
 	// Canonical path of the fuzz test's default seed corpus directory
 	SeedCorpus string
+	// Canonical path of the fuzz test's default dictionary
+	Dictionary string
 	// Canonical path of the build directory
 	BuildDir string
 	// The canonical paths of the fuzz test's runtime dependencies
