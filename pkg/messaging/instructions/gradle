@@ -5,3 +5,17 @@ build.gradle to enable fuzz testing:
 
 We highly recommend using cifuzz with JUnit >=5 to ensure
 easy IDE integration.
+
+    dependencies {
+        testImplementation(platform("org.junit:junit-bom:5.10.0"))
+        testImplementation('org.junit.jupiter:junit-jupiter')
+        testImplementation('com.code-intelligence:jazzer-junit:0.21.1')
+    }
+
+    tasks.test {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+    }
+
