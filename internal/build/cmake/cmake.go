@@ -245,6 +245,10 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.CBuildResult, error) {
 		if err != nil {
 			return nil, err
 		}
+		dict, err := b.findFuzzTestDictionary(fuzzTest)
+		if err != nil {
+			return nil, err
+		}
 
 		var runtimeDeps []string
 		if b.FindRuntimeDeps {
@@ -269,6 +273,7 @@ func (b *Builder) Build(fuzzTests []string) ([]*build.CBuildResult, error) {
 				Executable:      executable,
 				GeneratedCorpus: generatedCorpus,
 				SeedCorpus:      seedCorpus,
+				Dictionary:      dict,
 				BuildDir:        buildDir,
 				RuntimeDeps:     runtimeDeps,
 			},
@@ -291,6 +296,13 @@ func (b *Builder) findFuzzTestExecutable(fuzzTest string) (string, error) {
 // seed corpus directory.
 func (b *Builder) findFuzzTestSeedCorpus(fuzzTest string) (string, error) {
 	return b.readInfoFileAsPath(fuzzTest, "seed_corpus")
+}
+
+// findFuzzTestDict uses the info files emitted by the CMake integration
+// in the configure step to look up the canonical path of a fuzz test's
+// dictionary.
+func (b *Builder) findFuzzTestDictionary(fuzzTest string) (string, error) {
+	return b.readInfoFileAsPath(fuzzTest, "dict")
 }
 
 // ListFuzzTests lists all fuzz tests defined in the CMake project after
