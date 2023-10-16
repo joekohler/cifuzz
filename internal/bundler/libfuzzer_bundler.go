@@ -511,6 +511,16 @@ depsLoop:
 		}
 	}
 
+	if b.opts.Dictionary == "" {
+		var exists bool
+		exists, err = fileutil.Exists(buildResult.Dictionary)
+		if err != nil {
+			return
+		}
+		if exists {
+			b.opts.Dictionary = buildResult.Dictionary
+		}
+	}
 	// Add dictionary to archive
 	var archiveDict string
 	if b.opts.Dictionary != "" {

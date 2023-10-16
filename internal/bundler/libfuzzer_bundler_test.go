@@ -61,6 +61,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		BuildResult: &build.BuildResult{
 			Executable:  filepath.Join(buildDir, fuzzTest),
 			SeedCorpus:  filepath.Join(projectDir, "seeds"),
+			Dictionary:  filepath.Join(projectDir, "dict"),
 			BuildDir:    buildDir,
 			RuntimeDeps: runtimeDeps,
 		},
@@ -76,6 +77,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		Sanitizer:     "ADDRESS",
 		ProjectDir:    projectDir,
 		Seeds:         filepath.Join("libfuzzer", "address", "some_fuzz_test", "seeds"),
+		Dictionary:    filepath.Join("libfuzzer", "address", "some_fuzz_test", "dict"),
 		LibraryPaths:  []string{filepath.Join("libfuzzer", "address", "some_fuzz_test", "external_libs")},
 		EngineOptions: archive.EngineOptions{Env: []string{"FOO=foo", "NO_CIFUZZ=1"}},
 	}, *fuzzers[0])
@@ -92,6 +94,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		BuildResult: &build.BuildResult{
 			Executable:  filepath.Join(buildDir, fuzzTest),
 			SeedCorpus:  filepath.Join(projectDir, "seeds"),
+			Dictionary:  filepath.Join(projectDir, "dict"),
 			BuildDir:    buildDir,
 			RuntimeDeps: runtimeDeps,
 		},
@@ -106,6 +109,7 @@ func TestAssembleArtifacts_Fuzzing(t *testing.T) {
 		Engine:       "LLVM_COV",
 		ProjectDir:   projectDir,
 		Seeds:        filepath.Join("replayer", "coverage", "some_fuzz_test", "seeds"),
+		Dictionary:   filepath.Join("replayer", "coverage", "some_fuzz_test", "dict"),
 		LibraryPaths: []string{filepath.Join("replayer", "coverage", "some_fuzz_test", "external_libs")},
 		EngineOptions: archive.EngineOptions{
 			Env:   []string{"FOO=foo", "NO_CIFUZZ=1"},
