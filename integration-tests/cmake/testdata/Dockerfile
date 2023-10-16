@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:rolling
 
 # Install APT packages with caching set up according to
 # https://docs.docker.com/engine/reference/builder/#example-cache-apt-packages
