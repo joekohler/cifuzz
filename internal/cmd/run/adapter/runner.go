@@ -104,6 +104,18 @@ func runLibfuzzer(opts *RunOptions, buildResult *build.BuildResult, reportHandle
 		opts.SeedCorpusDirs = append(opts.SeedCorpusDirs, buildResult.SeedCorpus)
 	}
 
+	// If user-specified dictionary is not set, use
+	// implicit dictionary from buildResult (if it exists).
+	if opts.Dictionary == "" {
+		exists, err := fileutil.Exists(buildResult.Dictionary)
+		if err != nil {
+			return err
+		}
+		if exists {
+			opts.Dictionary = buildResult.Dictionary
+		}
+	}
+
 	runnerOpts := &libfuzzer.RunnerOptions{
 		Dictionary:         opts.Dictionary,
 		EngineArgs:         opts.EngineArgs,
