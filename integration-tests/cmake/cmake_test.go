@@ -3,6 +3,7 @@ package cmake
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -145,6 +146,10 @@ func TestIntegration_CMake(t *testing.T) {
 
 	t.Run("runWithSecretEnvVar", func(t *testing.T) {
 		testRunWithSecretEnvVar(t, cifuzzRunner)
+	})
+
+	t.Run("runWithDefaultDict", func(t *testing.T) {
+		testRunWithDefaultDict(t, cifuzzRunner)
 	})
 
 	t.Run("bundle", func(t *testing.T) {
@@ -404,6 +409,19 @@ func testRunWithSecretEnvVar(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzzRunner.Run(t, &shared.RunOptions{
 		Env:              env,
 		UnexpectedOutput: regexp.MustCompile(`verysecret`),
+	})
+}
+
+func testRunWithDefaultDict(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	// Create default dictionary
+	dict := fmt.Sprintf("%s.dict", filepath.Join("src", "parser", "parser_fuzz_test"))
+	err := os.WriteFile(filepath.Join(cifuzzRunner.DefaultWorkDir, dict), []byte(`kw1="test"`), 0o644)
+	require.NoError(t, err)
+
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`Dictionary: 1 entries`),
+		},
 	})
 }
 
