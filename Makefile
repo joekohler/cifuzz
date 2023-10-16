@@ -293,6 +293,13 @@ push-container-image: build-container-image
 	echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
 	docker push "$(image_tag)"
 
+.PHONY: build-llvm-test-container-image
+build-llvm-test-container-image: export DOCKER_BUILDKIT = 1
+build-llvm-test-container-image: build/linux
+ifneq ($(current_os),windows)
+	docker build --platform linux/amd64 -f docker/llvm-test/Dockerfile -t cifuzz-llvm-test:latest .
+endif
+
 .PHONY: installer-via-docker
 installer-via-docker: export DOCKER_BUILDKIT = 1
 installer-via-docker:
