@@ -46,7 +46,7 @@ func TestRemoteRun(t *testing.T, dir string, cifuzz string, args ...string) {
 			"--seed-corpus", seedCorpusDir,
 			"--timeout", "100m",
 			"--project", projectName,
-			"--server", server.Address,
+			"--server", server.AddressOnHost(),
 		}, args...)
 	cmd := executil.Command(cifuzz, args...)
 	cmd.Dir = dir
@@ -69,7 +69,7 @@ func TestRemoteRunWithAdditionalArgs(t *testing.T, cifuzzRunner *CIFuzzRunner, e
 
 	args = append([]string{
 		"--project", "test-project",
-		"--server", server.Address,
+		"--server", server.AddressOnHost(),
 		"--", "--non-existent-flag"},
 		args...)
 

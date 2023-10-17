@@ -108,7 +108,7 @@ func TestListFindings_Authenticated(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the command lists the finding
-	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json", "--server", server.Address)
+	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, "--json", "--server", server.AddressOnHost())
 	require.NoError(t, err)
 	jsonString, err := stringutil.ToJSONString([]*finding.Finding{f})
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func TestPrintFinding_Authenticated(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the command lists the finding
-	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--server", server.Address)
+	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--server", server.AddressOnHost())
 	require.NoError(t, err)
 	jsonString, err := stringutil.ToJSONString(f)
 	require.NoError(t, err)
@@ -213,7 +213,7 @@ func TestPrintFinding_Authenticated(t *testing.T) {
 
 	// Check that the command prints extra information
 	cmd := newWithOptions(opts)
-	_, stdErr, err := cmdutils.ExecuteCommand(t, cmd, os.Stdin, f.Name, "--server", server.Address)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, cmd, os.Stdin, f.Name, "--server", server.AddressOnHost())
 	require.NoError(t, err)
 	assert.Contains(t, stdErr, "cifuzz found more extensive information about this finding:")
 }
@@ -269,7 +269,7 @@ func TestPrintRemoteFinding_Authenticated(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the command lists the finding
-	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--server", server.Address, "--project", "my-project")
+	stdOut, _, err := cmdutils.ExecuteCommand(t, newWithOptions(opts), os.Stdin, f.Name, "--json", "--server", server.AddressOnHost(), "--project", "my-project")
 	require.NoError(t, err)
 	jsonString, err := stringutil.ToJSONString(f)
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestPrintRemoteFinding_Authenticated(t *testing.T) {
 
 	// Check that the command prints extra information
 	cmd := newWithOptions(opts)
-	_, stdErr, err := cmdutils.ExecuteCommand(t, cmd, os.Stdin, f.Name, "--server", server.Address)
+	_, stdErr, err := cmdutils.ExecuteCommand(t, cmd, os.Stdin, f.Name, "--server", server.AddressOnHost())
 	require.NoError(t, err)
 	assert.Contains(t, stdErr, "cifuzz found more extensive information about this finding:")
 }

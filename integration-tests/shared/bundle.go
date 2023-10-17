@@ -172,7 +172,7 @@ func TestBundleLibFuzzer(t *testing.T, dir string, cifuzz string, cifuzzEnv []st
 		cmd = executil.Command(cifuzz, "remote-run",
 			"--bundle", bundlePath,
 			"--project", projectName,
-			"--server", server.Address,
+			"--server", server.AddressOnHost(),
 		)
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout

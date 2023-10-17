@@ -70,7 +70,7 @@ func TestRunWithUpload(t *testing.T, dir string, cifuzz string, fuzzTestName str
 		[]string{
 			"run",
 			"--project", projectName,
-			"--server", server.Address,
+			"--server", server.AddressOnHost(),
 			"--interactive=false",
 			"--no-notifications",
 			fuzzTestName,

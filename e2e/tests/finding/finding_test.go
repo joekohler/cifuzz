@@ -100,12 +100,8 @@ var findingTests = &[]e2e.TestCase{
 }
 
 func TestFindingList(t *testing.T) {
-	// skipping test on Windows because there seems to be a bug in the docker
-	// engine on Windows that causes network requests to fail:
-	// dial tcp 172.25.224.1:50116: connectex: A connection attempt failed
-	// because the connected party did not properly respond after a period of
-	// time, or established connection failed because connected host has failed
-	// to respond.
+	// skipping test on Windows because the 'host.docker.internal' address does
+	// not work on Windows.
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping test on Windows")
 	}

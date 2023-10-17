@@ -59,8 +59,8 @@ func RunTests(t *testing.T, testCases []TestCase, mockServer *mockserver.MockSer
 		if mockServer != nil {
 			// we need to start the mock server with a different address and port, so
 			// that it is accessible from the container.
-			mockServer.StartForContainer(t)
-			runTest(t, &testCase, mockServer.Address)
+			mockServer.Start(t)
+			runTest(t, &testCase, mockServer.AddressInContainer())
 		} else {
 			runTest(t, &testCase, "")
 		}
