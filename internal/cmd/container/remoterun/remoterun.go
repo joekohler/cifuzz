@@ -3,7 +3,6 @@ package remoterun
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -190,23 +189,13 @@ func (c *containerRemoteRunCmd) run() error {
 		_, _ = fmt.Fprintln(os.Stdout, string(responseJSON))
 	}
 
-	path, err := url.JoinPath(c.opts.Server, "dashboard", "projects", c.opts.Project, "runs")
+	addr, err := cmdutils.BuildURLFromParts(c.opts.Server, "dashboard", "projects", c.opts.Project, "runs")
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
-
-	values := url.Values{}
-	values.Add("origin", "cli")
-
-	addr, err := url.Parse(path)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	addr.RawQuery = values.Encode()
 
 	log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
-    %s
-`, addr.String())
+    %s`, addr)
 
 	return nil
 }
