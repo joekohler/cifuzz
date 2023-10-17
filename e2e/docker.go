@@ -105,7 +105,7 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 	hostCoverageDirectoryPath, _ = testutil.SetupCoverage(t, os.Environ(), "e2e")
 	testCase.Environment = append(testCase.Environment, "GOCOVERDIR="+coverageDirectoryPath)
 
-	targetMount := "/app"
+	targetMount := "/tmp/app"
 	if runtime.GOOS == "windows" {
 		targetMount = "C:\\app"
 	}
