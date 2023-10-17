@@ -16,5 +16,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE exploreMe)
 
 add_fuzz_test(my_fuzz_test my_fuzz_test.cpp)
 target_link_libraries(my_fuzz_test PRIVATE exploreMe)
+target_link_libraries(my_fuzz_test PRIVATE dummy)
 
 
