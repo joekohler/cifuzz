@@ -1,5 +1,5 @@
 const { FuzzedDataProvider } = require("@jazzer.js/core");
-const exploreMe = require("./ExploreMe");
+const exploreMe = require("./src/ExploreMe");
 
 test.fuzz("My fuzz test", jazzerBuffer => {
 	const provider = new FuzzedDataProvider(jazzerBuffer);

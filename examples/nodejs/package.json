@@ -2,7 +2,7 @@
 	"name": "nodejs-example",
 	"scripts": {
 		"test": "jest",
-		"coverage": "jest --coverage"
+		"coverage": "jest --coverage "
 	},
 	"devDependencies": {
 		"@jazzer.js/jest-runner": "^2.0.0",

@@ -1,4 +1,5 @@
 module.exports = {
+	collectCoverageFrom: ["src/**/*.{js,jsx}"],
 	projects: [
 		{
 			displayName: "test",
