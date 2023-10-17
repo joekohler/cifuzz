@@ -7,4 +7,5 @@ repositories.mavenCentral()
 
 dependencies {
     implementation(project(":app"))
+    implementation(project(":sub1"))
 }
