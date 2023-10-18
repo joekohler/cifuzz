@@ -143,9 +143,10 @@ func (b *Builder) Build(fuzzTest string) (*build.CBuildResult, error) {
 		return nil, cmdutils.WrapExecError(errors.Errorf("Could not find executable for fuzz test %q", fuzzTest), cmd)
 	}
 
-	// For the build system type "other", we expect the default seed corpus next
-	// to the fuzzer executable.
+	// For the build system type "other", we expect the default seed corpus
+	// and the default dictionary next to the fuzzer executable.
 	seedCorpus := executable + "_inputs"
+	dictionary := executable + ".dict"
 	runtimeDeps, err := ldd.NonSystemSharedLibraries(executable)
 	if err != nil {
 		return nil, err
@@ -165,6 +166,7 @@ func (b *Builder) Build(fuzzTest string) (*build.CBuildResult, error) {
 			Executable:      executable,
 			GeneratedCorpus: generatedCorpus,
 			SeedCorpus:      seedCorpus,
+			Dictionary:      dictionary,
 			BuildDir:        wd,
 			RuntimeDeps:     runtimeDeps,
 		},
