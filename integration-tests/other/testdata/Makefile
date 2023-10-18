@@ -27,6 +27,7 @@ build/my_fuzz_test: build/libexplore.so
 	@echo "Building $@"
 	mkdir -p build
 	cp -r my_fuzz_test_inputs build/
+	cp my_fuzz_test.dict build/
 	# The FUZZ_TEST_CXXFLAGS and FUZZ_TEST_LDFLAGS environment variables
 	# are set by cifuzz when it executes the build command. Those must
 	# be passed to the compiler and linker (compiling and linking is

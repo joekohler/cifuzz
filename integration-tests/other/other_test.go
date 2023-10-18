@@ -77,6 +77,10 @@ func TestIntegration_Other(t *testing.T) {
 		})
 	})
 
+	t.Run("runWithDefaultDict", func(t *testing.T) {
+		testRunWithDefaultDict(t, cifuzzRunner)
+	})
+
 	t.Run("bundle", func(t *testing.T) {
 		if runtime.GOOS != "linux" {
 			t.Skip("Creating a bundle for other build systems is currently only supported on Linux")
@@ -295,6 +299,16 @@ func testLcovCoverageReport(t *testing.T, cifuzz string, dir string) {
 		21, 31, 41,
 	},
 		uncoveredLines)
+}
+
+func testRunWithDefaultDict(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
+	cifuzzRunner.Run(t, &shared.RunOptions{
+		ExpectedOutputs: []*regexp.Regexp{
+			regexp.MustCompile(`Dictionary: 1 entries`),
+		},
+		Env:  cifuzzEnv(cifuzzRunner.DefaultWorkDir),
+		Args: []string{"--build-command", buildCommand()},
+	})
 }
 
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
