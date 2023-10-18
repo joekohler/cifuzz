@@ -67,15 +67,30 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	classPath := strings.Join(r.ClassPaths, string(os.PathListSeparator))
-	err = r.printDebugVersionInfos(classPath)
-	if err != nil {
-		return err
-	}
 
 	javaBin, err := runfiles.Finder.JavaPath()
 	if err != nil {
 		return err
 	}
+
+	// Print version information for debugging purposes
+	jazzerVersion, err := dependencies.JazzerVersion(classPath)
+	if err != nil {
+		return err
+	}
+	junitVersion, err := dependencies.JUnitVersion(classPath)
+	if err != nil {
+		return err
+	}
+	javaVersion, err := dependencies.JavaVersion(javaBin)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Jazzer version: %s", jazzerVersion)
+	log.Debugf("JUnit Jupiter Engine version: %s", junitVersion)
+	log.Debugf("Java version: %s", javaVersion)
+
 	args := []string{javaBin}
 
 	// class path
@@ -348,20 +363,4 @@ func (r *Runner) FuzzerEnvironment() ([]string, error) {
 
 func (r *Runner) Cleanup(ctx context.Context) {
 	r.Runner.Cleanup(ctx)
-}
-
-func (r *Runner) printDebugVersionInfos(classPath string) error {
-	jazzerVersion, err := dependencies.JazzerVersion(classPath)
-	if err != nil {
-		return err
-	}
-	junitVersion, err := dependencies.JUnitVersion(classPath)
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("Jazzer version: %s", jazzerVersion)
-	log.Debugf("JUnit Jupiter Engine version: %s", junitVersion)
-
-	return nil
 }
