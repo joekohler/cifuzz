@@ -47,11 +47,21 @@ var (
 		`== Java Assertion Error`)
 	jazzerInputPathPatter = regexp.MustCompile(`INFO: using inputs from: (?P<input_path>.*)$`)
 
-	jestCommandInjectionPattern   = regexp.MustCompile(`Command Injection in`)
-	jestPathTraveralPattern       = regexp.MustCompile(`Path Traversal in`)
-	jestPrototypePollutionPattern = regexp.MustCompile(`Prototype Pollution: Prototype of`)
-	// A filled circle marks the beginning of the jest test report
-	jestFindingBeginningPattern = regexp.MustCompile(`^\s*●`)
+	jazzerJSExceptionErrorPattern = regexp.MustCompile(
+		`==\d+== Uncaught Exception: (?P<message>.+)`,
+	)
+	jazzerJSCommandInjectionPattern = regexp.MustCompile(
+		`==\d+== Command Injection`,
+	)
+	jazzerJSPathTraveralPattern = regexp.MustCompile(
+		`==\d+== Path Traversal`,
+	)
+	jazzerJSPrototypePollutionPattern = regexp.MustCompile(
+		`==\d+== Prototype Pollution`,
+	)
+	beginningOfJestReportPattern = regexp.MustCompile(
+		`FAIL Jazzer\.js`,
+	)
 
 	// Examples for matching strings:
 	// #2	INITED cov: 10 ft: 11 corp: 1/1b exec/s: 0 rss: 30Mb
@@ -86,6 +96,8 @@ type parser struct {
 	// attach them to the finding if they seem to belong to it
 	pendingFinding                       *finding.Finding
 	numMetricsLinesSinceFindingIsPending int
+
+	foundBeginningOfJestReport bool
 
 	lastNewFeatureTime time.Time // Timestamp representing the point when the last new feature was reported
 	lastFeatures       int       // Last features reported by Libfuzzer
@@ -261,12 +273,9 @@ func (p *parser) parseLine(ctx context.Context, line string) error {
 	}
 
 	if p.pendingFinding != nil {
-		if p.SupportJazzerJS {
-			p.determineJestErrorDetails()
-		}
 		// The line is not a metrics line and doesn't mark a new finding,
 		// so we append it to the pending finding (unless it's filtered)
-		if !minijail.IsIgnoredLine(line) {
+		if !minijail.IsIgnoredLine(line) && !p.foundBeginningOfJestReport {
 			p.pendingFinding.Logs = append(p.pendingFinding.Logs, line)
 		}
 	}
@@ -302,7 +311,7 @@ func (p *parser) parseAsNewFinding(line string) *finding.Finding {
 	}
 
 	if p.SupportJazzerJS {
-		finding := p.parseAsJestFinding(line)
+		finding := p.parseAsJazzerJSFinding(line)
 		if finding != nil {
 			return finding
 		}
@@ -435,48 +444,50 @@ func (p *parser) parseAsJazzerFinding(line string) *finding.Finding {
 	return nil
 }
 
-func (p *parser) parseAsJestFinding(line string) *finding.Finding {
-	_, found := regexutil.FindNamedGroupsMatch(jestFindingBeginningPattern, line)
+func (p *parser) parseAsJazzerJSFinding(line string) *finding.Finding {
+	_, found := regexutil.FindNamedGroupsMatch(beginningOfJestReportPattern, line)
+	if found {
+		p.foundBeginningOfJestReport = true
+		return nil
+	}
+
+	result, found := regexutil.FindNamedGroupsMatch(jazzerJSExceptionErrorPattern, line)
 	if found {
 		return &finding.Finding{
-			Type: finding.ErrorTypeWarning,
-			Logs: []string{line},
+			Type:    finding.ErrorTypeWarning,
+			Details: result["message"],
+			Logs:    []string{line},
+		}
+	}
+
+	_, found = regexutil.FindNamedGroupsMatch(jazzerJSCommandInjectionPattern, line)
+	if found {
+		return &finding.Finding{
+			Type:    finding.ErrorTypeWarning,
+			Details: "Command Injection",
+			Logs:    []string{line},
+		}
+	}
+
+	_, found = regexutil.FindNamedGroupsMatch(jazzerJSPathTraveralPattern, line)
+	if found {
+		return &finding.Finding{
+			Type:    finding.ErrorTypeWarning,
+			Details: "Path Traversal",
+			Logs:    []string{line},
+		}
+	}
+
+	_, found = regexutil.FindNamedGroupsMatch(jazzerJSPrototypePollutionPattern, line)
+	if found {
+		return &finding.Finding{
+			Type:    finding.ErrorTypeWarning,
+			Details: "Prototype Pollution",
+			Logs:    []string{line},
 		}
 	}
 
 	return nil
-}
-
-func (p *parser) determineJestErrorDetails() {
-	logs := strings.Join(p.pendingFinding.Logs, "\n")
-	_, found := regexutil.FindNamedGroupsMatch(jestPathTraveralPattern, logs)
-	if found {
-		p.pendingFinding.Details = "Path Traversal"
-		return
-	}
-
-	_, found = regexutil.FindNamedGroupsMatch(jestCommandInjectionPattern, logs)
-	if found {
-		p.pendingFinding.Details = "Command Injection"
-		return
-	}
-
-	_, found = regexutil.FindNamedGroupsMatch(jestPrototypePollutionPattern, logs)
-	if found {
-		p.pendingFinding.Details = "Prototype Pollution"
-		return
-	}
-
-	result, found := regexutil.FindNamedGroupsMatch(libfuzzerTimeoutErrorPattern, logs)
-	if found {
-		p.pendingFinding.Type = finding.ErrorTypeCrash
-		p.pendingFinding.Details = fmt.Sprintf("timeout after %s seconds", result["timeout_seconds"])
-	}
-
-	// If no other details are found, use crash as a fallback value
-	if p.pendingFinding.Details == "" {
-		p.pendingFinding.Details = "Crash"
-	}
 }
 
 func (p *parser) parseAsFuzzingMetric(line string) *report.FuzzingMetric {
