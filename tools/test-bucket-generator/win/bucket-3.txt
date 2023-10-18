@@ -1,4 +1,2 @@
-code-intelligence.com/cifuzz/integration-tests/gradle/kotlin
-code-intelligence.com/cifuzz/internal/bundler
-code-intelligence.com/cifuzz/internal/cmd/coverage/llvm
-code-intelligence.com/cifuzz/internal/builder
+code-intelligence.com/cifuzz/integration-tests/bazel
+code-intelligence.com/cifuzz/integration-tests/nodejs
