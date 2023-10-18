@@ -193,6 +193,10 @@ func JUnitVersion(classPath string) (*semver.Version, error) {
 	return extractVersion(classPath, junitRegex, "junit-jupiter-engine")
 }
 
+func JavaVersion(javaBin string) (*semver.Version, error) {
+	return getVersionFromCommand(javaBin, []string{"-version"}, javaRegex, Java)
+}
+
 func JazzerJSVersion() (*semver.Version, error) {
 	cmd := exec.Command("npx", []string{"jazzer", "--version"}...)
 	output, err := cmd.Output()
