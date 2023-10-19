@@ -179,7 +179,7 @@ func TestStackTrace(t *testing.T) {
 	}
 }
 
-func TestSetJavaSourceFilePath(t *testing.T) {
+func TestGetJavaSourceFilePath(t *testing.T) {
 	sourceFilePath := filepath.Join("src", "main", "java", "com", "example", "ExploreMe.java")
 	sourceMap := sourcemap.SourceMap{
 		JavaPackages: map[string][]string{
@@ -212,8 +212,8 @@ func TestSetJavaSourceFilePath(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		parser.setJavaSourceFilePath(tc.stackFrame)
-		assert.Equal(t, tc.expectedSourceFilePath, tc.stackFrame.SourceFile)
+		sourceFilePath := parser.getJavaSourceFilePath(tc.stackFrame.SourceFile, tc.stackFrame.Function)
+		assert.Equal(t, tc.expectedSourceFilePath, sourceFilePath)
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -54,6 +55,7 @@ func TestLibFuzzerAdapter_ReportsParsing(t *testing.T) {
 		supportJazzer   bool
 		supportJazzerJS bool
 		logs            string
+		sourceMap       *sourcemap.SourceMap
 		expected        []*report.Report
 	}{
 		{
@@ -388,6 +390,11 @@ MS: 0 ; base unit: 0000000000000000000000000000000000000000
 deadbeef
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: ZGVhZGJlZWY=`,
+			sourceMap: &sourcemap.SourceMap{
+				JavaPackages: map[string][]string{
+					"com.example.parser": {"src/main/java/com/example/parser/Parser.java"},
+				},
+			},
 			expected: []*report.Report{
 				{Status: report.RunStatusInitializing},
 				{
@@ -412,7 +419,7 @@ Base64: ZGVhZGJlZWY=`,
 						},
 						StackTrace: []*stacktrace.StackFrame{
 							{
-								SourceFile:  "Parser.java",
+								SourceFile:  "src/main/java/com/example/parser/Parser.java",
 								Line:        11,
 								Column:      0,
 								FrameNumber: 0,
@@ -443,6 +450,11 @@ Caused by: com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh: Output cont
 QQ<script-
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: UVFcb1w8L1xzY3JpcHQt`,
+			sourceMap: &sourcemap.SourceMap{
+				JavaPackages: map[string][]string{
+					"com.example": {"src/main/java/com/example/JsonSanitizerXSSFuzzer.java"},
+				},
+			},
 			expected: []*report.Report{
 				{Status: report.RunStatusInitializing},
 				{
@@ -464,7 +476,7 @@ Base64: UVFcb1w8L1xzY3JpcHQt`,
 						},
 						StackTrace: []*stacktrace.StackFrame{
 							{
-								SourceFile:  "JsonSanitizerXSSFuzzer.java",
+								SourceFile:  "src/main/java/com/example/JsonSanitizerXSSFuzzer.java",
 								Line:        44,
 								Column:      0,
 								FrameNumber: 0,
@@ -491,6 +503,11 @@ DEDUP_TOKEN: e943c470c21ef432
 @jaz.Zer\012-\037\000\000!\000\037
 ` + fmt.Sprintf("artifact_prefix='./'; Test unit written to %s", testInputFile.Name()) + `
 Base64: QGphei5aZXIKLR8AACEAHw==`,
+			sourceMap: &sourcemap.SourceMap{
+				JavaPackages: map[string][]string{
+					"com.github.CodeIntelligenceTesting.cifuzz": {"src/main/java/com/github/CodeIntelligenceTesting/cifuzz/ExploreMe.java"},
+				},
+			},
 			expected: []*report.Report{
 				{Status: report.RunStatusInitializing},
 				{
@@ -515,7 +532,7 @@ Base64: QGphei5aZXIKLR8AACEAHw==`,
 						},
 						StackTrace: []*stacktrace.StackFrame{
 							{
-								SourceFile:  "ExploreMe.java",
+								SourceFile:  "src/main/java/com/github/CodeIntelligenceTesting/cifuzz/ExploreMe.java",
 								Line:        22,
 								Column:      0,
 								FrameNumber: 0,
@@ -1147,7 +1164,11 @@ SUMMARY: libFuzzer: timeout`,
 		t.Run(tt.name, func(t *testing.T) {
 			r, w := io.Pipe()
 
-			options := &Options{SupportJazzer: tt.supportJazzer, SupportJazzerJS: tt.supportJazzerJS, ProjectDir: projectDir}
+			if tt.name == "jazzer FuzzerSecurityIssue output contains script" {
+				assert.True(t, true)
+
+			}
+			options := &Options{SupportJazzer: tt.supportJazzer, SupportJazzerJS: tt.supportJazzerJS, SourceMap: tt.sourceMap, ProjectDir: projectDir}
 			reporter := NewLibfuzzerOutputParser(options)
 			reportsCh := make(chan *report.Report, maxBufferedReports)
 			reporterErrCh := make(chan error)

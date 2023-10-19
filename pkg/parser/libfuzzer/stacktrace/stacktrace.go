@@ -151,18 +151,10 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 		return nil, nil
 	}
 
-	sourceFile := p.validateSourceFile(matches["source_file"])
+	sourceFile := p.validateSourceFile(matches["source_file"], matches["function"])
 	if sourceFile == "" {
 		// Not a valid source file, ignore this stack frame
 		return nil, nil
-	}
-
-	function := matches["function"]
-	if p.SupportJazzer {
-		function = p.filterPackages(function)
-		if function == "" {
-			return nil, nil
-		}
 	}
 
 	var frameNumber uint64
@@ -192,17 +184,13 @@ func (p *parser) stackFrameFromLine(line string) (*StackFrame, error) {
 		Line:        uint32(lineNumber),
 		Column:      uint32(column),
 		FrameNumber: uint32(frameNumber),
-		Function:    function,
-	}
-
-	if p.SupportJazzer {
-		p.setJavaSourceFilePath(stackFrame)
+		Function:    matches["function"],
 	}
 
 	return stackFrame, nil
 }
 
-func (p *parser) validateSourceFile(path string) string {
+func (p *parser) validateSourceFile(sourceFile string, function string) string {
 	var err error
 
 	// To make the stack trace more useful when the finding is shared
@@ -213,7 +201,8 @@ func (p *parser) validateSourceFile(path string) string {
 	// llvm-symbolizer to produce relative paths in the stack trace
 	// because that only produces relative paths if the compiler
 	// command-line also contained relative paths to the source files.
-	if filepath.IsAbs(path) {
+	path := sourceFile
+	if filepath.IsAbs(sourceFile) {
 		path, err = filepath.Rel(p.ProjectDir, path)
 		// We don't return the error here, because on Windows an error
 		// is returned when the paths are on different drives (e.g. C:
@@ -240,6 +229,21 @@ func (p *parser) validateSourceFile(path string) string {
 		return ""
 	}
 
+	if p.SupportJazzer {
+		sourceFilePath := p.getJavaSourceFilePath(sourceFile, function)
+		if sourceFilePath != path {
+			// If source file is found in the source map, all further
+			// stack frames do not get filtered anymore
+			p.filterJazzerStackFrames = false
+
+			path = sourceFilePath
+		} else if p.filterJazzerStackFrames {
+			// Filter stack frame if source file is not found in the
+			// source map and filterJazzerStackFrames is true
+			return ""
+		}
+	}
+
 	// Ignore files from node_modules
 	if p.SupportJazzerJS {
 		if strings.Contains(path, "node_modules") {
@@ -250,27 +254,13 @@ func (p *parser) validateSourceFile(path string) string {
 	return path
 }
 
-func (p *parser) filterPackages(packageName string) string {
-	// Ignore files from the Java standard library and jazzer. We can't filter
-	// these out via the regex because go regex doesn't support
-	// lookups to filter out specific words.
-	javaPrefixes := []string{"java.base", "java.lang", "jaz.Zer", "sun.reflect", "com.code_intelligence.jazzer"}
-	for _, prefix := range javaPrefixes {
-		if strings.Contains(packageName, prefix) {
-			return ""
-		}
-	}
-
-	return packageName
-}
-
 func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
 	matches, found := regexutil.FindNamedGroupsMatch(ubSanDiagPattern, line)
 	if !found {
 		return nil, nil
 	}
 
-	sourceFile := p.validateSourceFile(matches["source_file"])
+	sourceFile := p.validateSourceFile(matches["source_file"], matches["function"])
 	if sourceFile == "" {
 		// Not a valid source file, ignore this stack frame
 		return nil, nil
@@ -297,21 +287,23 @@ func (p *parser) sourceLocationFromLine(line string) (*StackFrame, error) {
 	}, nil
 }
 
-func (p *parser) setJavaSourceFilePath(frame *StackFrame) {
+func (p *parser) getJavaSourceFilePath(sourceFile string, function string) string {
 	// remove function and class name
-	possiblePackageName := frame.Function
-	possiblePackageName = removeLastPart(removeLastPart(possiblePackageName))
+	possiblePackageName := removeLastPart(removeLastPart(function))
 	// In the case of nested classes we are not at the true package
 	// name yet. Remove possible class suffixes until we find the
 	// Java package that matches.
+
 	for possiblePackageName != "" {
 		for _, relFile := range p.SourceMap.JavaPackages[possiblePackageName] {
-			if filepath.Base(relFile) == frame.SourceFile {
-				frame.SourceFile = relFile
+			if filepath.Base(relFile) == sourceFile {
+				return relFile
 			}
 		}
 		possiblePackageName = removeLastPart(possiblePackageName)
 	}
+
+	return sourceFile
 }
 
 func removeLastPart(packageName string) string {
