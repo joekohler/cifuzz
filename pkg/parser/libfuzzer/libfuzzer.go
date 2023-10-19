@@ -16,6 +16,7 @@ import (
 	"github.com/pterm/pterm"
 
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/parser/errorid"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
@@ -100,8 +101,8 @@ type Options struct {
 	// the point where the fuzzer has completed initialization.
 	StartupOutputWriter io.Writer
 	// The directory to which paths in the stack trace are made relative to
-	ProjectDir  string
-	SourceFiles []string
+	ProjectDir string
+	SourceMap  *sourcemap.SourceMap
 }
 
 func NewLibfuzzerOutputParser(options *Options) *parser {
@@ -616,7 +617,7 @@ func (p *parser) finalizeAndSendPendingFinding(ctx context.Context) error {
 	// Parse the stack trace
 	parserOpts := &stacktrace.ParserOptions{
 		ProjectDir:      p.ProjectDir,
-		SourceFiles:     p.SourceFiles,
+		SourceMap:       p.SourceMap,
 		SupportJazzer:   p.SupportJazzer,
 		SupportJazzerJS: p.SupportJazzerJS,
 	}

@@ -48,28 +48,18 @@ func EncodeStackTrace(stacktrace []*StackFrame) []byte {
 
 type ParserOptions struct {
 	ProjectDir      string
-	SourceFiles     []string
+	SourceMap       *sourcemap.SourceMap
 	SupportJazzer   bool
 	SupportJazzerJS bool
 }
 
 type parser struct {
 	*ParserOptions
-	*sourcemap.SourceMap
+	filterJazzerStackFrames bool
 }
 
 func NewParser(opts *ParserOptions) (*parser, error) {
-	var err error
-	var sourceMap *sourcemap.SourceMap
-
-	if opts.SupportJazzer {
-		sourceMap, err = sourcemap.CreateSourceMap(opts.ProjectDir, opts.SourceFiles)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &parser{opts, sourceMap}, nil
+	return &parser{opts, true}, nil
 }
 
 // Parse parses output from an error reported by libFuzzer or a sanitizer

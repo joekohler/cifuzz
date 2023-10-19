@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/minijail"
 	"code-intelligence.com/cifuzz/pkg/options"
@@ -47,7 +48,7 @@ type RunnerOptions struct {
 	LibraryDirs        []string
 	LogOutput          io.Writer
 	ProjectDir         string
-	SourceDirs         []string
+	SourceMap          *sourcemap.SourceMap
 	ReadOnlyBindings   []string
 	ReportHandler      report.Handler
 	SeedCorpusDirs     []string
@@ -268,7 +269,7 @@ func (r *Runner) RunLibfuzzerAndReport(ctx context.Context, args []string, env [
 		KeepColor:           r.KeepColor,
 		StartupOutputWriter: startupOutputWriter,
 		ProjectDir:          r.ProjectDir,
-		SourceFiles:         r.SourceDirs,
+		SourceMap:           r.SourceMap,
 	})
 	reportsCh := make(chan *report.Report, MaxBufferedReports)
 

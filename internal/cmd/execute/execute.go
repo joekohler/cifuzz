@@ -23,6 +23,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/internal/coverage"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -245,6 +246,11 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
+		sourceMap, err := sourcemap.ReadSourceMapFromFile("source_map.json")
+		if err != nil {
+			return err
+		}
+		runnerOpts.SourceMap = sourceMap
 
 		name := fuzzer.Name
 		method := ""

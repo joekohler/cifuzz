@@ -17,6 +17,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/ldd"
+	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
@@ -151,6 +152,20 @@ func runJazzer(opts *RunOptions, buildResult *build.BuildResult, reportHandler *
 		opts.SeedCorpusDirs = append(opts.SeedCorpusDirs, buildResult.SeedCorpus)
 	}
 
+	// Create source map
+	sourceDirs, err := java.SourceDirs(opts.ProjectDir, opts.BuildSystem)
+	if err != nil {
+		return err
+	}
+	testDirs, err := java.TestDirs(opts.ProjectDir, opts.BuildSystem)
+	if err != nil {
+		return err
+	}
+	sourceMap, err := sourcemap.CreateSourceMap(opts.ProjectDir, append(sourceDirs, testDirs...))
+	if err != nil {
+		return err
+	}
+
 	var fuzzerRunner FuzzerRunner
 
 	runnerOpts := &jazzer.RunnerOptions{
@@ -165,6 +180,7 @@ func runJazzer(opts *RunOptions, buildResult *build.BuildResult, reportHandler *
 			GeneratedCorpusDir: buildResult.GeneratedCorpus,
 			KeepColor:          !opts.PrintJSON && !log.PlainStyle(),
 			ProjectDir:         opts.ProjectDir,
+			SourceMap:          sourceMap,
 			ReadOnlyBindings:   []string{buildResult.BuildDir},
 			ReportHandler:      reportHandler,
 			SeedCorpusDirs:     opts.SeedCorpusDirs,
@@ -174,15 +190,6 @@ func runJazzer(opts *RunOptions, buildResult *build.BuildResult, reportHandler *
 		},
 	}
 
-	sourceDirs, err := java.SourceDirs(opts.ProjectDir, opts.BuildSystem)
-	if err != nil {
-		return err
-	}
-	testDirs, err := java.TestDirs(opts.ProjectDir, opts.BuildSystem)
-	if err != nil {
-		return err
-	}
-	runnerOpts.LibfuzzerOptions.SourceDirs = append(sourceDirs, testDirs...)
 	fuzzerRunner = jazzer.NewRunner(runnerOpts)
 	return ExecuteFuzzerRunner(fuzzerRunner)
 }
