@@ -40,6 +40,8 @@ func main() {
 			"pkg/messaging/instructions/gradle",
 			"pkg/messaging/instructions/gradlekotlin",
 			"internal/bundler/testdata/jazzer/gradle/multi-custom/testsuite/build.gradle.kts",
+			"test/projects/gradle/app/build.gradle.kts",
+			"test/projects/gradle/testsuite/build.gradle.kts",
 		}
 		for _, path := range paths {
 			updateFile(path, *version, re)
