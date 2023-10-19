@@ -12,14 +12,14 @@ clojure "-T:build" "fuzzing-jar"
 
 Then run the fuzzer as follows:
 
-``` shell
+```shell
 java -cp target/fuzzing.jar  com.code_intelligence.jazzer.Jazzer              \
      --target_class=jazzer_clojure_example.targets.SimpleExample
 ```
 
-or 
+or
 
-``` shell
+```shell
 java -cp target/fuzzing.jar  com.code_intelligence.jazzer.Jazzer              \
        --target-class=jazzer_clojure_example.targets.JsonistaExample          \
        /fuzzing/corpus-jsonista
