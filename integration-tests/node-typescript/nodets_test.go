@@ -281,7 +281,11 @@ func testLcovCoverageReport(t *testing.T, cifuzz, dir, fuzzTest string) {
 		if file.Filename == "ExploreMe.ts" {
 			assert.Equal(t, 1, file.Coverage.FunctionsHit)
 			assert.Equal(t, 6, file.Coverage.LinesHit)
-			assert.Equal(t, 4, file.Coverage.BranchesHit)
+			// How many of the 4 branches that don't lead to a crash are hit
+			// depends on how lucky the fuzzer is, so we just check that
+			// it's between 4 and 8.
+			assert.GreaterOrEqual(t, file.Coverage.BranchesHit, 4)
+			assert.LessOrEqual(t, file.Coverage.BranchesHit, 8)
 		} else if file.Filename == "FuzzTestCase.fuzz.ts" {
 			assert.Equal(t, 1, file.Coverage.FunctionsHit)
 			assert.Equal(t, 8, file.Coverage.LinesHit)

@@ -1,32 +1,7 @@
-Date: 2023-08-09 12:30:39.4503149 +0200 CEST
-
-    ● Test path traversal
-
-      Path Traversal in openSync(): called with 'I../../jaz_zer'
-
-        3 | test.fuzz("Test path traversal", jazzerBuffer => {
-        4 | 	try {
-      > 5 | 		fs.openSync(jazzerBuffer.toString(), "r");
-          | 		   ^
-        6 | 	} catch (e) {
-        7 | 		// ignore
-        8 | 	}
-
-        at reportFinding (node_modules/@jazzer.js/core/finding.ts:47:17)
-        at Hook.beforeHook [as hookFunction] (node_modules/@jazzer.js/bug-detectors/internal/path-traversal.ts:136:18)
-        at Object.openSync (node_modules/@jazzer.js/hooking/manager.ts:261:10)
-        at path-traversal/PathTraversal.fuzz.js:5:6
-        at result (node_modules/@jazzer.js/core/core.ts:357:15)
-
-  Test Suites: 1 failed, 1 total
-  Tests:       1 failed, 1 total
-  Snapshots:   0 total
-  Time:        0.338 s
-  Ran all test suites matching /path-traversal/i.
-  ==51089== ERROR: libFuzzer: fuzz target exited
-  SUMMARY: libFuzzer: fuzz target exited
-  MS: 2 ChangeByte-CMP- DE: "../../jaz_zer"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
-  0x49,0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,
-  I../../jaz_zer
-  artifact_prefix='/tmp/cifuzz-nodejs-testdata-1992622198/path-traversal/PathTraversal.fuzz/Test_path_traversal/'; Test unit written to .cifuzz-findings/nifty_fawn/crashing-input
-  Base64: SS4uLy4uL2phel96ZXI=
+==49173== Path Traversal in openSync(): called with '../../jaz_zer*'
+MS: 2 ChangeBit-zz-nodejs-testdata-2875010541/path-traversal/PathTraversal.fuzz.js:5:6
+MS: 2 ChangeBit-CMP- DE: "../../jaz_zer"-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+0x2e,0x2e,0x2f,0x2e,0x2e,0x2f,0x6a,0x61,0x7a,0x5f,0x7a,0x65,0x72,0x2a,
+../../jaz_zer*
+artifact_prefix='/tmp/cifuzz-nodejs-testdata-2875010541/path-traversal/PathTraversal.fuzz/Test_path_traversal/'; Test unit written to /tmp/cifuzz-nodejs-testdata-2875010541/path-traversal/PathTraversal.fuzz/Test_path_traversal/crash-e70d3633d6cbecebd7ba9969327184a549379d22
+Base64: Li4vLi4vamF6X3plcio=

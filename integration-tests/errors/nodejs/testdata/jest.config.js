@@ -4,7 +4,7 @@ module.exports = {
 			displayName: "test",
 		},
 		{
-			runner: "@jazzer.js/jest-runner",
+			testRunner: "@jazzer.js/jest-runner",
 			displayName: {
 				name: "Jazzer.js",
 				color: "cyan",
