@@ -167,13 +167,7 @@ var deps = Dependencies{
 	Maven: {
 		Key:        Maven,
 		MinVersion: *semver.MustParse("0.0.0"),
-		GetVersion: func(dep *Dependency, projectDir string) (*semver.Version, error) {
-			ver, err := semver.NewVersion("0.0.0")
-			if err != nil {
-				return nil, errors.WithStack(err)
-			}
-			return ver, nil
-		},
+		GetVersion: mavenVersion,
 		Installed: func(dep *Dependency, projectDir string) bool {
 			return dep.checkFinder(dep.finder.MavenPath)
 		},
