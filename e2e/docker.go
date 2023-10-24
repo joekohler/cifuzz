@@ -149,7 +149,8 @@ func runTestCaseInContainer(t *testing.T, ctx context.Context, dockerClient *cli
 		ctx,
 		containerConfig,
 		&dockerContainer.HostConfig{
-			Binds: containerBinds,
+			Binds:      containerBinds,
+			ExtraHosts: []string{"host.docker.internal:host-gateway"},
 		},
 		nil,
 		nil,
