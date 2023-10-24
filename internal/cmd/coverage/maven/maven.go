@@ -84,7 +84,7 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 	mavenReportArgs := []string{
 		"-Pcifuzz",
 		"jacoco:report",
-		fmt.Sprintf("-Dcifuzz.report.output=%q", cov.OutputPath),
+		//fmt.Sprintf("-Dcifuzz.report.output=%q", cov.OutputPath),
 	}
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
