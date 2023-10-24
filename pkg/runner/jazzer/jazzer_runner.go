@@ -3,6 +3,7 @@ package jazzer
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -137,7 +138,12 @@ func (r *Runner) Run(ctx context.Context) error {
 	// stored. This must be an absolute path, because else crash files
 	// are created in the current working directory, which the fuzz test
 	// could change, causing the parser to not find the crash files.
-	outputDir, err := os.MkdirTemp("", "jazzer-out-")
+	tempdir := filepath.Join(os.TempDir(), "äöü")
+	err = os.MkdirAll(tempdir, 0755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	outputDir, err := os.MkdirTemp(tempdir, "jazzer-out-")
 	if err != nil {
 		return errors.WithStack(err)
 	}
