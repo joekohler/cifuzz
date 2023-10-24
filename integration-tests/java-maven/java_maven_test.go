@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -478,11 +477,6 @@ func testRunWrongFuzzTest(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 }
 
 func testContainerRun(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	// TODO: Fix the test on Windows and macOS
-	if runtime.GOOS != "linux" {
-		t.Skip("TODO: This test is currently broken on Windows and macOS")
-	}
-
 	shared.TestContainerRun(t, cifuzzRunner, "", &shared.RunOptions{
 		ExpectedOutputs: []*regexp.Regexp{
 			regexp.MustCompile(`High: Remote Code Execution`),

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/mattn/go-zglob"
@@ -17,6 +18,10 @@ import (
 )
 
 func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string, options *RunOptions) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test because the container run command is not supported on Windows")
+	}
+
 	// Remove inputs from the inputs directory (if it was created by a
 	// previous test) to be able to test that new seeds are created in
 	// the generated corpus (they won't be created if the fuzzer exits
