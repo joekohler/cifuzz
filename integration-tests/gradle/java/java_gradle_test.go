@@ -60,6 +60,10 @@ func TestIntegration_Gradle(t *testing.T) {
 
 	// Add the plugin
 	linesToAdd := shared.FilterForInstructions(allStderrLines)
+
+	// we only need to add the first filtered line, as it is the gradle plugin
+	linesToAdd = linesToAdd[:1]
+
 	shared.AddLinesToFileAtBreakPoint(t, filepath.Join(projectDir, "build.gradle"), linesToAdd, "plugins", true)
 
 	// Execute the create command
