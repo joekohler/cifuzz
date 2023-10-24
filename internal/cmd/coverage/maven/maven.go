@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
+	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/pkg/errors"
 
@@ -17,7 +16,6 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	parser "code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
-	"code-intelligence.com/cifuzz/util/executil"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -107,8 +105,8 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 			notExistErr := fmt.Errorf(`JaCoCo did not create a coverage report (jacoco.xml).
 Please check if you configured JaCoCo correctly in your project.
 
-If you use the maven-surefire-plugin: 
-Be aware that adding additional arguments in the plugin configuration in your 
+If you use the maven-surefire-plugin:
+Be aware that adding additional arguments in the plugin configuration in your
 pom.xml can disrupt the JaCoCo execution and have to be prefixed with '@{argline}'.
 
 <argLine>@{argLine} -your -extra -arguments</argLine>
@@ -141,26 +139,26 @@ func (runner *MavenRunnerImpl) RunCommand(args []string) error {
 	cmdArgs := []string{mavenCmd}
 	cmdArgs = append(cmdArgs, args...)
 
-	cmd := executil.Command(cmdArgs[0], cmdArgs[1:]...)
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Dir = runner.ProjectDir
 	cmd.Stdout = runner.BuildStdout
 	cmd.Stderr = runner.BuildStderr
 	log.Debugf("Running maven command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	defer signal.Stop(sigs)
-	go func() {
-		<-sigs
-		err = cmd.TerminateProcessGroup()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
+	//
+	//sigs := make(chan os.Signal, 1)
+	//signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	//defer signal.Stop(sigs)
+	//go func() {
+	//	<-sigs
+	//	err = cmd.TerminateProcessGroup()
+	//	if err != nil {
+	//		log.Error(err)
+	//	}
+	//}()
 
 	err = cmd.Run()
 	if err != nil {
-		return cmdutils.WrapExecError(errors.WithStack(err), cmd.Cmd)
+		return cmdutils.WrapExecError(errors.WithStack(err), cmd)
 	}
 	return nil
 }

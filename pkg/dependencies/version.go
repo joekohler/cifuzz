@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
 /*
@@ -260,6 +262,7 @@ func getVersionFromCommand(cmdPath string, args []string, re *regexp.Regexp, key
 	cmd := exec.Command(cmdPath, args...)
 	cmd.Stdout = &output
 	cmd.Stderr = &output
+	log.Debugf("Running command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
 	err := cmd.Run()
 	if err != nil {
 		return nil, errors.WithStack(err)
