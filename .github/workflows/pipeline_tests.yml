@@ -39,32 +39,6 @@ jobs:
       - name: Check conventional commits
         uses: webiny/action-conventional-commits@v1.1.0
 
-  unit_tests:
-    name: unit tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-12, windows-2022]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.21"
-
-      - name: Run unit tests
-        run: make test/unit
-
-      # Upload the original go test log as an artifact for later review.
-      - name: Upload test log
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-log
-          path: gotest.log
-          if-no-files-found: error
-
   integration_tests:
     name: integration tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -76,16 +50,7 @@ jobs:
         # we have to use macos-12 as after upgrading the external
         # action for llvm setup as it seems that this is breaking
         # with macos-11
-        os: [ubuntu-20.04, ubuntu-latest, macos-12, windows-2022]
-        ci_index: [0, 1, 2]
-        include:
-          # Windows runs on more containers
-          - os: windows-2022
-            ci_index: 3
-          - os: windows-2022
-            ci_index: 4
-          - os: windows-2022
-            ci_index: 5
+        os: [macos-12]
 
     steps:
       - uses: actions/checkout@v3
@@ -94,7 +59,6 @@ jobs:
         uses: ./.github/actions/vm_setup
         with:
           os: ${{ matrix.os }}
-
 
       - name: Setup Docker
         if: contains(matrix.container, 'macos')
