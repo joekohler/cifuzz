@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -81,10 +82,16 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		// because the build directory is unknown at this point
 		cov.OutputPath = filepath.Join(cov.ProjectDir, ".cifuzz-build", "report")
 	}
+
+	// If we're on Windows, we have to escape any spaces in the output path
+	if runtime.GOOS == "windows" {
+		cov.OutputPath = strings.ReplaceAll(cov.OutputPath, " ", "\\ ")
+	}
+
 	mavenReportArgs := []string{
 		"-Pcifuzz",
 		"jacoco:report",
-		//fmt.Sprintf("-Dcifuzz.report.output=%q", cov.OutputPath),
+		fmt.Sprintf("-Dcifuzz.report.output=%q", cov.OutputPath),
 	}
 
 	if cov.OutputFormat == coverage.FormatJacocoXML {
