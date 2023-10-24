@@ -194,7 +194,7 @@ func (cov *CoverageGenerator) getBazelCommandFlags() ([]string, error) {
 
 	flags := []string{
 		"--repo_env=CC=" + envutil.Getenv(env, "CC"),
-		"--repo_env=CXX" + envutil.Getenv(env, "CXX"),
+		"--repo_env=CXX=" + envutil.Getenv(env, "CXX"),
 		// Don't use the LLVM from Xcode
 		"--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1",
 	}
