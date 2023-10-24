@@ -1,6 +1,7 @@
 package sourcemap
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code-intelligence.com/cifuzz/pkg/java"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 // SourceMap provides a mapping from package names
@@ -46,6 +48,29 @@ func CreateSourceMap(projectDir string, sourceDirs []string) (*SourceMap, error)
 		// Replace double slashes on Windows with forward slashes
 		relPath = strings.ReplaceAll(relPath, "\\", "/")
 		sourceMap.JavaPackages[packageName] = append(sourceMap.JavaPackages[packageName], relPath)
+	}
+
+	return &sourceMap, nil
+}
+
+func ReadSourceMapFromFile(filepath string) (*SourceMap, error) {
+	exists, err := fileutil.Exists(filepath)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.New("source map not found")
+	}
+
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	sourceMap := SourceMap{}
+	err = json.Unmarshal(content, &sourceMap)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return &sourceMap, nil
