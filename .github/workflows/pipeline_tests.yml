@@ -95,9 +95,9 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
-      - name: Setup Docker
+      - name: Setup Docker on macOS
         if: contains(matrix.os, 'macos')
-        uses: docker-practice/actions-setup-docker@master
+        uses: douglascamata/setup-docker-macos-action@v1-alpha
         timeout-minutes: 12
 
       - name: Run integration tests
