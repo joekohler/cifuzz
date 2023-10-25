@@ -55,7 +55,7 @@ func (opts *Opts) Validate() error {
 	// Ensure that the fuzz tests contain no duplicates
 	opts.FuzzTests = sliceutil.RemoveDuplicates(opts.FuzzTests)
 
-	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
+	opts.SeedCorpusDirs, err = cmdutils.ValidateCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
 		return err
 	}

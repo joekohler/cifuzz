@@ -42,7 +42,7 @@ type CoverageGenerator struct {
 	BuildSystemArgs []string
 	CleanCommand    string
 	NumBuildJobs    uint
-	SeedCorpusDirs  []string
+	CorpusDirs      []string
 	UseSandbox      bool
 	FuzzTest        string
 	ProjectDir      string
@@ -251,7 +251,7 @@ func (cov *CoverageGenerator) build() error {
 			return err
 		}
 		if exists {
-			cov.SeedCorpusDirs = append(cov.SeedCorpusDirs, path)
+			cov.CorpusDirs = append(cov.CorpusDirs, path)
 		}
 	}
 
@@ -261,7 +261,7 @@ func (cov *CoverageGenerator) build() error {
 func (cov *CoverageGenerator) run(ctx context.Context) error {
 	var err error
 
-	corpusDirs := cov.SeedCorpusDirs
+	corpusDirs := cov.CorpusDirs
 
 	// Ensure that symlinks are resolved to be able to add minijail
 	// bindings for the corpus dirs.

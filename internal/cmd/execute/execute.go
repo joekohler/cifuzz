@@ -357,9 +357,9 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		}
 		seedCorpusDirs := append(runnerOpts.SeedCorpusDirs, runnerOpts.GeneratedCorpusDir, container.ManagedSeedCorpusDir)
 		gen := &llvmCoverage.CoverageGenerator{
-			OutputFormat:   coverage.FormatLCOV,
-			SeedCorpusDirs: seedCorpusDirs,
-			Stderr:         os.Stderr,
+			OutputFormat: coverage.FormatLCOV,
+			CorpusDirs:   seedCorpusDirs,
+			Stderr:       os.Stderr,
 		}
 		return gen.GenerateCoverageReportInFuzzContainer(context.Background(), coverageBinary.Path,
 			c.opts.CoverageOutputPath, coverageBinary.LibraryPaths)

@@ -43,6 +43,16 @@ func AddFlags(cmd *cobra.Command, funcs ...func(cmd *cobra.Command) func()) (bin
 	}
 }
 
+func AddAdditionalCorpusFlag(cmd *cobra.Command) func() {
+	cmd.Flags().StringArray("add-corpus", nil,
+		"A `directory` containing inputs to be used for calculating code coverage.\n"+
+			"It is used in addition to inputs found in the inputs directory of the fuzz test.\n"+
+			"This flag can be used multiple times.")
+	return func() {
+		ViperMustBindPFlag("corpus-dirs", cmd.Flags().Lookup("add-corpus"))
+	}
+}
+
 func AddAdditionalFilesFlag(cmd *cobra.Command) func() {
 	cmd.Flags().StringArray("add", nil,
 		"Add a file or directory to the bundle, defined in the format '--add=<source-path>;<target-path>'.\n"+
@@ -227,9 +237,8 @@ e.g. "my-project-c170bc17".`)
 func AddSeedCorpusFlag(cmd *cobra.Command) func() {
 	// TODO(afl): Also link to https://aflplus.plus/docs/fuzzing_in_depth/#a-collecting-inputs
 	cmd.Flags().StringArrayP("seed-corpus", "s", nil,
-		"A `directory` containing sample inputs for the code under test,\n"+
-			"which is used in addition to inputs found in the inputs\n"+
-			"directory of the fuzz test.\n"+
+		"A `directory` containing sample inputs used as seeds for fuzzing the code under test.\n"+
+			"This is used in addition to inputs found in the inputs directory of the fuzz test.\n"+
 			"See https://github.com/CodeIntelligenceTesting/cifuzz/blob/main/docs/Glossary.md#seed-corpus.\n"+
 			"This flag can be used multiple times.")
 	return func() {

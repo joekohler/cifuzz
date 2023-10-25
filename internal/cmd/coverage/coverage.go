@@ -39,14 +39,14 @@ type Generator interface {
 }
 
 type coverageOptions struct {
-	OutputFormat   string   `mapstructure:"format"`
-	OutputPath     string   `mapstructure:"output"`
-	BuildSystem    string   `mapstructure:"build-system"`
-	BuildCommand   string   `mapstructure:"build-command"`
-	CleanCommand   string   `mapstructure:"clean-command"`
-	NumBuildJobs   uint     `mapstructure:"build-jobs"`
-	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
-	UseSandbox     bool     `mapstructure:"use-sandbox"`
+	OutputFormat string   `mapstructure:"format"`
+	OutputPath   string   `mapstructure:"output"`
+	BuildSystem  string   `mapstructure:"build-system"`
+	BuildCommand string   `mapstructure:"build-command"`
+	CleanCommand string   `mapstructure:"clean-command"`
+	NumBuildJobs uint     `mapstructure:"build-jobs"`
+	CorpusDirs   []string `mapstructure:"corpus-dirs"`
+	UseSandbox   bool     `mapstructure:"use-sandbox"`
 
 	ResolveSourceFilePath bool
 	Preset                string
@@ -63,7 +63,7 @@ type coverageOptions struct {
 func (opts *coverageOptions) validate() error {
 	var err error
 
-	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
+	opts.CorpusDirs, err = cmdutils.ValidateCorpusDirs(opts.CorpusDirs)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func New() *cobra.Command {
 		Long: `This command generates a coverage report for a fuzz test.
 
 The inputs found in the inputs directory of the fuzz test are used in
-addition to optional input directories specified by using the seed-corpus flag.
+addition to optional input directories specified by using the add-corpus flag.
 More details about the build system specific inputs directory location
 can be found in the help message of the run command.
 
@@ -212,7 +212,7 @@ or a lcov trace file.
 		cmdutils.AddPresetFlag,
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddResolveSourceFileFlag,
-		cmdutils.AddSeedCorpusFlag,
+		cmdutils.AddAdditionalCorpusFlag,
 		cmdutils.AddUseSandboxFlag,
 	)
 	// This flag is not supposed to be called by a user
@@ -288,7 +288,7 @@ func (c *coverageCmd) run() error {
 			BuildSystemArgs: c.opts.argsToPass,
 			CleanCommand:    c.opts.CleanCommand,
 			NumBuildJobs:    c.opts.NumBuildJobs,
-			SeedCorpusDirs:  c.opts.SeedCorpusDirs,
+			CorpusDirs:      c.opts.CorpusDirs,
 			UseSandbox:      c.opts.UseSandbox,
 			FuzzTest:        c.opts.fuzzTest,
 			ProjectDir:      c.opts.ProjectDir,

@@ -10,10 +10,15 @@
 ## `cifuzz run` to build the fuzz test.
 #build-command: "make my_fuzz_test"
 
-## Directories containing sample inputs for the code under test.
+## Directories containing sample inputs used as seeds for the
+## code under test. This is used only for fuzzing runs.
 ## See https://llvm.org/docs/LibFuzzer.html#corpus
 #seed-corpus-dirs:
 # - path/to/seed-corpus
+
+## Directories containing inputs used for calculating coverage.
+#corpus-dirs:
+# - path/to/corpus
 
 ## A file containing input language keywords or other interesting byte
 ## sequences.

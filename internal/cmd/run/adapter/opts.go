@@ -45,7 +45,7 @@ type RunOptions struct {
 func (opts *RunOptions) Validate() error {
 	var err error
 
-	opts.SeedCorpusDirs, err = cmdutils.ValidateSeedCorpusDirs(opts.SeedCorpusDirs)
+	opts.SeedCorpusDirs, err = cmdutils.ValidateCorpusDirs(opts.SeedCorpusDirs)
 	if err != nil {
 		return err
 	}
