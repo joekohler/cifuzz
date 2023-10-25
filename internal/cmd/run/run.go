@@ -67,6 +67,13 @@ depends on the build system configured for the project.
 
   are used as a starting point for the fuzzing run.
 
+  The default dictionary
+
+    <fuzz test>.dict
+
+  is used automatically if no other dictionary is specified
+  by using the --dict flag.
+
 ` + pterm.Style{pterm.Reset, pterm.Bold}.Sprint("Bazel") + `
   <fuzz test> is the name of the cc_fuzz_test target as defined in your
   BUILD file, either as a relative or absolute Bazel label.
@@ -142,6 +149,13 @@ depends on the build system configured for the project.
     <fuzz test>_inputs
 
   are used as a starting point for the fuzzing run.
+
+  The default dictionary
+
+    <fuzz test>.dict
+
+  is used automatically if no other dictionary is specified
+  by using the --dict flag.
 
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,

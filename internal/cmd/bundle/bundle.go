@@ -52,10 +52,14 @@ given fuzz tests into a self-contained archive (bundle) that can be executed
 on CI Sense.
 
 The inputs found in the inputs directory of the fuzz test are also added
-to the bundle in addition to optional input directories specified with
+to the bundle in addition to optional input directories specified by using
 the seed-corpus flag.
-More details about the build system specific inputs directory location
-can be found in the help message of the run command.
+
+The default dictionary of the fuzz test is added to the bundle
+if no other dictionary is specified by using the --dict flag.
+
+More details about the build system specific inputs directory and default
+dictionary locations can be found in the help message of the run command.
 
 The usage of this command depends on the build system
 configured for the project.
@@ -75,6 +79,19 @@ on the build system. This can be overridden with a docker-image flag.
   Additional CMake arguments can be passed after a "--". For example:
 
     cifuzz run my_fuzz_test -- -G Ninja
+
+  The inputs found in the directory
+
+    <fuzz test>_inputs
+
+  are added to the bundle automatically.
+
+  The default dictionary
+
+    <fuzz test>.dict
+
+  is added to the bundle automatically if no other dictionary is specified
+  by using the --dict flag.
 
   If no fuzz tests are specified, all fuzz tests are added to the bundle.
 
@@ -117,6 +134,19 @@ on the build system. This can be overridden with a docker-image flag.
   can provide a clean command using the --clean-command flag or specifying
   the "clean-command" option in cifuzz.yaml. The clean command is then
   executed once before building the fuzz tests.
+
+  The inputs found in the directory
+
+    <fuzz test>_inputs
+
+  are added to the bundle automatically.
+
+  Dictionary entries found in
+
+    <fuzz test>.dict
+
+  are added to the bundle automatically if no other dictionary is
+  specified by using the --dict flag.
 
 `,
 		ValidArgsFunction: completion.ValidFuzzTests,

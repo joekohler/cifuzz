@@ -88,10 +88,14 @@ bundle and uploads it to CI Sense to start a remote
 fuzzing run.
 
 The inputs found in the inputs directory of the fuzz test are also added
-to the bundle in addition to optional input directories specified with
+to the bundle in addition to optional input directories specified by using
 the seed-corpus flag.
-More details about the build system specific inputs directory location
-can be found in the help message of the run command.
+
+The default dictionary of the fuzz test is added to the bundle
+if no other dictionary is specified by using the --dict flag.
+
+More details about the build system specific inputs directory and default
+dictionary locations can be found in the help message of the run command.
 
 If the --bundle flag is used, building and bundling is skipped and the
 specified bundle is uploaded to start a remote fuzzing run instead.

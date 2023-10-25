@@ -109,6 +109,7 @@ func AddDictFlag(cmd *cobra.Command) func() {
 	// TODO(afl): Also link to https://github.com/AFLplusplus/AFLplusplus/blob/stable/dictionaries/README.md
 	cmd.Flags().String("dict", "",
 		"A `file` containing input language keywords or other interesting byte sequences.\n"+
+			"This flag is only used if no default dictionary is found for the fuzz test.\n"+
 			"See https://llvm.org/docs/LibFuzzer.html#dictionaries.")
 	return func() {
 		ViperMustBindPFlag("dict", cmd.Flags().Lookup("dict"))

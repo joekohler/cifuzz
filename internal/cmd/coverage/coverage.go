@@ -110,7 +110,7 @@ func New() *cobra.Command {
 		Long: `This command generates a coverage report for a fuzz test.
 
 The inputs found in the inputs directory of the fuzz test are used in
-addition to optional input directories specified with the seed-corpus flag.
+addition to optional input directories specified by using the seed-corpus flag.
 More details about the build system specific inputs directory location
 can be found in the help message of the run command.
 
