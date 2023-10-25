@@ -3,6 +3,7 @@ package bazel
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/envutil"
+	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
 type CoverageGenerator struct {
@@ -27,6 +29,7 @@ type CoverageGenerator struct {
 	ProjectDir      string
 	Engine          string
 	NumJobs         uint
+	CorpusDirs      []string
 	Stdout          io.Writer
 	Stderr          io.Writer
 	BuildStdout     io.Writer
@@ -34,8 +37,106 @@ type CoverageGenerator struct {
 	Verbose         bool
 }
 
+// symlinkUserInputsToGeneratedCorpus handles user defined inputs set via
+// '--corpus-dir'.
+// They are added as symlinks to the generated corpus directory, so they can be
+// included while creating the coverage report and are removed afterward. The
+// generated corpus is automatically included in the 'bazel coverage' command
+// because of the "@cifuzz//:collect_coverage" line in the fuzz test definition.
+// This solution is used because there is no easy way to add them via flags
+// to bazel or without adjusting the BUILD.bazel.
+func (cov *CoverageGenerator) symlinkUserInputsToGeneratedCorpus(commonFlags []string) (func(), error) {
+	symlinks := make([]string, 0)
+
+	// Get path to generated corpus of the fuzz test
+	fuzzTestPath, err := bazel.PathFromLabel(cov.FuzzTest, commonFlags)
+	if err != nil {
+		return nil, err
+	}
+	generatedCorpusBasename := "." + filepath.Base(fuzzTestPath) + "_cifuzz_corpus"
+	generatedCorpus := filepath.Join(cov.ProjectDir, filepath.Dir(fuzzTestPath), generatedCorpusBasename)
+
+	// Make sure that the generated corpus directory actually exists. If the user
+	// for any reason calls the coverage command without a prior fuzzing run, we
+	// still want this to work but also delete the directory again to not clutter
+	// up the project.
+	exist, err := fileutil.Exists(generatedCorpus)
+	if err != nil {
+		return nil, err
+	}
+	if !exist {
+		err = os.Mkdir(generatedCorpus, 0755)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		// Add it to the symlinks slice to delete it with the others at the end of
+		// the build step
+		symlinks = append(symlinks, generatedCorpus)
+	}
+
+	for _, dir := range cov.CorpusDirs {
+		// Create a symlink in the generated corpus directory for every input in the
+		// user specified directories
+		err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			info, err := d.Info()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			link := filepath.Join(generatedCorpus, filepath.Base(path))
+			err = os.Symlink(path, link)
+			if err != nil && !errors.Is(err, os.ErrExist) {
+				return errors.Wrapf(err, "Failed to symlink'%s' to '%s'", path, generatedCorpus)
+			}
+			if errors.Is(err, os.ErrExist) {
+				// TODO: don't skip input if a file with the same name already exists
+				log.Debugf("File %s already exists in corpus directory, a symlink for %s cannot be created", link, path)
+				// Return here to not add the path to the list of files that will be
+				// removed after the coverage run
+				return nil
+			}
+
+			symlinks = append(symlinks, link)
+			return nil
+		})
+		// nolint: wrapcheck
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	removeSymlinks := func() {
+		for _, s := range symlinks {
+			err = os.RemoveAll(s)
+			if err != nil {
+				log.Errorf(errors.WithStack(err), "Failed to remove '%s': %v", s, err.Error())
+			}
+		}
+	}
+
+	return removeSymlinks, nil
+}
+
 func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
-	var err error
+	commonFlags, err := cov.getBazelCommandFlags()
+	if err != nil {
+		return err
+	}
+
+	if len(cov.CorpusDirs) != 0 {
+		removeSymlinks, err := cov.symlinkUserInputsToGeneratedCorpus(commonFlags)
+		if err != nil {
+			return err
+		}
+		defer removeSymlinks()
+	}
 
 	// The cc_fuzz_test rule defines multiple bazel targets: If the
 	// name is "foo", it defines the targets "foo", "foo_bin", and
@@ -50,11 +151,6 @@ func (cov *CoverageGenerator) BuildFuzzTestForCoverage() error {
 		if err == nil {
 			cov.FuzzTest = trimmedLabel
 		}
-	}
-
-	commonFlags, err := cov.getBazelCommandFlags()
-	if err != nil {
-		return err
 	}
 
 	// Flags which should only be used for bazel run because they are

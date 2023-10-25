@@ -276,6 +276,7 @@ func (c *coverageCmd) run() error {
 			ProjectDir:      c.opts.ProjectDir,
 			Engine:          "libfuzzer",
 			NumJobs:         c.opts.NumBuildJobs,
+			CorpusDirs:      c.opts.CorpusDirs,
 			Stdout:          c.OutOrStdout(),
 			Stderr:          c.ErrOrStderr(),
 			BuildStdout:     c.opts.buildStdout,

@@ -22,6 +22,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/executil"
+	"code-intelligence.com/cifuzz/util/regexutil"
 )
 
 func TestIntegration_Bazel(t *testing.T) {
@@ -132,6 +133,10 @@ func TestIntegration_Bazel(t *testing.T) {
 		testCoverageWithAdditionalArgs(t, cifuzz, testdata)
 	})
 
+	t.Run("coverageWithAdditionalCorpus", func(t *testing.T) {
+		testCoverageWithAdditionalCorpus(t, cifuzz, testdata)
+	})
+
 	t.Run("containerRun", func(t *testing.T) {
 		testContainerRun(t, cifuzzRunner)
 	})
@@ -154,6 +159,44 @@ func testCoverageWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
 	seenExpectedOutput := regexp.MatchString(string(output))
 	require.Error(t, err)
 	require.True(t, seenExpectedOutput)
+}
+
+func testCoverageWithAdditionalCorpus(t *testing.T, cifuzz string, dir string) {
+	if runtime.GOOS == "darwin" && !config.AllowUnsupportedPlatforms() {
+		t.Skip("Coverage is currently not working on our macOS CI")
+	}
+
+	// Create corpus
+	err := os.Mkdir(filepath.Join(dir, "inputs"), 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, "inputs", "test"), []byte("hello"), 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, "inputs", "test2"), []byte("test"), 0755)
+	require.NoError(t, err)
+
+	// add "--test_output=all" to bazel command to see in the logs if the input
+	// has been recognized by bazel
+	cmd := executil.Command(cifuzz, "coverage", "//src/parser:parser_fuzz_test", "--add-corpus=inputs", "--", "--test_output=all")
+	cmd.Dir = dir
+
+	// Terminate the cifuzz process when we receive a termination signal
+	// (else the test won't stop).
+	shared.TerminateOnSignal(t, cmd)
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+
+	// Checking for this kind of line in the bazel log:
+	// 'Replaying 'src/parser/parser_fuzz_test_corpus/src-parser-.parser_fuzz_test_cifuzz_corpus-test' (5 bytes): OK'
+	// We only need the inputs from the *_corpus directory and can reduce the
+	// check to the last part after the "-" to get the name of the input
+	reg := regexp.MustCompile(`Replaying '\S+_corpus\S+-(?P<name>\S+)'`)
+	matches, _ := regexutil.FindAllNamedGroupsMatches(reg, string(output))
+	assert.Contains(t, matches, map[string]string{"name": "test"})
+	assert.Contains(t, matches, map[string]string{"name": "test2"})
+
+	assert.NoFileExists(t, filepath.Join(dir, "src", "parser", "parser_fuzz_test_corpus", "src-parser-.parser_fuzz_test_cifuzz_corpus-test"), "Symlink for 'test' was not removed from generated corpus directory")
+	assert.NoFileExists(t, filepath.Join(dir, "src", "parser", "parser_fuzz_test_corpus", "src-parser-.parser_fuzz_test_cifuzz_corpus-test2"), "Symlink for 'test2' was not removed from generated corpus directorty")
 }
 
 func testBundleWithAdditionalArgs(t *testing.T, cifuzz string, dir string) {
