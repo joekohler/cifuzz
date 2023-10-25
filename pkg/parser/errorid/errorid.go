@@ -70,9 +70,9 @@ var matchers = []matcher{
 	{id: "server_side_request_forgery", substrings: []string{"Security Issue: Server Side Request Forgery"}},
 
 	// more global issues, should be at the end so they do not overwrite more explicit ones
-	{id: "java_exception", regexs: []*regexp.Regexp{regexp.MustCompile(`java\.lang.+|Exception|Error`)}},
+	{id: "java_exception", regexs: []*regexp.Regexp{regexp.MustCompile(`java\.lang.+|Exception`)}},
 	{id: "jazzer_security_issue", substrings: []string{"Security Issue:"}},
-	{id: "Crash", substrings: []string{"Crash"}},
+	{id: "Crash", regexs: []*regexp.Regexp{regexp.MustCompile(`Error|Crash`)}},
 }
 
 func ForFinding(f *finding.Finding) string {
