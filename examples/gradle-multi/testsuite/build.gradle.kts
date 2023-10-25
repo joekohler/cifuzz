@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+  implementation(project(":app"))
 	testImplementation(platform("org.junit:junit-bom:5.10.0"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
   testImplementation("com.code-intelligence:jazzer-junit:0.21.1")
