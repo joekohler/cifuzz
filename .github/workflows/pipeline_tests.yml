@@ -97,7 +97,7 @@ jobs:
 
       - name: Setup Docker
         if: contains(matrix.os, 'macos')
-        uses: docker-practice/actions-setup-docker@master
+        uses: adombeck/actions-setup-docker@master
         timeout-minutes: 12
 
       - name: Run integration tests
