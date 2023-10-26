@@ -278,7 +278,6 @@ site/update:
 	git -C site push
 
 .PHONY: build-container-image
-build-container-image: export DOCKER_BUILDKIT = 1
 build-container-image: build/linux
 ifneq ($(current_os),windows)
 	docker build --platform linux/amd64 -f docker/cifuzz-base/Dockerfile -t $(image_tag) .
@@ -294,7 +293,6 @@ push-container-image: build-container-image
 	docker push "$(image_tag)"
 
 .PHONY: build-llvm-test-container-image
-build-llvm-test-container-image: export DOCKER_BUILDKIT = 1
 build-llvm-test-container-image: build/linux
 ifneq ($(current_os),windows)
 	docker build --platform linux/amd64 -f docker/llvm-test/Dockerfile -t cifuzz-llvm-test:latest .
