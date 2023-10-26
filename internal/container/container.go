@@ -92,7 +92,7 @@ func Create(imageID string, printJSON bool, bindMounts []string, args []string) 
 		return "", errors.WithStack(err)
 	}
 
-	log.Debugf("Created fuzz container %s based on image %s", cont.ID, containerConfig.Image)
+	log.Debugf("Created container %s based on image %s", cont.ID, containerConfig.Image)
 	return cont.ID, nil
 }
 
@@ -128,7 +128,7 @@ func Run(id string, outW, errW io.Writer) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.Debugf("started container %s", id)
+	log.Debugf("Started container %s", id)
 	if os.Getenv("CIFUZZ_CONTAINER_SLEEP") != "" {
 		log.Printf(`Container %[1]s is running.
 Attach to it with:
