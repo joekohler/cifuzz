@@ -66,7 +66,7 @@ jobs:
           if-no-files-found: error
 
   integration_tests:
-    name: integration tests (${{ matrix.os }})
+    name: integration tests (${{ matrix.os }}) (${{ matrix.ci_index }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
