@@ -7,3 +7,4 @@ examples/bazel/bazel-*/
 examples/**/build
 **/cifuzz.yaml
 go.mod
+tools/list-fuzz-tests/target
