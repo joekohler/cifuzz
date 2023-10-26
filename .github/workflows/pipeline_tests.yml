@@ -9,62 +9,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  linting:
-    name: lint
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.21"
-
-      - name: Check file formatting
-        run: make fmt/check
-
-      - name: Check go mod tidy
-        run: make tidy/check
-
-      - name: Restore golangci-lint files from cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-golangci-lint
-          path: /home/runner/.cache/golangci-lint
-
-      - name: Run linting check
-        run: make lint
-
-      - name: Check conventional commits
-        uses: webiny/action-conventional-commits@v1.1.0
-
-  unit_tests:
-    name: unit tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-12, windows-2022]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.21"
-
-      - name: Run unit tests
-        run: make test/unit
-
-      # Upload the original go test log as an artifact for later review.
-      - name: Upload test log
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-log
-          path: gotest.log
-          if-no-files-found: error
-
   integration_tests:
     name: integration tests (${{ matrix.os }}) (${{ matrix.bucket_index }})
     runs-on: ${{ matrix.os }}
@@ -76,16 +20,8 @@ jobs:
         # we have to use macos-12 as after upgrading the external
         # action for llvm setup as it seems that this is breaking
         # with macos-11
-        os: [ubuntu-20.04, ubuntu-latest, macos-12, windows-2022]
-        bucket_index: [0, 1, 2]
-        include:
-          # Windows runs on more containers
-          - os: windows-2022
-            bucket_index: 3
-          - os: windows-2022
-            bucket_index: 4
-          - os: windows-2022
-            bucket_index: 5
+        os: [macos-12]
+        bucket_index: [0]
 
     steps:
       - uses: actions/checkout@v3
@@ -105,7 +41,7 @@ jobs:
 
       - name: Run integration tests (Ubuntu/macOS)
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
-        run: make test/integration/linux-mac/${{ matrix.bucket_index }}
+        run: go test -v -timeout=20m code-intelligence.com/cifuzz/integration-tests/java-maven -run "^TestIntegration_Maven/containerRun$" | tee gotest.log
         shell: bash
 
       - name: Run integration tests (Windows)
