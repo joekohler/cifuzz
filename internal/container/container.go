@@ -48,6 +48,7 @@ func Create(imageID string, printJSON bool, bindMounts []string, args []string) 
 		AttachStderr: true,
 		User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 	}
+	log.Printf("XXX: UID: %d, GID: %d", os.Getuid(), os.Getgid())
 
 	if viper.GetBool("verbose") {
 		containerConfig.Cmd = append(containerConfig.Cmd, "-v")

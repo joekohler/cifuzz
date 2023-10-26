@@ -3,6 +3,9 @@ package run
 import (
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -169,6 +172,29 @@ func (c *containerRunCmd) run() error {
 
 	if c.opts.BuildOnly {
 		return nil
+	}
+
+	// Print the current user
+	log.Printf("XXX (container run): Current user:")
+	cmd := exec.Command("whoami")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmdErr := cmd.Run()
+	if cmdErr != nil {
+		log.Error(cmdErr)
+	}
+
+	// Print the content of the output directory
+	for _, bindMount := range c.opts.BindMounts {
+		sourceDir := strings.Split(bindMount, ":")[0]
+		log.Printf("Contents of %s:", sourceDir)
+		cmd := exec.Command("ls", "-la", sourceDir)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		cmdErr := cmd.Run()
+		if cmdErr != nil {
+			log.Error(cmdErr)
+		}
 	}
 
 	containerID, err := container.Create(imageID, c.opts.PrintJSON, c.opts.BindMounts, c.opts.ContainerArgs)

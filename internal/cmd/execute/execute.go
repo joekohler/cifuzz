@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -183,6 +185,19 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	}
 	err = os.MkdirAll(c.opts.GeneratedCorpusDir, 0o755)
 	if err != nil {
+		// Print the current UID
+		log.Printf("XXX 2: Current UID: %d", os.Getuid())
+
+		// Print the owner and permissions of the parent directory
+		log.Printf("Contents of %s:", filepath.Dir(c.opts.GeneratedCorpusDir))
+		cmd := exec.Command("ls", "-la", filepath.Dir(c.opts.GeneratedCorpusDir))
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		cmdErr := cmd.Run()
+		if cmdErr != nil {
+			log.Error(cmdErr)
+		}
+
 		return errors.WithStack(err)
 	}
 

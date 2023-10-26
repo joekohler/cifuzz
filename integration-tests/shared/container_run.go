@@ -59,6 +59,22 @@ func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string,
 	// report.
 	outputDir := testutil.MkdirTemp(t, "", "cifuzz-container-run-output-*")
 
+	// Print the current user
+	log.Print("XXX (TestContainerRun): Current user:")
+	cmd := exec.Command("whoami")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Print the content of the output directory
+	log.Printf("Contents of %s:", outputDir)
+	cmd = exec.Command("ls", "-la", outputDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	require.NoError(t, err)
+
 	options.Command = []string{"container", "run"}
 	options.Args = append(options.Args,
 		"--docker-image", imageTag,
