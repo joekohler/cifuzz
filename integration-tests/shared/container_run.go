@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/internal/testutil"
-	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/envutil"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -21,11 +20,6 @@ import (
 func TestContainerRun(t *testing.T, cifuzzRunner *CIFuzzRunner, imageTag string, options *RunOptions) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping test because the container run command is not supported on Windows")
-	}
-
-	// TODO: Get Docker to work on macOS GitHub Runners
-	if runtime.GOOS == "darwin" && cicheck.IsCIEnvironment() {
-		t.Skip("Skipping test because Docker is not supported on macOS GitHub Runners")
 	}
 
 	// Remove inputs from the inputs directory (if it was created by a
