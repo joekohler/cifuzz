@@ -1,5 +1,5 @@
 name: "VM Setup"
-description: "setting up vms for cifuzz"
+description: "Setting up VM for building and running cifuzz"
 inputs:
   os:
     description: "current vm operating system"
@@ -7,11 +7,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # Go is needed to build cifuzz
     - name: Setup Go environment
       uses: actions/setup-go@v3
       with:
         go-version: "1.21"
 
+    # Clang is needed to build Minijail which is built when building cifuzz
     - name: Cache LLVM and Clang
       id: cache-llvm
       uses: actions/cache@v3
@@ -29,6 +31,10 @@ runs:
 
     - name: Setup - Linux
       if: contains(inputs.os, 'ubuntu')
+      # * libcap-dev is needed to build Minijail which is built when building
+      #   cifuzz.
+      # * lcov provides genhtml which is needed to generate coverage reports
+      #   for C/C++ fuzz tests.
       run: sudo apt-get install -y lcov libcap-dev
       shell: bash
 
