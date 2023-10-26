@@ -61,6 +61,27 @@ runs:
         version: "14.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
+    # Maven is used to build the list-fuzz-tests tool which is part of cifuzz.
+    # We cache the local Maven repository to speed up builds. This is based
+    # on the example from:
+    #
+    #   https://github.com/actions/cache/blob/master/examples.md#java---maven
+    #
+    # Note that we use the hash of all pom.xml files here. This includes
+    # files from example projects in the cifuzz repository, which are
+    # not being built when building cifuzz itself but when running the
+    # integration tests (the job which runs the integration tests also
+    # uses this action, so it makes use of the cache as well). We might
+    # be able to optimize CI job runtime by using a separate cache for
+    # the integration tests.
+    - name: Cache local Maven repository
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ inputs.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ inputs.os }}-maven-
+
     - name: Setup - Linux
       if: contains(inputs.os, 'ubuntu')
       # * libcap-dev is needed to build Minijail which is built when building
