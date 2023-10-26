@@ -95,11 +95,6 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
-      - name: Setup Docker
-        if: contains(matrix.os, 'macos')
-        uses: adombeck/actions-setup-docker@master
-        timeout-minutes: 12
-
       - name: Run integration tests
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
         run: make test/integration/linux-mac/${{ matrix.ci_index }}
