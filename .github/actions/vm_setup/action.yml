@@ -7,7 +7,39 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Go is needed to build cifuzz
+    # Go is needed to build cifuzz. We cache the Go modules to speed up
+    # builds. This is based on the example from:
+    #   https://github.com/actions/cache/blob/master/examples.md#go---modules
+    - name: Cache Go modules (Linux)
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ inputs.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ inputs.os }}-go-
+
+    - name: Cache Go modules (macOS)
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/Library/Caches/go-build
+          ~/go/pkg/mod
+        key: ${{ inputs.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ inputs.os }}-go-
+
+    - name: Cache Go modules (Windows)
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~\AppData\Local\go-build
+          ~\go\pkg\mod
+        key: ${{ inputs.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ inputs.os }}-go-
+
     - name: Setup Go environment
       uses: actions/setup-go@v3
       with:
