@@ -31,22 +31,6 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
-      # Maven is used to build the list-fuzz-tests tool which is part of cifuzz.
-      # We cache the local Maven repository to speed up builds. This is based
-      # on the example from:
-      #
-      #   https://github.com/actions/cache/blob/master/examples.md#java---maven
-      #
-      # Maven is also used in the integration tests to build the Maven
-      # testdata projects.
-      - name: Cache local Maven repository
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: Start Colima (Docker in a Linux VM) on macOS
         if: contains(matrix.os, 'macos')
         # We need to set DOCKER_HOST to the unix socket of the Linux VM.
