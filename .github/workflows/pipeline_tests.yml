@@ -95,6 +95,14 @@ jobs:
         with:
           os: ${{ matrix.os }}
 
+      - name: Start Colima (Docker in a Linux VM) on macOS
+        if: contains(matrix.os, 'macos')
+        # We need to set DOCKER_HOST to the unix socket of the Linux VM.
+        # See https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+        run: |
+          colima start
+          echo DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
+
       - name: Run integration tests
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'mac')
         run: make test/integration/linux-mac/${{ matrix.bucket_index }}

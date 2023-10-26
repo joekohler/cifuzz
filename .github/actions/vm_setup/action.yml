@@ -51,6 +51,8 @@ runs:
         echo 'common --repo_env=BAZEL_LINKOPTS=--sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk:-fuse-ld=lld' >> ~/.bazelrc
         # install lcov which is needed for coverage report generation
         brew install lcov
+        # install Docker client which is needed for integration tests
+        brew install docker
       shell: bash
 
     # Action for configuring Developer Command Prompt for Microsoft Visual C++
