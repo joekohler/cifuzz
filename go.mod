@@ -8,7 +8,7 @@ require (
 	github.com/alessio/shellescape v1.4.2
 	github.com/alexflint/go-filemutex v1.2.0
 	github.com/docker/cli v24.0.7+incompatible
-	github.com/docker/docker v24.0.6+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/gen2brain/beeep v0.0.0-20230602101333-f384c29b62dd
 	github.com/gookit/color v1.5.4
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
