@@ -182,7 +182,7 @@ func validJVMFuzzTests(projectDir string, toComplete string) ([]string, cobra.Sh
 // validNodeFuzzTests returns a list of valid Node.js fuzz test identifiers
 // (i.e. the fully qualified class name of the fuzz test)
 func validNodeFuzzTests(projectDir string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	fuzzTests, err := cmdutils.ListNodeFuzzTests(projectDir, toComplete)
+	fuzzTests, err := cmdutils.ListNodeFuzzTestsByRegex(projectDir, toComplete)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
