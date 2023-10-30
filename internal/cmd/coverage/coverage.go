@@ -365,6 +365,11 @@ func (c *coverageCmd) run() error {
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
+		err = cmdutils.ValidateNodeFuzzTest(c.opts.ProjectDir, c.opts.fuzzTest, c.opts.testNamePattern)
+		if err != nil {
+			return err
+		}
+
 		gen = &nodeCoverage.CoverageGenerator{
 			OutputPath:      c.opts.OutputPath,
 			OutputFormat:    c.opts.OutputFormat,

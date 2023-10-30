@@ -6,6 +6,7 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
+	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/dependencies"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzerjs"
@@ -22,13 +23,18 @@ func (r *NodeJSAdapter) CheckDependencies(projectDir string) error {
 }
 
 func (r *NodeJSAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, error) {
-	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
-	log.Infof("Running %s", style.Sprintf(opts.FuzzTest+":"+opts.TestNamePattern))
+	err := cmdutils.ValidateNodeFuzzTest(opts.ProjectDir, opts.FuzzTest, opts.TestNamePattern)
+	if err != nil {
+		return nil, err
+	}
 
 	reportHandler, err := createReportHandler(opts, &build.BuildResult{})
 	if err != nil {
 		return nil, err
 	}
+
+	style := pterm.Style{pterm.Reset, pterm.FgLightBlue}
+	log.Infof("Running %s", style.Sprintf(opts.FuzzTest+":"+opts.TestNamePattern))
 
 	runnerOpts := &jazzerjs.RunnerOptions{
 		PackageManager:  "npm",
