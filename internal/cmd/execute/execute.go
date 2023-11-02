@@ -217,40 +217,47 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		KeepColor:          !c.opts.PrintJSON && !log.PlainStyle(),
 	}
 
-	// Specify the dictionary file if the bundle includes one.
-	dictFileName := "dict"
-	exists, err := fileutil.Exists(dictFileName)
-	if err != nil {
-		return err
-	}
-	if exists {
-		runnerOpts.Dictionary = dictFileName
-	}
-
-	// Specify user-supplied seed corpus dirs if the bundle includes any.
-	userSeedCorpusDir := "seeds"
-	entries, err := os.ReadDir(userSeedCorpusDir)
-	// Don't return an error if the directory doesn't exist.
-	if err != nil && !os.IsNotExist(err) {
-		return errors.WithStack(err)
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			return errors.Errorf("unexpected file in user seed corpus dir %q: %s", userSeedCorpusDir, entry.Name())
-		}
-		seedCorpusDir := fmt.Sprintf("%s/%s", userSeedCorpusDir, entry.Name())
-		runnerOpts.SeedCorpusDirs = append(runnerOpts.SeedCorpusDirs, seedCorpusDir)
-	}
-
 	var runner adapter.FuzzerRunner
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
-		sourceMap, err := sourcemap.ReadSourceMapFromFile("source_map.json")
+		// Use user-supplied dictionary file if the bundle includes one.
+		dictFileName := "dict"
+		exists, err := fileutil.Exists(dictFileName)
 		if err != nil {
 			return err
 		}
-		runnerOpts.SourceMap = sourceMap
+		if exists {
+			runnerOpts.Dictionary = dictFileName
+		}
+
+		// Use user-supplied seed corpus dirs if the bundle includes any.
+		userSeedCorpusDir := "seeds"
+		entries, err := os.ReadDir(userSeedCorpusDir)
+		// Don't return an error if the directory doesn't exist.
+		if err != nil && !os.IsNotExist(err) {
+			return errors.WithStack(err)
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				return errors.Errorf("unexpected file in user seed corpus dir %q: %s", userSeedCorpusDir, entry.Name())
+			}
+			seedCorpusDir := fmt.Sprintf("%s/%s", userSeedCorpusDir, entry.Name())
+			runnerOpts.SeedCorpusDirs = append(runnerOpts.SeedCorpusDirs, seedCorpusDir)
+		}
+
+		sourceMapFileName := "source_map.json"
+		exists, err = fileutil.Exists(sourceMapFileName)
+		if err != nil {
+			return err
+		}
+		if exists {
+			sourceMap, err := sourcemap.ReadSourceMapFromFile("source_map.json")
+			if err != nil {
+				return err
+			}
+			runnerOpts.SourceMap = sourceMap
+		}
 
 		name := fuzzer.Name
 		method := ""
