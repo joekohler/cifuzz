@@ -274,6 +274,30 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		}
 		runner = jazzer.NewRunner(runnerOpts)
 	default:
+		// Use dictionary file if the bundle includes one.
+		dictFileName := fuzzer.Dictionary
+		exists, err := fileutil.Exists(dictFileName)
+		if err != nil {
+			return err
+		}
+		if exists {
+			runnerOpts.Dictionary = dictFileName
+		}
+
+		// Use seed corpus dirs if the bundle includes any.
+		entries, err := os.ReadDir(fuzzer.Seeds)
+		// Don't return an error if the directory doesn't exist.
+		if err != nil && !os.IsNotExist(err) {
+			return errors.WithStack(err)
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				return errors.Errorf("unexpected file in user seed corpus dir %q: %s", fuzzer.Seeds, entry.Name())
+			}
+			seedCorpusDir := fmt.Sprintf("%s/%s", fuzzer.Seeds, entry.Name())
+			runnerOpts.SeedCorpusDirs = append(runnerOpts.SeedCorpusDirs, seedCorpusDir)
+		}
+
 		runner = libfuzzer.NewRunner(runnerOpts)
 	}
 
