@@ -162,16 +162,16 @@ func (r *Runner) Run(ctx context.Context) error {
 	return r.RunLibfuzzerAndReport(ctx, args, env)
 }
 
-func (r *Runner) ProduceJacocoReport(ctx context.Context, outputFile string) error {
+func (r *Runner) ProduceJacocoReport(ctx context.Context, outputFile string) (string, error) {
 	err := r.ValidateOptions()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	jacocoExecFile := "/tmp/jacoco.exec"
 	err = r.produceJacocoExecFile(ctx, jacocoExecFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	classFilesDir := "/cifuzz/runtime_deps/target/classes"
@@ -186,7 +186,7 @@ func (r *Runner) ProduceJacocoReport(ctx context.Context, outputFile string) err
 		}
 	}
 	if jacocoCLIJar == "" {
-		return errors.New("jacococli JAR not found in class paths")
+		return "", errors.New("jacococli JAR not found in class paths")
 	}
 
 	// Produce a JaCoCo XML report from the jacoco.exec file
@@ -195,7 +195,12 @@ func (r *Runner) ProduceJacocoReport(ctx context.Context, outputFile string) err
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	log.Debugf("Command: %s", strings.Join(stringutil.QuotedStrings(cmd.Args), " "))
-	return cmd.Run()
+	err = cmd.Run()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return outputFile, nil
 }
 
 func (r *Runner) produceJacocoExecFile(ctx context.Context, outputFile string) error {

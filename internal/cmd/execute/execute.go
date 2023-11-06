@@ -315,7 +315,11 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
 		jazzerRunner := runner.(*jazzer.Runner)
-		return jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath)
+		jacocoXMLFile, err := jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath)
+		if err != nil {
+			return err
+		}
+		return nil
 	default:
 		// libFuzzer fuzz tests have a separate coverage binary which
 		// is used to produce coverage data. The coverage binary is
