@@ -26,11 +26,6 @@ func TestIntegration_CPPErrors(t *testing.T) {
 		t.Skip()
 	}
 
-	// TODO: Look into why this test is failing on macOS
-	if runtime.GOOS == "darwin" {
-		t.Skip("TODO:	This test is currently failing on macOS")
-	}
-
 	// Install cifuzz
 	testutil.RegisterTestDepOnCIFuzz()
 	installDir := shared.InstallCIFuzzInTemp(t)
@@ -116,6 +111,17 @@ func TestIntegration_CPPErrors(t *testing.T) {
 				if f.MoreDetails.ID == tc.id {
 					idFound = true
 					break
+				}
+
+				// Currently the alloc_dealloc_mismatch error test on macOS is flaky.
+				// The problem is that libfuzzer sometimes reports a finding with
+				// SUMMARY: AddressSanitizer: bad-free and sometimes with SUMMARY:
+				// AddressSanitizer: SEGV.
+				if runtime.GOOS == "darwin" && tc.id == "alloc_dealloc_mismatch" {
+					if f.MoreDetails.ID == "segmentation_fault" {
+						idFound = true
+						break
+					}
 				}
 			}
 			assert.True(t, idFound, "finding id %q not found", tc.id)
