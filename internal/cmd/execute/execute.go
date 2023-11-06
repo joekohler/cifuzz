@@ -316,7 +316,7 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
 		jazzerRunner := runner.(*jazzer.Runner)
-		jacocoXMLFile, err := jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath)
+		jacocoXMLFile, err := jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath+".xml")
 		if err != nil {
 			return err
 		}
@@ -333,6 +333,13 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 		if err != nil {
 			return err
 		}
+		// we don't need the jacoco.xml file anymore
+		defer func() {
+			err = os.Remove(jacocoXMLFile)
+			if err != nil {
+				log.Debugf("Failed to remove intermediate jacoco.xml report: %v", err)
+			}
+		}()
 
 		// Write the LCOV report to the specified path.
 		err = lcovReport.WriteLCOVReportToFile(c.opts.CoverageOutputPath)
