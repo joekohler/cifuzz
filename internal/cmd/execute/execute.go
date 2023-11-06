@@ -25,6 +25,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
+	jacocoCoverage "code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -316,6 +317,25 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	case "JAVA_LIBFUZZER":
 		jazzerRunner := runner.(*jazzer.Runner)
 		jacocoXMLFile, err := jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath)
+		if err != nil {
+			return err
+		}
+
+		// read the jacoco.xml report...
+		fileReader, err := os.Open(jacocoXMLFile)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer fileReader.Close()
+
+		// ... and convert it to an LCOV report.
+		lcovReport, err := jacocoCoverage.ParseJacocoXMLIntoLCOVReport(fileReader)
+		if err != nil {
+			return err
+		}
+
+		// Write the LCOV report to the specified path.
+		err = lcovReport.WriteLCOVReportToFile(c.opts.CoverageOutputPath)
 		if err != nil {
 			return err
 		}
