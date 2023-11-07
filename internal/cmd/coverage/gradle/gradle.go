@@ -85,13 +85,30 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
-	parser.ParseJacocoXMLIntoSummary(reportFile).PrintTable(cov.Stderr)
 
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	var summary *parser.Summary
+
+	// if the output format is LCOV, we need to convert the jacoco.xml to LCOV
+	// with our own parser and write it to a file
+	if cov.OutputFormat == coverage.FormatLCOV {
+		summary, err = parser.ConvertToLCOV(reportFile, cov.OutputPath)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		summary = parser.ParseJacocoXMLIntoSummary(reportFile)
 	}
 
-	return filepath.Join(cov.OutputPath, "html"), nil
+	summary.PrintTable(cov.Stderr)
+
+	switch cov.OutputFormat {
+	case coverage.FormatJacocoXML:
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	case coverage.FormatLCOV:
+		return filepath.Join(cov.OutputPath, "coverage.lcov"), nil
+	default:
+		return filepath.Join(cov.OutputPath, "html"), nil
+	}
 }
 
 func (runner *GradleRunnerImpl) RunCommand(args []string) error {

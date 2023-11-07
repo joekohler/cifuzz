@@ -107,8 +107,8 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 			notExistErr := fmt.Errorf(`JaCoCo did not create a coverage report (jacoco.xml).
 Please check if you configured JaCoCo correctly in your project.
 
-If you use the maven-surefire-plugin: 
-Be aware that adding additional arguments in the plugin configuration in your 
+If you use the maven-surefire-plugin:
+Be aware that adding additional arguments in the plugin configuration in your
 pom.xml can disrupt the JaCoCo execution and have to be prefixed with '@{argline}'.
 
 <argLine>@{argLine} -your -extra -arguments</argLine>
@@ -118,13 +118,30 @@ pom.xml can disrupt the JaCoCo execution and have to be prefixed with '@{argline
 		return "", errors.WithStack(err)
 	}
 	defer reportFile.Close()
-	parser.ParseJacocoXMLIntoSummary(reportFile).PrintTable(cov.Stderr)
 
-	if cov.OutputFormat == coverage.FormatJacocoXML {
-		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	var summary *parser.Summary
+
+	// if the output format is LCOV, we need to convert the jacoco.xml to LCOV
+	// with our own parser and write it to a file
+	if cov.OutputFormat == coverage.FormatLCOV {
+		summary, err = parser.ConvertToLCOV(reportFile, cov.OutputPath)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		summary = parser.ParseJacocoXMLIntoSummary(reportFile)
 	}
 
-	return cov.OutputPath, nil
+	summary.PrintTable(cov.Stderr)
+
+	switch cov.OutputFormat {
+	case coverage.FormatJacocoXML:
+		return filepath.Join(cov.OutputPath, "jacoco.xml"), nil
+	case coverage.FormatLCOV:
+		return filepath.Join(cov.OutputPath, "coverage.lcov"), nil
+	default:
+		return cov.OutputPath, nil
+	}
 }
 
 func (runner *MavenRunnerImpl) RunCommand(args []string) error {

@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -194,6 +195,32 @@ func ParseJacocoXMLIntoSummary(in io.Reader) *Summary {
 	}
 
 	return coverageSummary
+}
+
+// ConvertToLCOV converts the given jacoco.xml file (reportFile) into an LCOV
+// report at covOutputPath and returns the coverage summary.
+func ConvertToLCOV(reportFile *os.File, covOutputPath string) (*Summary, error) {
+	lcovReport, err := ParseJacocoXMLIntoLCOVReport(reportFile)
+	if err != nil {
+		return nil, err
+	}
+	reportPath := filepath.Join(covOutputPath, "coverage.lcov")
+	err = lcovReport.WriteLCOVReportToFile(reportPath)
+	if err != nil {
+		return nil, err
+	}
+
+	reportFile, err = os.Open(reportPath)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer reportFile.Close()
+
+	summary, err := ParseLCOVReportIntoSummary(reportFile)
+	if err != nil {
+		return nil, err
+	}
+	return summary, nil
 }
 
 func countJacoco(c *Overview, counter *JacocoCounter) {
