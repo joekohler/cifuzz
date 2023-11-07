@@ -14,8 +14,10 @@ import (
 
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/build/java"
+	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
+	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/ldd"
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
@@ -161,7 +163,17 @@ func runJazzer(opts *RunOptions, buildResult *build.BuildResult, reportHandler *
 	if err != nil {
 		return err
 	}
-	sourceMap, err := sourcemap.CreateSourceMap(opts.ProjectDir, append(sourceDirs, testDirs...))
+
+	// In case of multi-module projects the project root directory is
+	// determined by the build system.
+	rootDir := opts.ProjectDir
+	if opts.BuildSystem == config.BuildSystemGradle {
+		rootDir, err = gradle.GetRootDirectory(opts.ProjectDir)
+		if err != nil {
+			return err
+		}
+	}
+	sourceMap, err := sourcemap.CreateSourceMap(rootDir, append(sourceDirs, testDirs...))
 	if err != nil {
 		return err
 	}
