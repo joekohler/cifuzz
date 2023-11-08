@@ -1,2 +1,2 @@
 code-intelligence.com/cifuzz/integration-tests/bazel
-code-intelligence.com/cifuzz/integration-tests/nodejs
+code-intelligence.com/cifuzz/integration-tests/java-maven-spring
