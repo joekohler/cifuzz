@@ -26,7 +26,7 @@ require (
 	github.com/u-root/u-root v0.11.1-0.20230701062237-921c08deecd7
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.5.0
-	golang.org/x/term v0.13.0
+	golang.org/x/term v0.14.0
 )
 
 // TODO: Revert when https://github.com/otiai10/copy/pull/94 is merged
