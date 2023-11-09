@@ -308,9 +308,11 @@ func (c *coverageCmd) run() error {
 		if err != nil {
 			return err
 		}
-		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
-		if err != nil {
-			return err
+		if !c.opts.SkipTestValidation {
+			err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
+			if err != nil {
+				return err
+			}
 		}
 
 		gen = &gradleCoverage.CoverageGenerator{
@@ -339,9 +341,11 @@ func (c *coverageCmd) run() error {
 		if err != nil {
 			return err
 		}
-		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
-		if err != nil {
-			return err
+		if !c.opts.SkipTestValidation {
+			err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
+			if err != nil {
+				return err
+			}
 		}
 
 		gen = &mavenCoverage.CoverageGenerator{

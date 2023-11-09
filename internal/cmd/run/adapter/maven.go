@@ -34,9 +34,11 @@ func (r *MavenAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, erro
 		return nil, nil
 	}
 
-	err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
-	if err != nil {
-		return nil, err
+	if !opts.SkipTestValidation {
+		err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = prepareCorpusDir(opts, buildResult)

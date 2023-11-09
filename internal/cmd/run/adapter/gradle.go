@@ -46,9 +46,11 @@ func (r *GradleAdapter) Run(opts *RunOptions) (*reporthandler.ReportHandler, err
 		return nil, nil
 	}
 
-	err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
-	if err != nil {
-		return nil, err
+	if !opts.SkipTestValidation {
+		err = cmdutils.ValidateJVMFuzzTest(opts.FuzzTest, &opts.TargetMethod, buildResult.RuntimeDeps)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = prepareCorpusDir(opts, buildResult)
