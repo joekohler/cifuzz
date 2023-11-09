@@ -261,6 +261,7 @@ depends on the build system configured for the project.
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddSeedCorpusFlag,
 		cmdutils.AddServerFlag,
+		cmdutils.AddSkipTestValidationFlag,
 		cmdutils.AddTimeoutFlag,
 		cmdutils.AddUseSandboxFlag,
 		cmdutils.AddResolveSourceFileFlag,

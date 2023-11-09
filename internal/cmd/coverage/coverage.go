@@ -39,14 +39,15 @@ type Generator interface {
 }
 
 type coverageOptions struct {
-	OutputFormat   string   `mapstructure:"format"`
-	OutputPath     string   `mapstructure:"output"`
-	BuildSystem    string   `mapstructure:"build-system"`
-	BuildCommand   string   `mapstructure:"build-command"`
-	CleanCommand   string   `mapstructure:"clean-command"`
-	NumBuildJobs   uint     `mapstructure:"build-jobs"`
-	SeedCorpusDirs []string `mapstructure:"seed-corpus-dirs"`
-	UseSandbox     bool     `mapstructure:"use-sandbox"`
+	OutputFormat       string   `mapstructure:"format"`
+	OutputPath         string   `mapstructure:"output"`
+	BuildSystem        string   `mapstructure:"build-system"`
+	BuildCommand       string   `mapstructure:"build-command"`
+	CleanCommand       string   `mapstructure:"clean-command"`
+	NumBuildJobs       uint     `mapstructure:"build-jobs"`
+	SeedCorpusDirs     []string `mapstructure:"seed-corpus-dirs"`
+	SkipTestValidation bool     `mapstructure:"skip-test-validation"`
+	UseSandbox         bool     `mapstructure:"use-sandbox"`
 
 	ResolveSourceFilePath bool
 	Preset                string
@@ -213,6 +214,7 @@ or a lcov trace file.
 		cmdutils.AddProjectDirFlag,
 		cmdutils.AddResolveSourceFileFlag,
 		cmdutils.AddSeedCorpusFlag,
+		cmdutils.AddSkipTestValidationFlag,
 		cmdutils.AddUseSandboxFlag,
 	)
 	// This flag is not supposed to be called by a user

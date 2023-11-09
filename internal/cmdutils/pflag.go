@@ -244,6 +244,14 @@ func AddServerFlag(cmd *cobra.Command) func() {
 	}
 }
 
+func AddSkipTestValidationFlag(cmd *cobra.Command) func() {
+	cmd.Flags().BoolP("skip-test-validation", "", false,
+		"Skip validation of the fuzz test and accept the string passed via command argument.")
+	return func() {
+		ViperMustBindPFlag("skip-test-validation", cmd.Flags().Lookup("skip-test-validation"))
+	}
+}
+
 func AddTimeoutFlag(cmd *cobra.Command) func() {
 	cmd.Flags().Duration("timeout", 0,
 		"Maximum time to run the fuzz test, e.g. \"30m\", \"1h\". The default is to run indefinitely.")

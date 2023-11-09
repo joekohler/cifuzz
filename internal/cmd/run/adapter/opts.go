@@ -28,6 +28,7 @@ type RunOptions struct {
 	PrintJSON             bool          `mapstructure:"print-json"`
 	BuildOnly             bool          `mapstructure:"build-only"`
 	ResolveSourceFilePath bool
+	SkipTestValidation    bool `mapstructure:"skip-test-validation"`
 
 	ProjectDir      string
 	FuzzTest        string
