@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattn/go-zglob"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/runfiles"
@@ -174,6 +175,10 @@ func ListJVMFuzzTests(classNames []string, runtimeDeps []string) ([]string, erro
 
 	cmd := exec.Command(javaBin, args...)
 	cmd.Stderr = os.Stderr
+	cmd.Env = os.Environ()
+	if viper.GetBool("verbose") {
+		cmd.Env = append(cmd.Env, "CIFUZZ_VERBOSE=true")
+	}
 	log.Debugf("Command: %s", cmd.String())
 	output, err := cmd.Output()
 	if err != nil {
