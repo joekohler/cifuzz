@@ -13,6 +13,8 @@ type RunfilesFinder interface {
 	ClangPath() (string, error)
 	CMakePath() (string, error)
 	CMakePresetsPath() (string, error)
+	JacocoAgentJarPath() (string, error)
+	JacocoCLIJarPath() (string, error)
 	LLVMCovPath() (string, error)
 	LLVMProfDataPath() (string, error)
 	LLVMSymbolizerPath() (string, error)

@@ -42,6 +42,14 @@ func (f RunfilesFinderImpl) CMakePresetsPath() (string, error) {
 	return f.findFollowSymlinks("share/integration/CMakePresets.json")
 }
 
+func (f RunfilesFinderImpl) JacocoAgentJarPath() (string, error) {
+	return f.findFollowSymlinks("share/java/org.jacoco.agent-0.8.11-runtime.jar")
+}
+
+func (f RunfilesFinderImpl) JacocoCLIJarPath() (string, error) {
+	return f.findFollowSymlinks("share/java/org.jacoco.cli-0.8.11-nodeps.jar")
+}
+
 func (f RunfilesFinderImpl) LLVMCovPath() (string, error) {
 	path, err := f.llvmToolPath("llvm-cov")
 	return path, err

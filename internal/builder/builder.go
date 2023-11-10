@@ -481,6 +481,12 @@ func (i *CIFuzzBuilder) CopyFiles() error {
 		return errors.WithStack(err)
 	}
 
+	// Copy .jar's needed for generating coverage reports
+	err = copy.Copy(filepath.Join(i.projectDir, "tools", "jacoco"), filepath.Join(i.shareDir(), "java"), opts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
