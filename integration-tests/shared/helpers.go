@@ -19,7 +19,6 @@ import (
 
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
-	"code-intelligence.com/cifuzz/pkg/cicheck"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/executil"
@@ -232,15 +231,7 @@ func InstallCIFuzzInTemp(t *testing.T) string {
 		require.NoError(t, err)
 
 		// Build cifuzz in the install directory
-		var opts builderPkg.Options
-		// If we are not in a CI environment, we need to set GOOS and GOARCH,
-		// otherwise we will build for the current OS.
-		if !cicheck.IsCIEnvironment() {
-			opts = builderPkg.Options{Version: "dev", TargetDir: installDir, Coverage: true, GOOS: "linux", GOARCH: "amd64"}
-		} else {
-			opts = builderPkg.Options{Version: "dev", TargetDir: installDir, Coverage: true}
-		}
-
+		opts := builderPkg.Options{Version: "dev", TargetDir: installDir, Coverage: true}
 		builder, err := builderPkg.NewCIFuzzBuilder(opts)
 		require.NoError(t, err)
 		err = builder.BuildCIFuzzAndDeps()
