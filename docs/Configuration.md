@@ -188,3 +188,62 @@ Choose the style to run cifuzz in
 ```yaml
 style: plain
 ```
+
+## Configuration of seed corpus and dictionary inputs
+
+Seed corpus directories and a dictionary file can be defined for the whole project using the `cifuzz.yaml` config file.
+
+Those settings can be overridden per fuzz test using the `--seed-corpus` and `--dict` flags.
+
+### Default seed corpus directories
+
+Each fuzz test has a default seed corpus location, whose inputs are used in addition to inputs defined in the `cifuzz.yaml` config file or
+using the `--seed-corpus` flag. The reproducing inputs for findings are stored in this location.
+This directory can also be used for custom inputs.
+
+#### C/C++
+
+```
+<fuzz test name>_inputs
+```
+
+#### Java/Kotlin
+
+```
+src/test/resources/.../<fuzz test name>Inputs
+```
+
+#### Javascript/Typescript
+
+```
+<fuzz test name>.fuzz
+```
+
+### Defining dictionaries per fuzz test
+
+Note that only one dictionary file can be defined per fuzz test.
+
+#### C/C++
+
+Similarly to default seed corpus directories, each fuzz test has a default dictionary location.
+This dictionary is used if no other dictionary is defined in the `cifuzz.yaml` config file or
+using the `dict` flag.
+
+```
+<fuzz test name>.dict
+```
+
+#### Java/Kotlin
+
+Dictionary entries can be defined with the help of JUnit annotations, e.g.:
+
+```java
+@DictionaryFile(resourcePath = "test.dict")
+@DictionaryEntries("test")
+```
+
+Note that it is possible to define multiple files or entries per fuzz test.
+
+#### Javascript/Typescript
+
+Support coming soon.
