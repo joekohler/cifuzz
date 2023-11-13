@@ -243,3 +243,65 @@ func (c *containerRemoteRunCmd) buildImage() (string, error) {
 
 	return container.BuildImageFromBundle(bundlePath)
 }
+
+// monitorCampaignRun monitors the status of a campaign run on the CI Sense
+// API. It returns when the run is finished or an error occurs.
+// ported from core/cmd/cictl/monitor_campaign_run.go
+func monitorCampaignRun(apiClient *api.APIClient, runNID string, token string) error {
+	status, err := apiClient.GetContainerRemoteRunStatus(runNID, token)
+	if err != nil {
+		return err
+	}
+
+	if status.Run.Status == "finished" {
+		log.Successf("Run finished.")
+		return nil
+	}
+
+	var ticker *time.Ticker
+	pullInterval := time.Duration(5) * time.Second
+
+	// TODO: make this configurable via --monitor-duration
+	runFor := time.Duration(300) * time.Second
+	if runFor < pullInterval {
+		ticker = time.NewTicker(1 * time.Second)
+	} else {
+		ticker = time.NewTicker(pullInterval)
+	}
+	defer ticker.Stop()
+	stopChannel := make(chan struct{})
+	time.AfterFunc(runFor, func() { close(stopChannel) })
+
+	for {
+		select {
+		case <-ticker.C:
+			status, err := apiClient.GetContainerRemoteRunStatus(runNID, token)
+			if err != nil {
+				return err
+			}
+
+			if status.Run.Status == "cancelled" {
+				fmt.Println("Run cancelled.")
+				return nil
+			}
+
+			if status.Run.Status == "STOPPED" || status.Run.Status == "SUCCEEDED" {
+				// we can exit ear;y if the campaign run has stopped before the configuration duruation
+				close(stopChannel)
+			}
+		case <-stopChannel:
+			switch status.Run.Status {
+			case "COMPILING", "UNKNOWN", "WAITING_FOR_FUZZING_AGENTS", "UNSPECIFIED":
+				log.Infof("After the timeout of %s the test collection run still has status %s", runFor, status.Run.Status)
+			case "INITIALIZING", "PENDING":
+				notExecutedRunsCount := 0
+				completedRunsCount := 0
+				failedRunsCount := 0
+				incompleteRunsCount := 0
+				inProgressRunsCount := 0
+
+			}
+		}
+	}
+
+}
