@@ -164,7 +164,7 @@ func testHTMLCoverageReport(t *testing.T, cifuzz, dir string) {
 	assert.Contains(t, string(output), "Created coverage HTML report: report")
 
 	// Check that the coverage report was created
-	reportPath := filepath.Join(dir, "report", "index.html")
+	reportPath := filepath.Join(dir, "report", "html", "index.html")
 	require.FileExists(t, reportPath)
 
 	// Check that the coverage report contains coverage for

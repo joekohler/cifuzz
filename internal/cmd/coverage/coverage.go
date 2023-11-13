@@ -17,9 +17,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/build/java/gradle"
 	"code-intelligence.com/cifuzz/internal/build/java/maven"
 	bazelCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/bazel"
-	gradleCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/gradle"
+	javaCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/java"
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
-	mavenCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/maven"
 	nodeCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/node"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
@@ -92,6 +91,14 @@ func (opts *coverageOptions) validate() error {
 		return cmdutils.WrapIncorrectUsageError(errors.New(msg))
 	}
 
+	if opts.NumBuildJobs > 0 &&
+		opts.BuildSystem != config.BuildSystemBazel &&
+		opts.BuildSystem != config.BuildSystemCMake &&
+		opts.BuildSystem != config.BuildSystemOther {
+		msg := `Flag 'build-jobs' is only applicable for build system types 'Bazel', 'CMake' and 'other'`
+		return cmdutils.WrapIncorrectUsageError(errors.New(msg))
+	}
+
 	return nil
 }
 
@@ -115,6 +122,8 @@ More details about the build system specific inputs directory location
 can be found in the help message of the run command.
 
 Additional arguments for CMake and Bazel can be passed after a "--".
+
+The flag 'build-jobs' is only applicable for CMake, Bazel and 'other'.
 
 The output can be displayed in the browser or written as a HTML
 or a lcov trace file.
@@ -296,68 +305,39 @@ func (c *coverageCmd) run() error {
 			BuildStdout:     c.opts.buildStdout,
 			BuildStderr:     c.opts.buildStderr,
 		}
-	case config.BuildSystemGradle:
+	case config.BuildSystemGradle, config.BuildSystemMaven:
 		if len(c.opts.argsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for Gradle.\n"+
+			log.Warnf("Passing additional arguments is not supported for Gradle or Maven.\n"+
 				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
 		}
 
-		deps, err := gradle.GetDependencies(c.opts.ProjectDir)
+		var deps []string
+		if c.opts.BuildSystem == config.BuildSystemGradle {
+			deps, err = gradle.GetDependencies(c.opts.ProjectDir)
+		} else {
+			deps, err = maven.GetDependencies(c.opts.ProjectDir, c.opts.buildStderr)
+		}
 		if err != nil {
 			return err
 		}
+
 		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
 		if err != nil {
 			return err
 		}
 
-		gen = &gradleCoverage.CoverageGenerator{
-			OutputPath:   c.opts.OutputPath,
+		gen = &javaCoverage.CoverageGenerator{
+			BuildSystem:  c.opts.BuildSystem,
 			OutputFormat: c.opts.OutputFormat,
+			OutputPath:   c.opts.OutputPath,
 			FuzzTest:     c.opts.fuzzTest,
 			TargetMethod: c.opts.targetMethod,
 			ProjectDir:   c.opts.ProjectDir,
-			Parallel: gradle.ParallelOptions{
-				Enabled: viper.IsSet("build-jobs"),
-			},
-			Stderr: c.OutOrStderr(),
-			GradleRunner: &gradleCoverage.GradleRunnerImpl{
-				ProjectDir:  c.opts.ProjectDir,
-				BuildStdout: c.opts.buildStdout,
-				BuildStderr: c.opts.buildStderr,
-			},
-		}
-	case config.BuildSystemMaven:
-		if len(c.opts.argsToPass) > 0 {
-			log.Warnf("Passing additional arguments is not supported for Maven.\n"+
-				"These arguments are ignored: %s", strings.Join(c.opts.argsToPass, " "))
-		}
-
-		deps, err := maven.GetDependencies(c.opts.ProjectDir, c.opts.buildStderr)
-		if err != nil {
-			return err
-		}
-		err = cmdutils.ValidateJVMFuzzTest(c.opts.fuzzTest, &c.opts.targetMethod, deps)
-		if err != nil {
-			return err
-		}
-
-		gen = &mavenCoverage.CoverageGenerator{
-			OutputPath:   c.opts.OutputPath,
-			OutputFormat: c.opts.OutputFormat,
-			FuzzTest:     c.opts.fuzzTest,
-			TargetMethod: c.opts.targetMethod,
-			ProjectDir:   c.opts.ProjectDir,
-			Parallel: maven.ParallelOptions{
-				Enabled: viper.IsSet("build-jobs"),
-				NumJobs: c.opts.NumBuildJobs,
-			},
-			Stderr: c.OutOrStderr(),
-			MavenRunner: &mavenCoverage.MavenRunnerImpl{
-				ProjectDir:  c.opts.ProjectDir,
-				BuildStdout: c.opts.buildStdout,
-				BuildStderr: c.opts.buildStderr,
-			},
+			Deps:         deps,
+			CorpusDirs:   c.opts.CorpusDirs,
+			BuildStdout:  c.opts.buildStdout,
+			BuildStderr:  c.opts.buildStderr,
+			Stderr:       c.OutOrStderr(),
 		}
 	case config.BuildSystemNodeJS:
 		if len(c.opts.argsToPass) > 0 {

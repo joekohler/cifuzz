@@ -6,7 +6,6 @@ code-intelligence.com/cifuzz/internal/builder
 code-intelligence.com/cifuzz/pkg/minijail/process_wrapper
 code-intelligence.com/cifuzz/internal/api
 code-intelligence.com/cifuzz/internal/build/other
-code-intelligence.com/cifuzz/internal/cmd/coverage/gradle
 code-intelligence.com/cifuzz/internal/cmd/bundle
 code-intelligence.com/cifuzz/internal/cmd/coverage
 code-intelligence.com/cifuzz/pkg/dependencies
@@ -21,7 +20,6 @@ code-intelligence.com/cifuzz/internal/cmd/create
 code-intelligence.com/cifuzz/pkg/dialog
 code-intelligence.com/cifuzz/e2e/tests/execute
 code-intelligence.com/cifuzz/e2e/tests/container
-code-intelligence.com/cifuzz/internal/cmd/coverage/maven
 code-intelligence.com/cifuzz/e2e/tests/finding
 code-intelligence.com/cifuzz/internal/cmd/integrate
 code-intelligence.com/cifuzz/e2e/tests/version

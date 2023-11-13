@@ -5,7 +5,6 @@ code-intelligence.com/cifuzz/integration-tests/java-maven-spring
 code-intelligence.com/cifuzz/pkg/minijail/process_wrapper
 code-intelligence.com/cifuzz/internal/api
 code-intelligence.com/cifuzz/internal/build/other
-code-intelligence.com/cifuzz/internal/cmd/coverage/gradle
 code-intelligence.com/cifuzz/internal/cmd/bundle
 code-intelligence.com/cifuzz/internal/cmd/coverage
 code-intelligence.com/cifuzz/pkg/dependencies
