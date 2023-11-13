@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
 	"code-intelligence.com/cifuzz/internal/api"
@@ -169,10 +172,10 @@ func (c *containerRemoteRunCmd) run() error {
 
 	buildPrinter.StopOnSuccess(log.ContainerBuildInProgressSuccessMsg, false)
 
-	err = container.UploadImage(imageID, c.opts.Registry)
-	if err != nil {
-		return err
-	}
+	//	if err != nil {
+	//		err = container.UploadImage(imageID, c.opts.Registry)
+	//		return err
+	//	}
 
 	imageID = c.opts.Registry + ":" + imageID
 	response, err := c.apiClient.PostContainerRemoteRun(imageID, c.opts.Project, c.opts.FuzzTests, token)
@@ -196,6 +199,37 @@ func (c *containerRemoteRunCmd) run() error {
 
 	log.Successf(`Successfully started fuzzing run. To view findings and coverage, open:
     %s`, addr)
+
+	// show updating status here
+
+	spinner, _ := pterm.DefaultSpinner.Start("Waiting for the run to finish...")
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		for {
+			status, err := c.apiClient.GetContainerRemoteRunStatus(response.Run.Nid, token)
+			if err != nil {
+				log.Error(err)
+				spinner.Fail("Failed to get run status.")
+				return
+			}
+
+			spinner.UpdateText(fmt.Sprintf("Run status: %s", status.Run.Status))
+
+			if status.Run.Status == "finished" {
+				spinner.Success("Run finished. Last status: " + status.Run.Status)
+				wg.Done()
+				break
+			}
+
+			// sleep for 5 seconds
+			time.Sleep(5 * time.Second)
+			wg.Done()
+		}
+	}()
+	wg.Wait()
+	spinner.Warning("Run monitoring stopped. Took too long to finish.")
 
 	return nil
 }
