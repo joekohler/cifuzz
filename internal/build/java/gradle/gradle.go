@@ -141,6 +141,17 @@ func GetDependencies(projectDir string) ([]string, error) {
 	classpath := classpathRegex.FindStringSubmatch(string(output))
 	deps := strings.Split(strings.TrimSpace(classpath[1]), string(os.PathListSeparator))
 
+	// Add jacoco cli and java agent JAR paths
+	cliJarPath, err := runfiles.Finder.JacocoCLIJarPath()
+	if err != nil {
+		return nil, err
+	}
+	agentJarPath, err := runfiles.Finder.JacocoAgentJarPath()
+	if err != nil {
+		return nil, err
+	}
+	deps = append(deps, cliJarPath, agentJarPath)
+
 	return deps, nil
 }
 

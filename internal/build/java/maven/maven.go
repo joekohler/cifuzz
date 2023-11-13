@@ -14,6 +14,7 @@ import (
 	"code-intelligence.com/cifuzz/internal/build"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -179,6 +180,17 @@ func GetDependencies(projectDir string, stderr io.Writer) ([]string, error) {
 		project.Build.OutputDirectory,
 		project.Build.TestOutputDirectory,
 	}...)
+
+	// Add jacoco cli and java agent JAR paths
+	cliJarPath, err := runfiles.Finder.JacocoCLIJarPath()
+	if err != nil {
+		return nil, err
+	}
+	agentJarPath, err := runfiles.Finder.JacocoAgentJarPath()
+	if err != nil {
+		return nil, err
+	}
+	deps = append(deps, cliJarPath, agentJarPath)
 
 	return deps, nil
 }

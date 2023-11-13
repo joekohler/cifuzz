@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/viper"
 
 	"code-intelligence.com/cifuzz/internal/bundler/archive"
+	javaCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/java"
 	llvmCoverage "code-intelligence.com/cifuzz/internal/cmd/coverage/llvm"
 	"code-intelligence.com/cifuzz/internal/cmd/run/adapter"
 	"code-intelligence.com/cifuzz/internal/cmd/run/reporthandler"
@@ -25,7 +26,6 @@ import (
 	"code-intelligence.com/cifuzz/internal/coverage"
 	"code-intelligence.com/cifuzz/pkg/java/sourcemap"
 	"code-intelligence.com/cifuzz/pkg/log"
-	jacocoCoverage "code-intelligence.com/cifuzz/pkg/parser/coverage"
 	"code-intelligence.com/cifuzz/pkg/runner/jazzer"
 	"code-intelligence.com/cifuzz/pkg/runner/libfuzzer"
 	"code-intelligence.com/cifuzz/util/fileutil"
@@ -219,6 +219,8 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	}
 
 	var runner adapter.FuzzerRunner
+	var targetClass string
+	var targetMethod string
 
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
@@ -260,16 +262,16 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 			runnerOpts.SourceMap = sourceMap
 		}
 
-		name := fuzzer.Name
-		method := ""
+		targetClass = fuzzer.Name
+		targetMethod = ""
 		if strings.Contains(fuzzer.Name, "::") {
 			split := strings.Split(fuzzer.Name, "::")
-			name = split[0]
-			method = split[1]
+			targetClass = split[0]
+			targetMethod = split[1]
 		}
 		runnerOpts := &jazzer.RunnerOptions{
-			TargetClass:      name,
-			TargetMethod:     method,
+			TargetClass:      targetClass,
+			TargetMethod:     targetMethod,
 			ClassPaths:       fuzzer.RuntimePaths,
 			LibfuzzerOptions: runnerOpts,
 		}
@@ -315,37 +317,33 @@ func (c *executeCmd) run(metadata *archive.Metadata) error {
 	// Create the coverage report
 	switch fuzzer.Engine {
 	case "JAVA_LIBFUZZER":
-		jazzerRunner := runner.(*jazzer.Runner)
-		jacocoXMLFile, err := jazzerRunner.ProduceJacocoReport(context.Background(), c.opts.CoverageOutputPath+".xml")
+		corpusDirs := append(runnerOpts.SeedCorpusDirs, runnerOpts.GeneratedCorpusDir)
+		gen := javaCoverage.CoverageGenerator{
+			FuzzTest:     targetClass,
+			TargetMethod: targetMethod,
+			OutputFormat: coverage.FormatLCOV,
+			OutputPath:   c.opts.CoverageOutputPath,
+			Deps:         fuzzer.RuntimePaths,
+			CorpusDirs:   corpusDirs,
+			Stderr:       os.Stderr,
+		}
+
+		if viper.GetBool("verbose") {
+			gen.BuildStdout = printerOutput
+			gen.BuildStderr = printerOutput
+		}
+
+		jacocoExec := "/tmp/jacoco.exec"
+		err = gen.BuildFuzzTestForContainerCoverage(jacocoExec)
 		if err != nil {
 			return err
 		}
 
-		// read the jacoco.xml report...
-		fileReader, err := os.Open(jacocoXMLFile)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer fileReader.Close()
-
-		// ... and convert it to an LCOV report.
-		lcovReport, err := jacocoCoverage.ParseJacocoXMLIntoLCOVReport(fileReader)
+		_, err = gen.GenerateCoverageReportInFuzzContainer(jacocoExec)
 		if err != nil {
 			return err
 		}
-		// we don't need the jacoco.xml file anymore
-		defer func() {
-			err = os.Remove(jacocoXMLFile)
-			if err != nil {
-				log.Debugf("Failed to remove intermediate jacoco.xml report: %v", err)
-			}
-		}()
 
-		// Write the LCOV report to the specified path.
-		err = lcovReport.WriteLCOVReportToFile(c.opts.CoverageOutputPath)
-		if err != nil {
-			return err
-		}
 		return nil
 	default:
 		// libFuzzer fuzz tests have a separate coverage binary which

@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -121,6 +122,81 @@ func (cov *CoverageGenerator) GenerateCoverageReport() (string, error) {
 	}
 
 	return "", fmt.Errorf("undefined output format: %s", cov.OutputFormat)
+}
+
+func (cov *CoverageGenerator) BuildFuzzTestForContainerCoverage(jacocoExecFilePath string) error {
+	log.Info("Creating coverage report")
+
+	err := os.MkdirAll(cov.OutputPath, 0755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Find the JaCoCo Java agent JAR in the class paths
+	jacocoAgentRuntimePattern := regexp.MustCompile(`^org\.jacoco\.agent-.*-runtime\.jar$`)
+	var jacocoAgentJar string
+	for _, classPath := range cov.Deps {
+		if jacocoAgentRuntimePattern.MatchString(filepath.Base(classPath)) {
+			jacocoAgentJar = classPath
+			break
+		}
+	}
+	if jacocoAgentJar == "" {
+		return errors.New("JaCoCo agent JAR not found in class paths")
+	}
+
+	return cov.produceJacocoExec(jacocoAgentJar, jacocoExecFilePath)
+}
+
+func (cov *CoverageGenerator) GenerateCoverageReportInFuzzContainer(jacocoExecFilePath string) (string, error) {
+	// Find the jacoco cli JAR in the class paths
+	jacocoCLIPattern := regexp.MustCompile(`^org\.jacoco\.cli-.*\.jar$`)
+	var cliJar string
+	for _, dep := range cov.Deps {
+		if jacocoCLIPattern.MatchString(filepath.Base(dep)) {
+			cliJar = dep
+			break
+		}
+	}
+	if cliJar == "" {
+		return "", errors.New("jacococli JAR not found in class paths")
+	}
+
+	classFilesDir := "/cifuzz/runtime_deps/target/classes"
+	jacocoXMLFile, err := cov.runJacocoCommand(cliJar, jacocoExecFilePath, "", classFilesDir)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert jacoco.xml report to LCOV report
+	fileReader, err := os.Open(jacocoXMLFile)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer fileReader.Close()
+	lcovReport, err := parser.ParseJacocoXMLIntoLCOVReport(fileReader)
+	if err != nil {
+		return "", err
+	}
+
+	// Remove jacoco.xml file because we don't need it anymore
+	defer func() {
+		err = os.Remove(jacocoXMLFile)
+		if err != nil {
+			log.Debugf("Failed to remove intermediate jacoco.xml report: %v", err)
+		}
+	}()
+
+	// Write the LCOV report to the specified path.
+	lcovPath := filepath.Join(cov.OutputPath, "report.lcov")
+	err = lcovReport.WriteLCOVReportToFile(lcovPath)
+	if err != nil {
+		return "", err
+	}
+
+	log.Infof("Successfully created coverage report: %s", lcovPath)
+
+	return lcovPath, nil
 }
 
 func (cov *CoverageGenerator) environment() ([]string, error) {
