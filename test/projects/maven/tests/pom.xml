@@ -15,13 +15,6 @@
 
 	<build>
 		<testSourceDirectory>fuzzTests</testSourceDirectory>
-		<plugins>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.9</version>
-			</plugin>
-		</plugins>
 	</build>
 
 	<dependencies>
@@ -44,22 +37,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<profiles>
-		<profile>
-			<id>cifuzz</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.jacoco</groupId>
-						<artifactId>jacoco-maven-plugin</artifactId>
-						<configuration>
-							<formats>${cifuzz.report.format}</formats>
-							<outputDirectory>${cifuzz.report.output}</outputDirectory>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>

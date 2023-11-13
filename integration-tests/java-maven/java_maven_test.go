@@ -47,23 +47,13 @@ func TestIntegration_Maven(t *testing.T) {
 		DefaultFuzzTest: "com.example.FuzzTestCase::myFuzzTest",
 	}
 
-	// Execute the init command
-	// The instructions file for maven includes dependencies, plugin and a profile section for jacoco that
-	// need to be included at different locations in the pom.xml, so we split the instructions file up into
-	// <dependency> and <profile> and ignore the code adding the jacoco plugin because the user should already
-	// have it, the instruction is just a nudge so it doesn't get overlooked and doesn't need to be tested.
+	// Execute the init command and include the dependencies listed in the instructions
 	linesToAdd := cifuzzRunner.CommandWithFilterForInstructions(t, "init", nil)
 	assert.FileExists(t, filepath.Join(projectDir, "cifuzz.yaml"))
 	shared.AddLinesToFileAtBreakPoint(t,
 		filepath.Join(projectDir, "pom.xml"),
-		strings.Split(strings.Split(strings.Join(linesToAdd, "\n"), "<plugin>")[0], "\n"),
+		linesToAdd,
 		"\t</dependencies>",
-		false,
-	)
-	shared.AddLinesToFileAtBreakPoint(t,
-		filepath.Join(projectDir, "pom.xml"),
-		strings.Split("<profile>"+strings.Split(strings.Join(linesToAdd, "\n"), "<profile>")[1], "\n"),
-		"\t</profiles>",
 		false,
 	)
 
