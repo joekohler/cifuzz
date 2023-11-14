@@ -21,7 +21,10 @@ import (
 func Select(message string, items map[string]string, sorted bool) (string, error) {
 	options := maps.Keys(items)
 	if sorted {
-		sort.Strings(options)
+		// sort case-insensitively
+		sort.Slice(options, func(i, j int) bool {
+			return strings.ToLower(options[i]) < strings.ToLower(options[j])
+		})
 	}
 	prompt := pterm.DefaultInteractiveSelect.WithOptions(options)
 	prompt.DefaultText = message
