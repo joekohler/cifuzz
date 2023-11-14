@@ -1,9 +1,13 @@
 package remoterun
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -304,4 +308,98 @@ func monitorCampaignRun(apiClient *api.APIClient, runNID string, token string) e
 		}
 	}
 
+}
+
+func checkErrors(targetRun api.ContainerRun) error {
+	projectName, err := api.Remarshal(targetRun.Name, &projectUtils.Name{})
+	if err != nil {
+		log.Fatalf("failed to get project name from test collection run %q: %+v", targetRun.Name, err)
+	}
+	for _, fuzzingRun := range targetRun.Runs {
+		res, err := getFuzzingRunFindings(context.Background(), conn, projectName, fuzzingRun.Name)
+		if err != nil {
+			log.Printf("failed to get findings for fuzzing run %q of test collection %q: %+v", fuzzingRun.Name, targetRun.Name, err)
+		}
+		if res == nil || res.Findings == nil {
+			continue
+		}
+
+		for _, finding := range res.Findings {
+			if _, ok := reportedFindings[finding.Name]; ok {
+				// we have already dealt with this finding
+				continue
+			}
+
+			if finding.ErrorReport != nil {
+				findingType := finding.ErrorReport.Type.String()
+				switch finding.State {
+				case types.Finding_IGNORED:
+					// Do nothing for ignored findings.
+					continue
+				case types.Finding_VERIFIED:
+					firstOccurrenceMessage := ""
+					if finding.FirstSeenFinding != "" && monitorCampaignRunCfg.DashboardAddress != "" {
+						firstOccurrenceMessage = fmt.Sprintf("First occurrence of this finding: \n\t%s",
+							generateFindingLink(finding.FirstSeenFinding))
+					}
+					log.Printf("Previously verified finding with type %s was found. %s\n",
+						findingType, firstOccurrenceMessage)
+					continue
+				}
+				if _, ok := findingsTypeMap[findingType]; !ok {
+					log.Printf(
+						"Finding with type %s was found, but its type is not being monitored. Monitored finding types: %v",
+						findingType, monitorCampaignRunCfg.FindingsType)
+					continue
+				}
+				findingSeverity := strings.ToUpper(finding.ErrorReport.GetMoreDetails().GetSeverity().GetDescription())
+				if _, ok := ignoredFindingSeveritiesMap[findingSeverity]; findingSeverity != "" && ok {
+					log.Printf(
+						"Finding with severity %s was found, but its type is not being monitored. Monitored finding severities: %v",
+						findingSeverity, monitorCampaignRunCfg.MinFindingsSeverity)
+					continue
+				}
+
+				// get the full finding because we currently only have the name and type field
+				fullFinding, err := findingsClient.GetFinding(context.Background(), &local.GetFindingRequest{Name: finding.Name})
+				if err == nil {
+					finding = fullFinding
+				} else {
+					log.Printf("failed to get the finding %v: %+v", finding.Name, err)
+				}
+
+				findingJSON, err := stringutils.ToJsonString(finding.ErrorReport)
+				if err != nil {
+					log.Fatalf("%+v", err)
+				}
+				findingJSONFilename := fmt.Sprintf("finding-%s.json", filepath.Base(finding.Name))
+				err = ioutil.WriteFile(findingJSONFilename, []byte(findingJSON), 0o644)
+				if err != nil {
+					log.Fatalf("%+v", err)
+				}
+				msg := fmt.Sprintf("Found %s while fuzzing. Finding report:\n%s", findingType, findingJSON)
+				if monitorCampaignRunCfg.DashboardAddress != "" {
+					findingLink := generateFindingLink(finding.Name)
+					msg += fmt.Sprintf("\n\nLink to finding in the dashboard: %s", findingLink)
+				} else {
+					log.Println("No dashboard address provided, so the link to the finding in the dashboard cannot be formed")
+				}
+				if finding.GetErrorReport().GetDebuggingInfo() != nil {
+					debugURL := fmt.Sprintf("vscode://code-intelligence.ci-fuzzing-plugin/debug?finding=%s", finding.Name)
+					msg += fmt.Sprintf("\n\nDebug crash in VS Code: %s", debugURL)
+				}
+				if finding.GetErrorReport().GetDebuggingInfo().GetBreakPoints() != nil {
+					gotoURL := fmt.Sprintf("vscode://code-intelligence.ci-fuzzing-plugin/goto?finding=%s", finding.Name)
+					msg += fmt.Sprintf("\n\nView line of crash in VS Code: %s", gotoURL)
+				}
+				reportedFindings[finding.Name] = struct{}{}
+				if monitorCampaignRunCfg.KeepRunning {
+					log.Println(msg)
+				} else {
+					return errors.New(msg)
+				}
+			}
+		}
+	}
+	return nil
 }
