@@ -13,6 +13,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
+	"code-intelligence.com/cifuzz/internal/tokenstorage"
+	"code-intelligence.com/cifuzz/pkg/log"
 )
 
 type loginOpts struct {
@@ -103,5 +105,15 @@ in interactive mode. You can generate a token here:
 	}
 
 	_, err = auth.EnsureValidToken(c.opts.Server)
-	return err
+	if err != nil {
+		return err
+	}
+
+	tokenFilePath, err := tokenstorage.GetTokenFilePath()
+	if err != nil {
+		return err
+	}
+	log.Infof("Your API access token is stored in %s", tokenFilePath)
+
+	return nil
 }

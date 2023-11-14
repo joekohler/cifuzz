@@ -116,12 +116,7 @@ func StoreToken(server, token string) error {
 	if err != nil {
 		return err
 	}
-	tokenFilePath, err := tokenstorage.GetTokenFilePath()
-	if err != nil {
-		return err
-	}
 	log.Successf("Successfully authenticated with %s", server)
-	log.Infof("Your API access token is stored in %s", tokenFilePath)
 	return nil
 }
 
