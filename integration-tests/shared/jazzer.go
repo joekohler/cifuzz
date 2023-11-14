@@ -42,7 +42,7 @@ func TestAdditionalJazzerParameters(t *testing.T, cifuzz, dir string) {
 		},
 	}
 
-	for name, tc := range testCases {
+	for _, tc := range testCases {
 		tc.cmd.Dir = dir
 		tc.cmd.Args = append(tc.cmd.Args, "--engine-arg="+tc.arg)
 		out, err := tc.cmd.CombinedOutput()
@@ -50,8 +50,7 @@ func TestAdditionalJazzerParameters(t *testing.T, cifuzz, dir string) {
 
 		lines := strings.Split(string(out), "\n")
 		for _, l := range lines {
-			// ToDo: Support engine args for coverage with jazzer
-			if strings.Contains(l, "com.code_intelligence.jazzer.Jazzer") && name != "coverage" {
+			if strings.Contains(l, "com.code_intelligence.jazzer.Jazzer") {
 				assert.Contains(t, l, tc.arg, "java call does not include jazzer flag")
 				break
 			}

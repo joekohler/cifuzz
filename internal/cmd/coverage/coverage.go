@@ -46,6 +46,7 @@ type coverageOptions struct {
 	NumBuildJobs uint     `mapstructure:"build-jobs"`
 	CorpusDirs   []string `mapstructure:"corpus-dirs"`
 	UseSandbox   bool     `mapstructure:"use-sandbox"`
+	EngineArgs   []string `mapstructure:"engine-args"`
 
 	ResolveSourceFilePath bool
 	Preset                string
@@ -335,6 +336,7 @@ func (c *coverageCmd) run() error {
 			ProjectDir:   c.opts.ProjectDir,
 			Deps:         deps,
 			CorpusDirs:   c.opts.CorpusDirs,
+			EngineArgs:   c.opts.EngineArgs,
 			BuildStdout:  c.opts.buildStdout,
 			BuildStderr:  c.opts.buildStderr,
 			Stderr:       c.OutOrStderr(),
