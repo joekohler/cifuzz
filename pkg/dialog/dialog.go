@@ -26,7 +26,7 @@ func Select(message string, items map[string]string, sorted bool) (string, error
 			return strings.ToLower(options[i]) < strings.ToLower(options[j])
 		})
 	}
-	prompt := pterm.DefaultInteractiveSelect.WithOptions(options)
+	prompt := pterm.DefaultInteractiveSelect.WithMaxHeight(15).WithOptions(options)
 	prompt.DefaultText = message
 
 	result, err := prompt.Show()
