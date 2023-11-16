@@ -17,6 +17,8 @@ import (
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
+var MaxListEntries = 15
+
 // Select offers the user a list of items (label:value) to select from and returns the value of the selected item
 func Select(message string, items map[string]string, sorted bool) (string, error) {
 	options := maps.Keys(items)
@@ -26,7 +28,7 @@ func Select(message string, items map[string]string, sorted bool) (string, error
 			return strings.ToLower(options[i]) < strings.ToLower(options[j])
 		})
 	}
-	prompt := pterm.DefaultInteractiveSelect.WithMaxHeight(15).WithOptions(options)
+	prompt := pterm.DefaultInteractiveSelect.WithMaxHeight(MaxListEntries).WithOptions(options)
 	prompt.DefaultText = message
 
 	result, err := prompt.Show()
@@ -164,6 +166,17 @@ func ProjectPickerWithOptionNew(projects []*api.Project, prompt string, client *
 	// add option to cancel
 	items["<Cancel>"] = "<<cancel>>"
 
+	// if the number of items including the 2 options is more than
+	// MaxListEntries, show a message to the user that they can scroll past the
+	// list and show the number of items in total (excluding the 2 options).
+	if len(items) > MaxListEntries {
+		// show a maximum of MaxListEntries items
+		// subtract 2 for the <<new>> and <<cancel>> items
+		numItemsToShow := min(len(items), MaxListEntries) - 2
+		prompt = fmt.Sprintf(`Showing %d of %d projects. Use ^ and v to scroll past the list.
+%s`, numItemsToShow, len(items)-2, prompt)
+	}
+
 	projectName, err := Select(prompt, items, true)
 	if err != nil {
 		return "", err
@@ -209,6 +222,17 @@ func ProjectPicker(projects []*api.Project, prompt string) (string, error) {
 
 	// add option to cancel
 	items["<Cancel>"] = "<<cancel>>"
+
+	// if the number of items including the 2 options is more than
+	// MaxListEntries, show a message to the user that they can scroll past the
+	// list and show the number of items in total (excluding the 2 options).
+	if len(items) > MaxListEntries {
+		// show a maximum of MaxListEntries items
+		// subtract 1 for the <<cancel>> item
+		numItemsToShow := min(len(items), MaxListEntries) - 1
+		prompt = fmt.Sprintf(`Showing %d of %d projects. Use ^ and v to scroll past the list.
+%s`, numItemsToShow, len(items)-1, prompt)
+	}
 
 	projectName, err := Select(prompt, items, true)
 	if err != nil {
