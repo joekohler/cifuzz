@@ -1,11 +1,8 @@
 name: Coverage Pipeline
 
 on:
-  push:
-    branches:
-      - "*"
-      - "*/*"
-      - "**"
+  schedule:
+    - cron: "0 8 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -48,8 +45,6 @@ jobs:
 
       - name: Run e2e test coverage
         run: make coverage/e2e
-        env:
-          E2E_TEST_CIFUZZ_API_TOKEN: ${{ secrets.E2E_TEST_CIFUZZ_API_TOKEN }}
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
@@ -82,10 +77,33 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  catch:
+    name: Catch all coverage report
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup VM for cifuzz
+        uses: ./.github/actions/vm_setup
+        with:
+          os: ubuntu-22.04
+
+      - name: Test Coverage
+        run: make coverage
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-data
+          path: coverage/*
+          if-no-files-found: error
+          retention-days: 1
+
   merge:
     name: Merge Coverage + Report
     runs-on: ubuntu-22.04
-    needs: [integration, e2e, unit]
+    needs: [integration, e2e, unit, catch]
     steps:
       - uses: actions/checkout@v3
 
@@ -111,17 +129,15 @@ jobs:
           if-no-files-found: error
           retention-days: 5
 
-  all:
-    name: Catch all coverage report
+  notification:
+    needs: [merge]
+    name: send message to slack notification
     runs-on: ubuntu-22.04
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup VM for cifuzz
-        uses: ./.github/actions/vm_setup
+      - name: Send notification to cifuzz dev channel
+        uses: slackapi/slack-github-action@v1.24.0
         with:
-          os: ubuntu-22.04
-
-      - name: Test Coverage
-        run: make coverage
+          channel-id: "C064T9ND6AX" # ci-fuzz-devs channel
+          slack-message: "New CI Fuzz coverage report available at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
