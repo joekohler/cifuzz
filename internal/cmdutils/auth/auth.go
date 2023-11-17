@@ -57,17 +57,6 @@ func GetValidToken(server string) (string, error) {
 	return token, nil
 }
 
-// HasValidToken returns true if a valid API access token is configured
-// for the given server.
-func HasValidToken(server string) (bool, error) {
-	token, err := GetToken(server)
-	if err != nil {
-		return false, err
-	}
-
-	return IsValidToken(server, token)
-}
-
 func IsValidToken(server, token string) (bool, error) {
 	if token == "" {
 		return false, nil

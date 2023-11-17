@@ -7,18 +7,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"code-intelligence.com/cifuzz/internal/api"
 	"code-intelligence.com/cifuzz/internal/bundler"
 	"code-intelligence.com/cifuzz/internal/cmd/bundle"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
-	"code-intelligence.com/cifuzz/internal/cmdutils/auth"
 	"code-intelligence.com/cifuzz/internal/cmdutils/logging"
 	"code-intelligence.com/cifuzz/internal/cmdutils/resolve"
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/internal/container"
 	"code-intelligence.com/cifuzz/pkg/log"
-	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
 
@@ -139,19 +136,6 @@ container is built and run locally instead of being pushed to a CI Sense server.
 }
 
 func (c *containerRunCmd) run() error {
-	authenticated, err := auth.HasValidToken(c.opts.Server)
-	if err != nil {
-		var connErr *api.ConnectionError
-		if !errors.As(err, &connErr) {
-			return err
-		} else {
-			log.Debugf("Connection error: %v", connErr)
-		}
-	}
-	if !authenticated {
-		log.Infof(messaging.UsageWarning())
-	}
-
 	buildOutput := c.OutOrStdout()
 	if c.opts.PrintJSON {
 		// We only want JSON output on stdout, so we print the build

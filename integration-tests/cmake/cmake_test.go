@@ -175,10 +175,6 @@ func TestIntegration_CMake(t *testing.T) {
 		testRunWithUpload(t, cifuzzRunner)
 	})
 
-	t.Run("runNotAuthenticated", func(t *testing.T) {
-		testRunNotAuthenticated(t, cifuzzRunner)
-	})
-
 	t.Run("containerRun", func(t *testing.T) {
 		if runtime.GOOS != "linux" && !config.AllowUnsupportedPlatforms() {
 			t.Skip("Creating a bundle for CMake (which is required by the container run command) is currently only supported on Linux")
@@ -621,12 +617,6 @@ func testRunWithUpload(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
 	cifuzz := cifuzzRunner.CIFuzzPath
 	testdata := cifuzzRunner.DefaultWorkDir
 	shared.TestRunWithUpload(t, testdata, cifuzz, "crashing_fuzz_test")
-}
-
-func testRunNotAuthenticated(t *testing.T, cifuzzRunner *shared.CIFuzzRunner) {
-	cifuzz := cifuzzRunner.CIFuzzPath
-	testdata := cifuzzRunner.DefaultWorkDir
-	shared.TestRunNotAuthenticated(t, testdata, cifuzz)
 }
 
 func testCoverageVSCodePreset(t *testing.T, cifuzz, dir string) {
