@@ -1,7 +1,7 @@
 Please make sure to add our cifuzz gradle plugin to your
 build.gradle to enable fuzz testing:
 
-    id "com.code-intelligence.cifuzz" version "1.8.0"
+    id "com.code-intelligence.cifuzz" version "1.9.0"
 
 We highly recommend using cifuzz with JUnit >=5 to ensure
 easy IDE integration.
