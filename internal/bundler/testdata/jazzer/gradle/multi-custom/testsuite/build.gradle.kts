@@ -1,6 +1,6 @@
 plugins {
     id("java-library")
-    id("com.code-intelligence.cifuzz") version "1.8.0"
+    id("com.code-intelligence.cifuzz") version "1.9.0"
 }
 
 sourceSets.getByName("test") {
