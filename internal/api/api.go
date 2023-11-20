@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -110,6 +111,40 @@ func NewClient(server string) *APIClient {
 	}
 }
 
+// SomeProjectIdToNidNameExternalId takes an arbitrary project ID and returns
+// 1) the nid (for use with v3 API)
+// 2) the name (for use with v1/v2 API)
+// 3) the external ID (deprecated, but still used in some places)
+func SomeProjectIdToNidNameExternalId(someProjectId string) (string, string, string, error) {
+	var nid, externalId string
+	if strings.HasPrefix(someProjectId, "projects/") {
+		someProjectId = strings.TrimPrefix(someProjectId, "projects/")
+	}
+	if strings.HasPrefix(someProjectId, "projects%2F") {
+		someProjectId = strings.TrimPrefix(someProjectId, "projects%2F")
+	}
+
+	matchExternalId := regexp.MustCompile(".*-([0-9a-f]{8})")
+	matchNid := regexp.MustCompile("[0-9a-zA-Z\\-]*")
+
+	if matchExternalId.MatchString(someProjectId) {
+		externalId = someProjectId
+		nid = "prj-" + matchExternalId.FindStringSubmatch(someProjectId)[1] + "0000"
+	} else if matchNid.MatchString(someProjectId) {
+		externalId = someProjectId
+		// This is not guaranteed to work for old projects
+		// but will always work for new projects!
+		nid = someProjectId
+	} else {
+		return "", "", "",
+			errors.Wrapf(errors.New("invalid project ID"),
+				"project ID %s is not a valid nid or external ID", someProjectId)
+	}
+
+	name := "projects/" + externalId
+	return nid, name, externalId, nil
+}
+
 // ConvertProjectNameFromAPI converts a project name from the API format to a
 // format we can use internally.
 // The API format is projects/<project-name>, where <project-name> is URL encoded.
@@ -144,19 +179,6 @@ func ConvertProjectNameForUseWithAPIV1V2(projectName string) string {
 	projectName = "projects/" + projectName
 
 	return projectName
-}
-
-// ConvertProjectNameForUseWithAPIV3 converts a project name to the v3 API
-// format. The API format is <project-name>, where <project-name> is URL
-// unescaped.
-func ConvertProjectNameForUseWithAPIV3(projectName string) (string, error) {
-	projectName = strings.TrimPrefix(projectName, "projects/")
-
-	projectName, err := url.QueryUnescape(projectName)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	return projectName, nil
 }
 
 func (client *APIClient) UploadBundle(path string, projectName string, token string) (*Artifact, error) {

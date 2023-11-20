@@ -59,15 +59,15 @@ func (client *APIClient) PostContainerRemoteRun(image string, project string, fu
 		tests = append(tests, &FuzzTest{Name: fuzzTest})
 	}
 
-	project, err := ConvertProjectNameForUseWithAPIV3(project)
+	nid, _, _, err := SomeProjectIdToNidNameExternalId(project)
 	if err != nil {
 		return nil, err
 	}
 
 	containerRun := &ContainerRun{
-		Image:             image,
-		FuzzTests:         tests,
-		ProjectExternalID: project,
+		Image:      image,
+		FuzzTests:  tests,
+		ProjectNid: nid,
 	}
 
 	body, err := json.Marshal(containerRun)
