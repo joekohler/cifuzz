@@ -22,8 +22,8 @@ import (
 	"code-intelligence.com/cifuzz/internal/completion"
 	"code-intelligence.com/cifuzz/internal/config"
 	"code-intelligence.com/cifuzz/pkg/dialog"
-	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/report"
 	"code-intelligence.com/cifuzz/util/sliceutil"
 )
@@ -31,9 +31,8 @@ import (
 type runCmd struct {
 	*cobra.Command
 
-	opts         *adapter.RunOptions
-	apiClient    *api.APIClient
-	errorDetails []*finding.ErrorDetails
+	opts      *adapter.RunOptions
+	apiClient *api.APIClient
 
 	reportHandler *reporthandler.ReportHandler
 }
@@ -270,11 +269,15 @@ depends on the build system configured for the project.
 }
 
 func (c *runCmd) run() error {
-	errorDetails, token, err := auth.TryGetErrorDetailsAndToken(c.opts.Server)
+	token, err := auth.GetValidToken(c.opts.Server)
 	if err != nil {
 		return err
 	}
-	c.errorDetails = errorDetails
+	if token == "" {
+		log.Infof(messaging.UsageWarning())
+	} else {
+		log.Success("You are authenticated.")
+	}
 
 	adapter, err := adapter.NewAdapter(c.opts)
 	if err != nil {
@@ -299,7 +302,6 @@ func (c *runCmd) run() error {
 	if c.reportHandler == nil && err == nil {
 		return nil
 	}
-	c.reportHandler.ErrorDetails = errorDetails
 
 	c.reportHandler.PrintCrashingInputNote()
 	err = c.reportHandler.PrintFinalMetrics()
@@ -379,8 +381,9 @@ Findings have *not* been uploaded. Please check the 'project' entry in your cifu
 
 	// upload findings
 	for _, finding := range c.reportHandler.Findings {
-		if c.errorDetails != nil {
-			finding.EnhanceWithErrorDetails(c.errorDetails)
+		err = finding.EnhanceWithErrorDetails()
+		if err != nil {
+			return err
 		}
 		err = c.apiClient.UploadFinding(project, fuzzTarget, campaignRunName, fuzzingRunName, finding, token)
 		if err != nil {

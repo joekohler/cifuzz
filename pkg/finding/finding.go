@@ -15,6 +15,7 @@ import (
 
 	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -72,6 +73,11 @@ type ErrorDetails struct {
 	Links        []Link          `json:"links,omitempty"`
 	OwaspDetails *ExternalDetail `json:"owasp_details,omitempty"`
 	CweDetails   *ExternalDetail `json:"cwe_details,omitempty"`
+}
+
+type errorDetailsJSON struct {
+	VersionSchema int             `json:"version_schema"`
+	ErrorDetails  []*ErrorDetails `json:"error_details"`
 }
 
 type SeverityLevel string
@@ -309,7 +315,7 @@ func (f *Finding) ShortDescriptionColumns() []string {
 
 // LocalFindings parses the JSON files of all findings and returns the
 // result.
-func LocalFindings(projectDir string, errorDetails []*ErrorDetails) ([]*Finding, error) {
+func LocalFindings(projectDir string) ([]*Finding, error) {
 	findingsDir := filepath.Join(projectDir, nameFindingsDir)
 	entries, err := os.ReadDir(findingsDir)
 	if os.IsNotExist(err) {
@@ -321,7 +327,7 @@ func LocalFindings(projectDir string, errorDetails []*ErrorDetails) ([]*Finding,
 
 	var res []*Finding
 	for _, e := range entries {
-		f, err := LoadFinding(projectDir, e.Name(), errorDetails)
+		f, err := LoadFinding(projectDir, e.Name())
 		if err != nil {
 			return nil, err
 		}
@@ -340,7 +346,7 @@ func LocalFindings(projectDir string, errorDetails []*ErrorDetails) ([]*Finding,
 // the result.
 // If the specified finding does not exist, a NotExistError is returned.
 // If the user is logged in, the error details are added to the finding.
-func LoadFinding(projectDir, findingName string, errorDetails []*ErrorDetails) (*Finding, error) {
+func LoadFinding(projectDir, findingName string) (*Finding, error) {
 	findingDir := filepath.Join(projectDir, nameFindingsDir, findingName)
 	jsonPath := filepath.Join(findingDir, nameJSONFile)
 	bytes, err := os.ReadFile(jsonPath)
@@ -357,18 +363,33 @@ func LoadFinding(projectDir, findingName string, errorDetails []*ErrorDetails) (
 	}
 
 	f.Origin = "Local"
-	f.EnhanceWithErrorDetails(errorDetails)
+	err = f.EnhanceWithErrorDetails()
+	if err != nil {
+		return nil, err
+	}
 
 	return &f, nil
 }
 
 // EnhanceWithErrorDetails adds more details to the finding by parsing the
 // error details file.
-func (f *Finding) EnhanceWithErrorDetails(errorDetails []*ErrorDetails) {
-	if errorDetails == nil {
-		return
+func (f *Finding) EnhanceWithErrorDetails() error {
+	// Read error details from error-details.json
+	errorDetailsPath, err := runfiles.Finder.ErrorDetailsPath()
+	if err != nil {
+		return err
 	}
-	for _, d := range errorDetails {
+	content, err := os.ReadFile(errorDetailsPath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	var errorDetailsFromJSON errorDetailsJSON
+	err = json.Unmarshal(content, &errorDetailsFromJSON)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, d := range errorDetailsFromJSON.ErrorDetails {
 		if (f.MoreDetails != nil && f.MoreDetails.ID == d.ID) ||
 			strings.Contains(
 				strings.ToLower(f.ShortDescriptionColumns()[0]),
@@ -385,9 +406,11 @@ func (f *Finding) EnhanceWithErrorDetails(errorDetails []*ErrorDetails) {
 			if originalID != "" {
 				f.MoreDetails.ID = originalID
 			}
-			return
+			return nil
 		}
 	}
 
 	log.Debugf("No error details found for finding %s", f.Name)
+
+	return nil
 }

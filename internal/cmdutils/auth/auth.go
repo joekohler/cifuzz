@@ -52,7 +52,7 @@ func GetValidToken(server string) (string, error) {
 		return "", err
 	}
 	if !isValid {
-		return "", &NoValidTokenError{errors.New("Please log in with a valid API access token")}
+		return "", nil
 	}
 	return token, nil
 }

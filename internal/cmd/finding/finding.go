@@ -21,6 +21,7 @@ import (
 	"code-intelligence.com/cifuzz/pkg/dialog"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/log"
+	"code-intelligence.com/cifuzz/pkg/messaging"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
@@ -97,9 +98,14 @@ func newWithOptions(opts *options) *cobra.Command {
 }
 
 func (cmd *findingCmd) run(args []string) error {
-	errorDetails, token, err := auth.TryGetErrorDetailsAndToken(cmd.opts.Server)
+	token, err := auth.GetValidToken(cmd.opts.Server)
 	if err != nil {
 		return err
+	}
+	if token == "" {
+		log.Infof(messaging.UsageWarning())
+	} else {
+		log.Success("You are authenticated.")
 	}
 
 	var remoteAPIFindings api.Findings
@@ -141,7 +147,7 @@ Skipping remote findings because running in non-interactive mode.`)
 		}
 	}
 
-	localFindings, err := finding.LocalFindings(cmd.opts.ProjectDir, errorDetails)
+	localFindings, err := finding.LocalFindings(cmd.opts.ProjectDir)
 	if err != nil {
 		return err
 	}
@@ -254,7 +260,7 @@ Skipping remote findings because running in non-interactive mode.`)
 	}
 
 	// ...if the finding is not a remote finding, check if it is a local finding
-	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName, errorDetails)
+	f, err := finding.LoadFinding(cmd.opts.ProjectDir, findingName)
 	if finding.IsNotExistError(err) {
 		return errors.WithMessagef(err, "Finding %s does not exist", findingName)
 	}
