@@ -1,5 +1,4 @@
 code-intelligence.com/cifuzz/integration-tests/errors/java
-code-intelligence.com/cifuzz/integration-tests/node-typescript
 code-intelligence.com/cifuzz/integration-tests/errors/nodejs
 code-intelligence.com/cifuzz/integration-tests/java-maven-spring
 code-intelligence.com/cifuzz/pkg/minijail/process_wrapper

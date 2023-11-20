@@ -2,6 +2,7 @@ package nodejs
 
 import (
 	"encoding/json"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	builderPkg "code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
+	"code-intelligence.com/cifuzz/pkg/log"
 	"code-intelligence.com/cifuzz/util/fileutil"
 )
 
@@ -33,10 +35,23 @@ func TestIntegration_NodeJSErrors(t *testing.T) {
 		CIFuzzPath: cifuzz,
 	}
 
-	// Execute npm install
-	cmd := exec.Command("npm", "install")
+	// This test sometimes fails due to conflicting npm installations
+	// This step should solve that problem
+	cmd := exec.Command("npm", "cache", "verify")
 	cmd.Dir = testdataTmp
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	log.Printf("Command: %s", cmd.String())
 	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Execute npm install
+	cmd = exec.Command("npm", "install")
+	cmd.Dir = testdataTmp
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	log.Printf("Command: %s", cmd.String())
+	err = cmd.Run()
 	require.NoError(t, err)
 
 	testCases := []struct {
