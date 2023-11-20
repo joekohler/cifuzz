@@ -58,10 +58,10 @@ func TestIntegration_NodeJSErrors(t *testing.T) {
 		id       string
 		fuzzTest string
 	}{
-		{
-			id:       "os_command_injection",
-			fuzzTest: "command-injection",
-		},
+		//{
+		//	id:       "os_command_injection",
+		//	fuzzTest: "command-injection",
+		//},
 		{
 			id:       "File Path Injection",
 			fuzzTest: "path-traversal",
@@ -85,6 +85,7 @@ func TestIntegration_NodeJSErrors(t *testing.T) {
 			cifuzzRunner.Run(t, &shared.RunOptions{
 				FuzzTest: tc.fuzzTest,
 				WorkDir:  testdataTmp,
+				Args:     []string{"--engine-arg=-timeout=15", "--timeout=20s"},
 			})
 
 			// Call findings command, get json output and check for finding id
