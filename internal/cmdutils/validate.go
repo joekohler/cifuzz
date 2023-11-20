@@ -1,6 +1,7 @@
 package cmdutils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,6 +14,10 @@ func ValidateCorpusDirs(dirs []string) ([]string, error) {
 	for i, d := range dirs {
 		_, err := os.Stat(d)
 		if err != nil {
+			if os.IsNotExist(err) {
+				msg := fmt.Sprintf("The additional corpus directory '%s' does not exist", d)
+				return nil, WrapIncorrectUsageError(errors.New(msg))
+			}
 			return nil, errors.WithStack(err)
 		}
 		dirs[i], err = filepath.Abs(d)
