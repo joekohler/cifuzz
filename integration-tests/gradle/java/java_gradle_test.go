@@ -112,6 +112,10 @@ func TestIntegration_Gradle(t *testing.T) {
 			// Produce a jacoco xml coverage report
 			testJacocoXMLCoverageReport(t, cifuzz, projectDir)
 		})
+		t.Run("lcovCoverageReport", func(t *testing.T) {
+			// Produce a jacoco xml coverage report
+			shared.TestLCOVCoverageReport(t, cifuzz, projectDir)
+		})
 	})
 
 	t.Run("coverageVSCodePreset", func(t *testing.T) {
