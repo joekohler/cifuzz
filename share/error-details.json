@@ -1,0 +1,880 @@
+{
+	"schema_version": 1,
+	"error_details": [
+		{
+			"id": "use_after_return",
+			"name": "Use After Return",
+			"description": "A use after return error occurs when a (pointer to a) variable is accessed that was created on the stack by another function that has already returned. This happens, for example when a function returns a pointer to a local stack variable. The impact of this error is that private memory can be leaked into different parts of the program and unpredictable behavior can occur.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "When a function needs to return more data than just a basic type, you can allocate the memory in the calling function and pass a pointer where the result can be written to. Alternatively allocate the memory in the called function on the heap with malloc and return a pointer to it.",
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerUseAfterReturn"
+				}
+			]
+		},
+		{
+			"id": "use_after_scope",
+			"name": "Use After Scope",
+			"description": "A use after scope error occurs when a pointer to a variable on the stack is accessed, but the variable has already gone out of scope.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Make sure variables are placed in the correct scope and don't keep pointers to variables after they go out of scope.",
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerUseAfterScope"
+				},
+				{
+					"description": "Stack-use-after-scope detector in AddressSanitizer",
+					"url": "https://llvm.org/devmtg/2016-11/Slides/Buka-StackUseAfterScope.pdf"
+				}
+			]
+		},
+		{
+			"id": "out_of_memory",
+			"name": "Out of Memory",
+			"description": "Out of memory means that the application under test tries to allocate more memory than a given threshold. This can lead to denial of service if the system memory is exhausted. For processes available publicly this presents a possible denial the service (DoS).",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"cwe_details": {
+				"id": 730,
+				"name": "Denial of Service",
+				"description": "A Denial-of-Service (DoS) attack is an attack meant to shut down a machine or network, making it inaccessible to its intended users. DoS attacks accomplish this by flooding the target with traffic, or sending it information that triggers a crash."
+			}
+		},
+		{
+			"id": "global_buffer_overflow",
+			"name": "Global Buffer Overflow",
+			"description": "A heap buffer overflow is a type of a memory corruption vulnerability that is widely used for different types of attacks. A successful heap buffer overflow attack can be used to read sensitive data in memory, or write and execute code in it.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"mitigation": "A programmer can follow the following guidelines to help avoid buffer overflows: When using functions which copy a given size from memory, ensure that the target buffer has a size large enough for the amount of data to be copied. Always make sure to access the buffer within its defined boundaries, checking on each access.",
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerExampleGlobalOutOfBounds"
+				},
+				{
+					"description": "OWASP: Using freed memory",
+					"url": "https://owasp.org/www-community/vulnerabilities/Using_freed_memory"
+				},
+				{
+					"description": "CWE: Heap based overflows",
+					"url": "https://cwe.mitre.org/data/definitions/122.html"
+				}
+			],
+			"cwe_details": {
+				"id": 122,
+				"name": "Heap-based Buffer Overflow",
+				"description": "A heap overflow condition is a buffer overflow, where the buffer that can be overwritten is allocated in the heap portion of memory, generally meaning that the buffer was allocated using a routine such as malloc()."
+			}
+		},
+		{
+			"id": "heap_use_after_free",
+			"name": "Heap Use After Free",
+			"description": "A heap use after free is the use of memory locations that has been allocated during the program execution then freed. For example, using attempting to use a pointer that has been freed. Accessing such locations have consequences that range from interrupting the execution to making the machine vulnerable to malicious code execution.",
+			"severity": {
+				"description": "High",
+				"score": 8
+			},
+			"mitigation": "Heap use after free can be avoided with good memory management within the code. Possible steps to avoid this attack: Using modern pointers (e.g C++ 11 smart pointers). Use unique pointers and shared pointer to control the allowed operations on pointers.",
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerExampleUseAfterFree"
+				},
+				{
+					"description": "OWASP: Using freed memory",
+					"url": "https://owasp.org/www-community/vulnerabilities/Using_freed_memory"
+				},
+				{
+					"description": "CWE: Use after free",
+					"url": "https://cwe.mitre.org/data/definitions/416.html"
+				}
+			],
+			"cwe_details": {
+				"id": 416,
+				"name": "Use After Free",
+				"description": "Referencing memory after it has been freed can cause a program to crash, use unexpected values, or execute code."
+			}
+		},
+		{
+			"id": "heap_buffer_overflow",
+			"name": "Heap Buffer Overflow",
+			"description": "A heap buffer overflow is a type of a memory corruption vulnerability that is widely used for different types of attacks. A successful heap buffer overflow attack can be used to read sensitive data in memory, or write and execute code in it.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"mitigation": "A programmer can follow the following guidelines to help avoid buffer overflows: When using functions which copy a given size from memory, ensure that the target buffer has a size large enough for the amount of data to be copied. Always make sure to access the buffer within its defined boundaries, checking on each access.",
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerExampleHeapOutOfBounds"
+				},
+				{
+					"description": "CWE: Overflow writes",
+					"url": "https://cwe.mitre.org/data/definitions/787.html"
+				},
+				{
+					"description": "CWE: Overflow reads",
+					"url": "https://cwe.mitre.org/data/definitions/125.html"
+				}
+			]
+		},
+		{
+			"id": "stack_buffer_overflow",
+			"name": "Stack Buffer Overflow",
+			"description": "A stack buffer overflow occurs when the execution stack (function calls) exceeds a set threshold. A stack over flow vulnerability can be used by an attacker to overwrite memory locations close to the stack. For example, the stack return address, or exception handlers, which would allow the attacker to divert the program execution to his code.",
+			"severity": {
+				"description": "High",
+				"score": 7
+			},
+			"links": [
+				{
+					"description": "ASan Example",
+					"url": "https://github.com/google/sanitizers/wiki/AddressSanitizerExampleStackOutOfBounds"
+				},
+				{
+					"description": "CWE: Stack-based Buffer Overflow",
+					"url": "https://cwe.mitre.org/data/definitions/121.html"
+				}
+			],
+			"cwe_details": {
+				"id": 121,
+				"name": "Stack-based Buffer Overflow",
+				"description": "A stack-based buffer overflow condition is a condition where the buffer being overwritten is allocated on the stack (i.e., is a local variable or, rarely, a parameter to a function)."
+			}
+		},
+		{
+			"id": "double_free",
+			"name": "Double Free",
+			"description": "A double free occurs when the same memory address is freed twice. This can potentially cause the program to crash or, in some cases, alter the execution flow",
+			"severity": {
+				"description": "High",
+				"score": 7
+			},
+			"mitigation": "Ensure that each allocation is freed only once. After freeing memory, set the corresponding pointer to NULL to ensure the pointer cannot be freed again. For C++, ensure that object destructors delete each chunk of memory only once.",
+			"links": [
+				{
+					"description": "CWE: Double Free",
+					"url": "https://cwe.mitre.org/data/definitions/415.html"
+				},
+				{
+					"description": "OWASP: Doubly freeing memory",
+					"url": "https://owasp.org/www-community/vulnerabilities/Doubly_freeing_memory"
+				}
+			],
+			"cwe_details": {
+				"id": 415,
+				"name": "Double Free",
+				"description": "The product calls free() twice on the same memory address, potentially leading to modification of unexpected memory locations."
+			}
+		},
+		{
+			"id": "stack_exhaustion",
+			"name": "Stack Exhaustion",
+			"description": "Stack exhaustion is an error that occurs when the call stack grows beyond the maximum allowed size. Attackers can use it for denial-of-service attacks. Uncontrolled recursion is a common cause for stack exhaustion. Stack exhaustion is also referred to as stack overflow; however, it is not to be confused with stack-based buffer overflows.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"links": [
+				{
+					"description": "CWE: Uncontrolled Recursion",
+					"url": "https://cwe.mitre.org/data/definitions/674.html"
+				}
+			],
+			"cwe_details": {
+				"id": 674,
+				"name": "Uncontrolled Recursion",
+				"description": "The product does not properly control the amount of recursion which takes place, consuming excessive resources, such as allocated memory or the program stack."
+			}
+		},
+		{
+			"id": "segmentation_fault",
+			"name": "Segmentation Fault",
+			"description": "A Segmentation Fault is an error raised usually by hardware when software attempts to access protected memory. A program must first allocate memory it needs to write to or acquire access to read from a memory location. Programmers sometimes do not follow these requirements causing segmentation faults. Segmentation faults are a security concern as they could allow loading malicious code into the execution stack, allowing the attacker to execute arbitrary code and gain control of the target host as well as retrieving sensitive data.",
+			"severity": {
+				"description": "High",
+				"score": 7
+			},
+			"mitigation": "Good programming practices and reviews are necessary to address segmentation fault errors. In general the programmer should ensure they allocate the necessary memory to write to, do not write to arbitrary memory locations, and manage the ownership and release of memory pointers correctly.",
+			"links": [
+				{
+					"description": "Explanation and Examples",
+					"url": "https://www.geeksforgeeks.org/core-dump-segmentation-fault-c-cpp/"
+				}
+			]
+		},
+		{
+			"id": "memory_leak",
+			"name": "Memory Leak",
+			"description": "A memory leak happens if memory that is no longer used is not released. Memory leaks can lead to system stability issues.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			}
+		},
+		{
+			"id": "deadly_signal",
+			"name": "Deadly Signal",
+			"description": "The test was terminated via a signal. This is often due to assertion failures in tested code, which cause the operating system to send a SIGABRT signal to the offending process. In production software, such defects can facilitate denial-of-service attacks.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			}
+		},
+		{
+			"id": "alloc_dealloc_mismatch",
+			"name": "Alloc Dealloc Mismatch",
+			"description": "An alloc-dealloc mismatch happens when allocated memory was not properly freed. This can lead to undefined behavior, memory leaks and system stability issues.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Make sure the type of the allocation matches the deallocation. Memory that was obtained using \"new\" should be freed with \"delete\". When using \"malloc\" instead memory should be freed with \"free\"."
+		},
+		{
+			"id": "odr_violation",
+			"name": "ODR Violation",
+			"description": "A violation of the \"One Definition Rule\" occurs when duplicate symbols occur in the binary or its dependencies at runtime. This can lead to instabilities and undefined behavior.'",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Make sure that the fuzz target and its libraries are linked correctly. No source files or symbols should be linked in a way that they appear twice in the final executable.'"
+		},
+		{
+			"id": "timeout",
+			"name": "Timeout Error",
+			"description": "Execution of the fuzz test with this particular input did not finish in the predefined amount of time (default is 20 minutes). This might be a sign of an endless loop in your code which could lead to denial of service.",
+			"severity": {
+				"description": "High",
+				"score": 7
+			},
+			"mitigation": "Make sure that you don't have an endless loop in your code. However, if the code is expected to take that long, you can increase the timeout for the fuzz test'"
+		},
+		{
+			"id": "out_of_bounds",
+			"name": "Out-of-Bound Access Error",
+			"description": "An out-of-bound access error occurs when the value of a variable that is used to index an array is outside the bounds of the array. This is undefined behavior in C/C++ and may lead to accessing invalid memory, potentially causing memory leaks or corrupting the contained data",
+			"severity": {
+				"description": "High",
+				"score": 6
+			},
+			"mitigation": "Make sure that the index used to access an array is contained within the array bounds."
+		},
+		{
+			"id": "undefined behaviou?r: shift exponent.+",
+			"name": "Invalid Shift",
+			"description": "A shift operation has been detected which is equal or greater than the left hand side of the operation, or the left hand side is negative.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			},
+			"mitigation": "Make sure the shift operation does not exceed the size of its target or causes an overflow",
+			"links": [
+				{
+					"description": "Undefined Behavior Sanitizer",
+					"url": "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks"
+				}
+			],
+			"cwe_details": {
+				"id": 682,
+				"name": "Incorrect Calculation",
+				"description": "The software performs a calculation that generates incorrect or unintended results that are later used in security-critical decisions or resource management."
+			},
+			"language": 1
+		},
+		{
+			"id": "undefined behaviou?r: addition of unsigned offset.+",
+			"name": "Pointer Overflow",
+			"description": "A pointer arithmetic operation which overflows, or where either the old or new pointer value is a null pointer.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			},
+			"mitigation": "Validate the pointer values before using them",
+			"links": [
+				{
+					"description": "Undefined Behavior Sanitizer",
+					"url": "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks"
+				}
+			],
+			"cwe_details": {
+				"id": 468,
+				"name": "Incorrect Pointer Scaling",
+				"description": "In C and C++, one may often accidentally refer to the wrong memory due to the semantics of when math operations are implicitly scaled."
+			},
+			"language": 1
+		},
+		{
+			"id": "undefined behaviou?r: .*",
+			"name": "Undefined Behavior",
+			"description": "An operation has been detected which is undefined by the C/C++ standard. The result will be compiler dependent and is often unpredictable.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			},
+			"mitigation": "Avoid all operations that cause undefined behavior as per the C/C++ standard.",
+			"links": [
+				{
+					"description": "Undefined Behavior Sanitizer",
+					"url": "https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#available-checks"
+				}
+			],
+			"language": 1
+		},
+		{
+			"id": "Go Panic",
+			"name": "Go Panic",
+			"description": "Panics stop the ordinary flow of control and the process continues up the stack until all functions in the current goroutine have returned, at which point the program crashes. Panics can be initiated by invoking panic directly. They can also be caused by runtime errors, such as out-of-bounds array accesses.",
+			"severity": {
+				"description": "High",
+				"score": 9
+			}
+		},
+		{
+			"id": "Template Injection",
+			"name": "Template Injection",
+			"description": "",
+			"severity": {
+				"description": "Critical",
+				"score": 8
+			},
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 94,
+				"name": "Improper Control of Generation of Code ('Code Injection')",
+				"description": "The product constructs all or part of a code segment using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the syntax or behavior of the intended code segment when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "sql_injection",
+			"name": "SQL Injection",
+			"description": "A SQL injection attack consists of insertion or “injection” of a SQL query via the input data from the client to the application. A successful SQL injection exploit can read sensitive data from the database, modify database data (Insert/Update/Delete), execute administration operations on the database (such as shutdown the DBMS), recover the content of a given file present on the DBMS file system and in some cases issue commands to the operating system.",
+			"severity": {
+				"description": "Critical",
+				"score": 8
+			},
+			"links": [
+				{
+					"description": "OWASP: SQL Injection",
+					"url": "https://owasp.org/www-community/attacks/SQL_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 89,
+				"name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+				"description": "The product constructs all or part of an SQL command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended SQL command when it is sent to a downstream component. "
+			}
+		},
+		{
+			"id": "remote_code_execution",
+			"name": "Remote Code Execution",
+			"description": "Remote code execution attacks allow an attacker to execute arbitrary code on a vulnerable system. This can be used to steal data, bypass authentication, and gain access to more systems. RCE is often combined with other application vulnerability, such as SQL injection, to gain initial access to a system.",
+			"severity": {
+				"description": "Critical",
+				"score": 7
+			},
+			"cwe_details": {
+				"id": 94,
+				"name": "Improper Control of Generation of Code ('Code Injection')",
+				"description": "The product constructs all or part of a code segment using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the syntax or behavior of the intended code segment when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "ldap_injection",
+			"name": "LDAP Injection",
+			"description": "LDAP injection is a type of injection attack that targets LDAP servers. LDAP injection attacks are possible when untrusted data is used in an LDAP query. The attacker’s malicious data can trick the interpreter into executing unintended commands or accessing data without proper authorization.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"links": [
+				{
+					"description": "OWASP: LDAP Injection",
+					"url": "https://owasp.org/www-community/attacks/LDAP_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 90,
+				"name": "Improper Neutralization of Special Elements used in an LDAP Query ('LDAP Injection')",
+				"description": "The product constructs all or part of an LDAP query using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended LDAP query when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "Remote JNDI Lookup",
+			"name": "Remote JNDI Lookup",
+			"description": "Remote JNDI lookup is a type of injection attack that targets JNDI servers. Remote JNDI lookup attacks are possible when untrusted data is used in a JNDI lookup. JNDI lookups with attacker-controlled remote URLs can, depending on the JDK version, lead to remote code execution or the exfiltration of information.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"links": [
+				{
+					"description": "OWASP: Code Injection",
+					"url": "https://owasp.org/www-community/attacks/Code_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 94,
+				"name": "Improper Control of Generation of Code ('Code Injection')",
+				"description": "The product constructs all or part of a code segment using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the syntax or behavior of the intended code segment when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "os_command_injection",
+			"name": "Command Injection",
+			"description": "Command injection is a type of injection attack that targets the execution of operating system commands. Command injection attacks are possible when untrusted data is used to execute OS commands. Executing OS commands with attacker-controlled data can lead to remote code execution, information disclosure, and denial of service.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"links": [
+				{
+					"description": "OWASP: Command Injection",
+					"url": "https://owasp.org/www-community/attacks/Command_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 78,
+				"name": "Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+				"description": "The product constructs all or part of an OS command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended OS command when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "load_arbitrary_library",
+			"name": "Arbitrary Library Loading",
+			"description": "Arbitrary library loading is a type of injection attack that targets the loading of dynamic libraries. Arbitrary library loading attacks are possible when untrusted data is used to load dynamic libraries. Loading dynamic libraries with attacker-controlled data can lead to remote code execution, information disclosure, and denial of service.",
+			"severity": {
+				"description": "Critical",
+				"score": 7
+			},
+			"links": [
+				{
+					"description": "OWASP: Code Injection",
+					"url": "https://owasp.org/www-community/attacks/Code_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 94,
+				"name": "Improper Control of Generation of Code ('Code Injection')",
+				"description": "The product constructs all or part of a code segment using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the syntax or behavior of the intended code segment when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "regex_injection_CANON_EQ",
+			"name": "Regular Expression Injection with CANON_EQ",
+			"description": "Regular expression injection is a type of injection attack that targets the execution of regular expressions. Regular expression injection attacks are possible when untrusted data is used to execute regular expressions. When java.util.regex.Pattern.compile is used with the Pattern.CANON_EQ flag, every injection into the regular expression pattern can cause arbitrarily large memory allocations, even when wrapped with Pattern.quote(...).",
+			"severity": {
+				"description": "Critical",
+				"score": 1
+			},
+			"links": [
+				{
+					"description": "OWASP: Regular expression Denial of Service",
+					"url": "https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 1333,
+				"name": "Inefficient Regular Expression Complexity",
+				"description": "The product uses a regular expression with an inefficient, possibly exponential worst-case computational complexity that consumes excessive CPU cycles."
+			}
+		},
+		{
+			"id": "regex_injection",
+			"name": "Regular Expression Injection",
+			"description": "Regular expression injection is a type of injection attack that targets the execution of regular expressions. Regular expression injection attacks are possible when untrusted data is used to execute regular expressions. Regular expression patterns that contain unescaped untrusted input can consume arbitrary amounts of CPU time.",
+			"severity": {
+				"description": "Critical",
+				"score": 1
+			},
+			"links": [
+				{
+					"description": "OWASP: Regular expression Denial of Service",
+					"url": "https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 1333,
+				"name": "Inefficient Regular Expression Complexity",
+				"description": "The product uses a regular expression with an inefficient, possibly exponential worst-case computational complexity that consumes excessive CPU cycles."
+			}
+		},
+		{
+			"id": "xpath_injection",
+			"name": "XPath Injection",
+			"description": "XPath injection is a type of injection attack that targets the execution of XPath queries. XPath injection attacks are possible when untrusted data is used to execute XPath queries. This attack could lead to access or exfiltration of restricted data, or even elevation of user privileges.",
+			"severity": {
+				"description": "Critical",
+				"score": 7
+			},
+			"links": [
+				{
+					"description": "OWASP: XPath Injection",
+					"url": "https://owasp.org/www-community/attacks/XPATH_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 643,
+				"name": "Improper Neutralization of Data within XPath Expressions ('XPath Injection')",
+				"description": "The product uses external input to dynamically construct an XPath expression used to retrieve data from an XML database, but it does not neutralize or incorrectly neutralizes that input. This allows an attacker to control the structure of the query. "
+			}
+		},
+		{
+			"id": "File Path Injection",
+			"name": "File Traversal",
+			"description": "A path traversal attack aims to access files and directories that should not be accessible. By manipulating variables that reference files or directories with “dot-dot-slash (../)” sequences and its variations or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system including application source code or configuration and critical system files. This attack is often used in conjunction with command injection attacks, where the attacker aims to execute operating system commands on the underlying operating system.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			},
+			"links": [
+				{
+					"description": "OWASP: Path Traversal",
+					"url": "https://owasp.org/www-community/attacks/Path_Traversal"
+				}
+			],
+			"cwe_details": {
+				"id": 22,
+				"name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+				"description": "The product uses external input to construct a pathname that is intended to identify a file or directory that is located underneath a restricted parent directory, but the product does not properly neutralize special elements within the pathname that can cause the pathname to resolve to a location that is outside of the restricted directory. "
+			}
+		},
+		{
+			"id": "File Traversal",
+			"name": "File Traversal",
+			"description": "A path traversal attack aims to access files and directories that should not be accessible. By manipulating variables that reference files or directories with “dot-dot-slash (../)” sequences and its variations or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system including application source code or configuration and critical system files. This attack is often used in conjunction with command injection attacks, where the attacker aims to execute operating system commands on the underlying operating system.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			},
+			"links": [
+				{
+					"description": "OWASP: Path Traversal",
+					"url": "https://owasp.org/www-community/attacks/Path_Traversal"
+				}
+			],
+			"cwe_details": {
+				"id": 22,
+				"name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+				"description": "The product uses external input to construct a pathname that is intended to identify a file or directory that is located underneath a restricted parent directory, but the product does not properly neutralize special elements within the pathname that can cause the pathname to resolve to a location that is outside of the restricted directory. "
+			}
+		},
+		{
+			"id": "server_side_request_forgery",
+			"name": "Server Side Request Forgery",
+			"description": "A server-side request forgery (SSRF) vulnerability is a type of vulnerability where an attacker is able to send crafted requests from a vulnerable web application. SSRF vulnerabilities occur when an attacker has the ability to create requests from the vulnerable system. The impact of an SSRF attack is usually information disclosure, and the attacker will be able to read files on the local server, or internal network. In some situations it may be possible for an attacker to escalate SSRF to a remote code execution vulnerability.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			},
+			"links": [
+				{
+					"description": "OWASP: Server Side Request Forgery",
+					"url": "https://owasp.org/www-community/attacks/Server_Side_Request_Forgery"
+				}
+			],
+			"cwe_details": {
+				"id": 918,
+				"name": "Server-Side Request Forgery (SSRF)",
+				"description": "The web server receives a URL or similar request from an upstream component and retrieves the contents of this URL, but it does not sufficiently ensure that the request is being sent to the expected destination."
+			}
+		},
+		{
+			"id": "script_engine_injection",
+			"name": "Script Engine Injection",
+			"description": "Script Engine Injection is a type of command injection attack that targets the execution of malicious code by an application that uses a script engine. Script Engine Injection attacks are possible when untrusted data is used to create or modify the script content executed by a script engine. This attack could lead to the execution of arbitrary commands or code on the host system.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			},
+			"links": [
+				{
+					"description": "OWASP: Command Injection",
+					"url": "https://owasp.org/www-community/attacks/Command_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 78,
+				"name": "Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+				"description": "The product constructs all or part of an OS command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended OS command when it is sent to a downstream component."
+			}
+		},
+		{
+			"id": "prototype_pollution",
+			"name": "Prototype Pollution",
+			"description": "Prototype pollution is a vulnerability that occurs when user-controllable data is able to influence the prototype of an object. When this occurs, properties that are not supposed to be accessible can be manipulated. This can lead to denial of service, arbitrary code execution, or data modification.",
+			"severity": {
+				"description": "Critical",
+				"score": 9
+			},
+			"links": [
+				{
+					"description": "OWASP: Prototype Pollution Prevention Cheat Sheet",
+					"url": "https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html"
+				}
+			],
+			"cwe_details": {
+				"id": 1321,
+				"name": "Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')",
+				"description": "The product receives input from an upstream component that specifies attributes that are to be initialized or updated in an object, but it does not properly control modifications of attributes of the object prototype."
+			}
+		},
+		{
+			"id": "Critical Security Issue",
+			"name": "Critical Security Issue",
+			"description": "A security issue has been found by the fuzzer. This is the result of either the application under test, the fuzz target or hooks throwing an exception of type com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical.",
+			"severity": {
+				"description": "High",
+				"score": 9
+			},
+			"mitigation": "Check the exception message and the source of the exception to identify the specific security implications and choose an appropriate mitigation."
+		},
+		{
+			"id": "High Security Issue",
+			"name": "High Security Issue",
+			"description": "A security issue has been found by the fuzzer. This is the result of either the application under test, the fuzz target or hooks throwing an exception of type com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh.",
+			"severity": {
+				"description": "High",
+				"score": 7
+			},
+			"mitigation": "Check the exception message and the source of the exception to identify the specific security implications and choose an appropriate mitigation."
+		},
+		{
+			"id": "Medium Security Issue",
+			"name": "Medium Security Issue",
+			"description": "A security issue has been found by the fuzzer. This is the result of either the application under test, the fuzz target or hooks throwing an exception of type com.code_intelligence.jazzer.api.FuzzerSecurityIssueMedium.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			},
+			"mitigation": "Check the exception message and the source of the exception to identify the specific security implications and choose an appropriate mitigation."
+		},
+		{
+			"id": "Low Security Issue",
+			"name": "Low Security Issue",
+			"description": "A security issue has been found by the fuzzer. This is the result of either the application under test, the fuzz target or hooks throwing an exception of type com.code_intelligence.jazzer.api.FuzzerSecurityIssueLow.",
+			"severity": {
+				"description": "Low",
+				"score": 1
+			},
+			"mitigation": "Check the exception message and the source of the exception to identify the specific security implications and choose an appropriate mitigation."
+		},
+		{
+			"id": "java\\.sql\\.SQLException|java\\.sql\\.SQLSyntaxErrorException",
+			"name": "Possible SQL Injection",
+			"description": "A SQL injection attack consists of insertion or “injection” of a SQL query via the input data from the client to the application. A successful SQL injection exploit can read sensitive data from the database, modify database data (Insert/Update/Delete), execute administration operations on the database (such as shutdown the DBMS), recover the content of a given file present on the DBMS file system and in some cases issue commands to the operating system.",
+			"severity": {
+				"description": "Critical",
+				"score": 7
+			},
+			"links": [
+				{
+					"description": "OWASP: SQL Injection",
+					"url": "https://owasp.org/www-community/attacks/SQL_Injection"
+				}
+			],
+			"owasp_details": {
+				"id": 1,
+				"name": "Injection",
+				"description": "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization."
+			},
+			"cwe_details": {
+				"id": 89,
+				"name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+				"description": "The product constructs all or part of an SQL command using externally-influenced input from an upstream component, but it does not neutralize or incorrectly neutralizes special elements that could modify the intended SQL command when it is sent to a downstream component. "
+			}
+		},
+		{
+			"id": "java_out_of_bounds",
+			"name": "Out-of-Bound Access Error",
+			"description": "Accessing an array out of its defined bounds using a read or write operation causes an exception that if goes uncaught, will cause the program to crash.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "The programmer should make sure that their access to an array is within bounds. If that is not possible, the access should be done within a try/catch clause, and the exception should be handled accordingly.",
+			"links": [
+				{
+					"description": "Array out of bound explained",
+					"url": "https://www.geeksforgeeks.org/understanding-array-indexoutofbounds-exception-in-java/"
+				}
+			],
+			"cwe_details": {
+				"id": 129,
+				"name": "Improper Validation of Array Index",
+				"description": "The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array. "
+			}
+		},
+		{
+			"id": "negative_array_size",
+			"name": "Negative Array Size",
+			"description": "Attempting to create an array with a negative size will throw an exception that, if not handled properly, may crash the application.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Check that dynamically constructed array sizes always have valid values.",
+			"links": [
+				{
+					"description": "Negative Array Size Exception",
+					"url": "https://docs.oracle.com/javase/7/docs/api/java/lang/NegativeArraySizeException.html"
+				}
+			],
+			"cwe_details": {
+				"id": 129,
+				"name": "Improper Validation of Array Index",
+				"description": "The product uses untrusted input when calculating or using an array index, but the product does not validate or incorrectly validates the index to ensure the index references a valid position within the array. "
+			}
+		},
+		{
+			"id": "null_pointer",
+			"name": "Dereference of Null Object",
+			"description": "Dereferencing a null object reference will cause a Null Pointer Exception that, if goes uncaught, may cause the program to crash.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "If null object references are possible this condition should be checked explicitly before dereferencing the reference.",
+			"links": [
+				{
+					"description": "Null Pointer Exception explained",
+					"url": "https://www.geeksforgeeks.org/null-pointer-exception-in-java/"
+				}
+			],
+			"cwe_details": {
+				"id": 476,
+				"name": "NULL Pointer Dereference",
+				"description": "NULL pointer dereference issues can occur through a number of flaws, including race conditions, and simple programming omissions. "
+			}
+		},
+		{
+			"id": "number_format",
+			"name": "Number Format Exception",
+			"description": "A number format exception occurs e.g. when converting a String to a numeric type. If the String is not properly formatted the conversion fails which needs to be handled by the caller.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Always perform conversion in a safe manner and handle the appropriate exceptions.",
+			"links": [
+				{
+					"description": "Number Format Exception explained",
+					"url": "https://www.baeldung.com/java-number-format-exception"
+				}
+			]
+		},
+		{
+			"id": "java_exception",
+			"name": "Java Exception",
+			"description": "An unhandled exception has been triggered by the fuzzer. Depending on the program this can indicate a security vulnerability or lead to a crash of the program.",
+			"severity": {
+				"description": "Medium",
+				"score": 4
+			},
+			"mitigation": "Perform exhaustive error handling by surrounding function calls in a try-catch block whenever errors are possible.",
+			"links": [
+				{
+					"description": "Java Exception explained",
+					"url": "https://www.geeksforgeeks.org/exceptions-in-java/"
+				}
+			],
+			"cwe_details": {
+				"id": 248,
+				"name": "Uncaught Exception",
+				"description": "When an exception is not caught, it may cause the program to crash or expose sensitive information."
+			}
+		},
+		{
+			"id": "Crash",
+			"name": "Crash",
+			"description": "The application under test exited unexpectedly. This could be a result of an uncaught exception (Java) or panic (Go) and presents a serious risk to the application's availability.",
+			"severity": {
+				"description": "Medium",
+				"score": 5
+			}
+		},
+		{
+			"id": "slow_input",
+			"name": "Slow Input",
+			"description": "A slow input occurs when a single invocation of the fuzz target succeeds, but takes unusually long to do so. Typical sources of slow inputs are algorithms and processes that are very slow when applied to large or unusual input and insufficient resources to handle high application load. Reproducible slow input can make an application susceptible to Denial of Service attacks and reduce the performance of fuzz tests.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			}
+		},
+		{
+			"id": "Connection Loss",
+			"name": "Connection Loss",
+			"description": "The fuzzer was not able to reach the application under test in multiple attempts. This may be caused by a temporary network issue, but could also be the result of a crash.",
+			"severity": {
+				"description": "Low",
+				"score": 2
+			}
+		}
+	]
+}
