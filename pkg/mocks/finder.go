@@ -136,3 +136,8 @@ func (m *RunfilesFinderMock) NodePath() (string, error) {
 	args := m.Called()
 	return args.String(0), args.Error(1)
 }
+
+func (m *RunfilesFinderMock) ErrorDetailsPath() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}

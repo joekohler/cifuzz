@@ -33,6 +33,7 @@ type RunfilesFinder interface {
 	JavaPath() (string, error)
 	JavaHomePath() (string, error)
 	NodePath() (string, error)
+	ErrorDetailsPath() (string, error)
 }
 
 var Finder RunfilesFinder
