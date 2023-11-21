@@ -2,6 +2,7 @@ package finding
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"testing"
 
@@ -9,12 +10,26 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code-intelligence.com/cifuzz/integration-tests/shared/mockserver"
+	"code-intelligence.com/cifuzz/internal/builder"
 	"code-intelligence.com/cifuzz/internal/cmdutils"
 	"code-intelligence.com/cifuzz/internal/testutil"
 	"code-intelligence.com/cifuzz/pkg/finding"
 	"code-intelligence.com/cifuzz/pkg/parser/libfuzzer/stacktrace"
+	"code-intelligence.com/cifuzz/pkg/runfiles"
 	"code-intelligence.com/cifuzz/util/stringutil"
 )
+
+func TestMain(m *testing.M) {
+	// Set finder install dir to project root. This way the
+	// finder finds the required error-details.json in the
+	// project dir instead of the cifuzz install dir.
+	sourceDir, err := builder.FindProjectDir()
+	if err != nil {
+		log.Fatalf("Failed to find cifuzz project dir")
+	}
+
+	runfiles.Finder = runfiles.RunfilesFinderImpl{InstallDir: sourceDir}
+}
 
 func TestFindingCmd_FailsIfNoCIFuzzProject(t *testing.T) {
 	// Create an empty directory
