@@ -78,7 +78,7 @@ func IsValidToken(server, token string) (bool, error) {
 }
 
 func readToken(server string) (string, error) {
-	path, err := url.JoinPath(server, "dashboard", "settings", "account", "tokens")
+	path, err := url.JoinPath(server, "app", "settings", "account", "tokens")
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

@@ -302,7 +302,7 @@ func (c *runRemoteCmd) run() error {
 		//       shows details about the run, but currently details are only
 		//       shown on the "<fuzz target>/edit" page, which lists all runs
 		//       of the fuzz target.
-		addr, err := cmdutils.BuildURLFromParts(c.opts.Server, "dashboard", campaignRunName, "overview")
+		addr, err := cmdutils.BuildURLFromParts(c.opts.Server, "app", campaignRunName, "overview")
 		if err != nil {
 			return err
 		}

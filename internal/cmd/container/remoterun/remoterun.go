@@ -189,7 +189,7 @@ func (c *containerRemoteRunCmd) run() error {
 		_, _ = fmt.Fprintln(os.Stdout, string(responseJSON))
 	}
 
-	addr, err := cmdutils.BuildURLFromParts(c.opts.Server, "dashboard", "projects", c.opts.Project, "runs")
+	addr, err := cmdutils.BuildURLFromParts(c.opts.Server, "app", "projects", c.opts.Project, "runs")
 	if err != nil {
 		return err
 	}
