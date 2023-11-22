@@ -2,8 +2,7 @@
 
 ## Release process
 
-We are using a automatic release process based on conventional commits
-and semantic versioning.
+Alpha Version-- Code-Intelligence
 
 ## Building from Source (Linux / macOS)
 
